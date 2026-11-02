@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ressource · Techno-Hangar</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+  body > footer { display: none; }
+  .barre { display: flex; align-items: center; gap: .6rem; padding: .45rem 1rem; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .barre h1 { font-size: 1rem; margin: 0; flex: 1; min-width: 10rem; }
+  .etat { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+  .etat.ok { color: var(--ok); } .etat.ko { color: var(--warn); }
+  main#voir { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #cadre { flex: 1; width: 100%; border: 0; background: #fff; min-height: 70vh; }
+  #msg:empty { display: none; }
+  #msg { padding: 2rem 1rem; max-width: 640px; margin: 0 auto; }
+</style>
+</head>
+<body data-racine="./" data-page="voir">
+<main id="voir">
+  <div class="barre">
+    <a class="btn" id="retour" href="index.html">← Retour</a>
+    <h1 id="titre">Chargement…</h1>
+    <span class="etat" id="etat"></span>
+    <button class="btn" id="plein" type="button" title="Plein écran">⛶</button>
+  </div>
+  <div id="msg"></div>
+  <iframe id="cadre" title="Ressource" hidden></iframe>
+</main>
+<script src="assets/config.js"></script>
+<script src="assets/th.js"></script>
+<script src="catalogue.js"></script>
+<script>
+window.TH_VOIR = async function (acces) {
+  var q = new URLSearchParams(location.search);
+  var r = q.get("r") || "";                       // ex. "bts-maintenance/pompe-volumetrique-eleve.html"
+  var morceaux = r.split("/"), classe = morceaux[0], fichier = morceaux.slice(1).join("/");
+  var cadre = document.getElementById("cadre"), msg = document.getElementById("msg");
+  var titre = document.getElementById("titre"), etat = document.getElementById("etat");
+  var infos = (window.CATALOGUE || []).filter(function (x) { return x.classe === classe && x.fichier === fichier; })[0];
+  document.getElementById("retour").href = classe + "/index.html" + (infos && infos.onglet ? "#" + infos.onglet : "");
+  titre.textContent = infos ? infos.titre : fichier;
+  document.title = titre.textContent + " · Techno-Hangar";
+
+  function erreur(t) { titre.textContent = "Ressource indisponible"; msg.innerHTML = ""; var d = document.createElement("div"); d.className = "vide"; d.textContent = t; msg.appendChild(d); }
+
+  if (!classe || !fichier || /\.\.|^\//.test(r)) return erreur("Adresse de ressource invalide.");
+  var cle = acces.cles && acces.cles[classe];
+  if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
+
+  document.getElementById("plein").onclick = function () {
+    var e = document.documentElement;
+    try { if (!document.fullscreenElement) e.requestFullscreen(); else document.exitFullscreen(); } catch (x) {}
+  };
+
+  /* 1. Télécharger et déchiffrer */
+  var clair;
+  try {
+    var rep = await fetch(classe + "/" + fichier + ".enc", { cache: "no-cache" });
+    if (!rep.ok) return erreur("Le fichier n'est pas encore en ligne.");
+    clair = await TH.dechiffrer(await rep.arrayBuffer(), cle);
+  } catch (e) { return erreur("Impossible d'ouvrir la ressource (fichier abîmé ou mauvaise clé)."); }
+
+  var ext = (fichier.split(".").pop() || "").toLowerCase();
+  var types = { html: "text/html", htm: "text/html", pdf: "application/pdf", png: "image/png", jpg: "image/jpeg",
+                jpeg: "image/jpeg", svg: "image/svg+xml", mp4: "video/mp4", glb: "model/gltf-binary" };
+  var blob = new Blob([clair], { type: types[ext] || "application/octet-stream" });
+  var url = URL.createObjectURL(blob);
+
+  if (!/^(html?|pdf|png|jpe?g|svg|mp4)$/.test(ext)) {
+    titre.textContent = (infos ? infos.titre : fichier);
+    var a = document.createElement("a"); a.href = url; a.download = fichier.split("/").pop();
+    a.className = "btn primary"; a.textContent = "Télécharger le fichier";
+    msg.appendChild(a); return;
+  }
+
+  /* 2. Reprise de la progression (pages HTML) */
+  var eleve = acces.role === "eleve" ? (TH.session() || {}).user.id : null;
+  var suivi = eleve && /^html?$/.test(ext);
+  var surveilles = {}, base = {}, dernierEnvoi = "", infosPage = {};
+
+  function cles() {
+    var a = []; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("th-") !== 0) a.push(k); } } catch (e) {}
+    return a;
+  }
+  function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  if (suivi) {
+    try {
+      var lignes = await TH.rest("progression?select=etat&eleve=eq." + eleve + "&ressource=eq." + encodeURIComponent(r));
+      var ls = (lignes[0] && lignes[0].etat && lignes[0].etat.ls) || {};
+      Object.keys(ls).forEach(function (k) { try { localStorage.setItem(k, ls[k]); } catch (e) {} surveilles[k] = true; });
+      if (lignes[0]) etat.textContent = "Progression reprise";
+    } catch (e) { etat.textContent = "Reprise impossible"; etat.className = "etat ko"; }
+    cles().forEach(function (k) { base[k] = lire(k); });
+  }
+
+  /* 3. Afficher */
+  cadre.src = url; cadre.hidden = false;
+
+  if (!suivi) return;
+
+  /* 4. Enregistrer régulièrement ce que la page sauvegarde */
+  async function enregistrer() {
+    cles().forEach(function (k) { if (lire(k) !== base[k]) surveilles[k] = true; });
+    var ls = {};
+    Object.keys(surveilles).forEach(function (k) { var v = lire(k); if (v !== null) ls[k] = v; });
+    var ligne = { eleve: eleve, ressource: r, etat: { ls: ls }, maj_le: new Date().toISOString() };
+    if (infosPage.avancement !== undefined) ligne.avancement = infosPage.avancement;
+    if (infosPage.score !== undefined) ligne.score = infosPage.score;
+    if (infosPage.termine !== undefined) ligne.termine = !!infosPage.termine;
+    var empreinte = JSON.stringify([ls, infosPage]);
+    if (empreinte === dernierEnvoi) return;
+    try {
+      await TH.rest("progression?on_conflict=eleve,ressource", { method: "POST", body: ligne,
+        headers: { "Prefer": "resolution=merge-duplicates,return=minimal" } });
+      dernierEnvoi = empreinte;
+      etat.textContent = "Enregistré à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      etat.className = "etat ok";
+    } catch (e) {
+      etat.textContent = e.status === 403 || e.status === 401 ? "Site fermé : non enregistré" : "Pas de connexion : non enregistré";
+      etat.className = "etat ko";
+    }
+  }
+  // Première visite : on crée la ligne pour que le prof voie que l'élève a ouvert la ressource
+  dernierEnvoi = "__"; enregistrer();
+  setInterval(enregistrer, 10000);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") enregistrer(); });
+  window.addEventListener("pagehide", enregistrer);
+
+  // Les pages peuvent aussi signaler leur avancement :
+  // parent.postMessage({ type: "th-progression", avancement: 60, score: 12, termine: false }, "*")
+  window.addEventListener("message", function (ev) {
+    if (ev.source !== cadre.contentWindow || !ev.data || ev.data.type !== "th-progression") return;
+    ["avancement", "score", "termine"].forEach(function (k) { if (ev.data[k] !== undefined) infosPage[k] = ev.data[k]; });
+    enregistrer();
+  });
+};
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>
