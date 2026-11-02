@@ -15,7 +15,9 @@
           sequences: [ "Thème 1 · Gérer la ville du futur", "Thème 2 · Comment sécuriser un bâtiment ?", "Thème 3 · Robotique", "Étude de système" ] },
         { id: "itec", nom: "ITEC",
           sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] } ] },
-    { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique", couleur: "--c-it", onglets: [] },
+    { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique", couleur: "--c-it", onglets: [],
+      sequences: [ "Séquence 1 · Représentation du réel", "Séquence 2 · Support téléphone",
+                   "Projet 1 · Le casque connecté", "Projet 2", "Projet final" ] },
     { id: "snt", nom: "SNT seconde", court: "SNT", code: "2DE", det: "Sciences numériques", couleur: "--c-snt", onglets: [],
       sequences: [ "Séquence 1 · Renseignement & découverte de la SNT", "Thème 0 · Python", "Thème 1 · Les réseaux sociaux",
                    "Thème 2 · Le Web", "Thème 3 · Internet", "Thème 4 · La géolocalisation" ] },
@@ -40,6 +42,8 @@
     doc: I('<path d="M12 6h17l9 9v27H12z"/><path d="M29 6v9h9M17 24h14M17 30h14M17 36h9"/>'),
     web: I('<circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c-6 6-6 26 0 32M24 8c6 6 6 26 0 32"/>'),
     quiz: I('<rect x="8" y="8" width="32" height="32" rx="4"/><path d="M14 18l3 3 5-6M26 18h8M14 30l3 3 5-6M26 30h8"/>'),
+    casque: I('<path d="M8 30a16 16 0 0 1 32 0v3H8z"/><path d="M14 22c3-4 7-6 10-6M30 17l4 3M20 30v3M28 30v3"/><circle cx="38" cy="12" r="2.2" fill="currentColor"/><path d="M41.5 8.5a5 5 0 0 1 0 7M44.5 5.5a9 9 0 0 1 0 13"/>'),
+    telephone: I('<rect x="17" y="6" width="14" height="24" rx="3"/><path d="M22 26h4"/><path d="M10 42h28M14 42l6-12h8l6 12"/>'),
     pompe: I('<circle cx="22" cy="26" r="11"/><circle cx="22" cy="26" r="4"/><path d="M33 26h9M22 15V6M18 6h8M6 26h5"/>')
   };
   window.TH_ICONES = ICONES;
