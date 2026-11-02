@@ -51,7 +51,7 @@ window.CATALOGUE = [
     consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
     documents: [ { titre: "Document réponse", url: "https://drive.google.com/file/d/1mjWqssl9KTCoHwsSH24YnD_ZiWSa7lDi/view?usp=sharing" } ] },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
-    titre: "TD3 · Lève-moto", fichier: "td-levemoto-eleve.html", type: "td", icone: "moto", en_ligne: false,
+    titre: "TD3 · Lève-moto", fichier: "td-levemoto-eleve.html", type: "td", icone: "moto", en_ligne: true,
     titre_consigne: "TD : Lève-moto",
     consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
     documents: [ { titre: "Document réponse 1", url: "https://drive.google.com/file/d/1zQN2ez3Pa1MgSCfohO9LnY6x8D7nkkwz/view?usp=sharing" },
