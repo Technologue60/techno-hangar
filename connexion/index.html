@@ -3,23 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Connexion · Mes cours</title>
+<title>Connexion · Techno-Hangar</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body data-racine="../" data-page="connexion">
 <main>
-  <h1>Connexion</h1>
-  <p class="lead">La connexion n'est pas encore ouverte. En attendant, toutes les ressources sont accessibles sans compte.</p>
-  <form class="carte-form" onsubmit="return false">
-    <label for="id">Identifiant</label>
-    <input id="id" autocomplete="username" disabled placeholder="fourni par ton professeur">
-    <label for="mdp">Mot de passe</label>
-    <input id="mdp" type="password" autocomplete="current-password" disabled>
-    <button class="btn primary" disabled>Se connecter</button>
-  </form>
-  <p style="margin-top:1.2rem"><a href="../prof/index.html">Espace professeur</a></p>
+  <section class="accueil" style="padding-top:2.5rem">
+    <h1>Techno-Hangar</h1>
+    <p class="lead">Connecte-toi avec l'identifiant donné par ton professeur.</p>
+    <form class="carte-form" id="form" style="margin:0 auto; text-align:left" novalidate>
+      <label for="id">Identifiant</label>
+      <input id="id" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="prenom.nom" required>
+      <label for="mdp">Mot de passe</label>
+      <input id="mdp" type="password" autocomplete="current-password" required>
+      <button class="btn primary" id="go" type="submit">Se connecter</button>
+      <div class="erreur" id="err" role="alert"></div>
+    </form>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:1.2rem">Mot de passe oublié ? Demande à ton professeur.</p>
+  </section>
 </main>
+<script src="../assets/config.js"></script>
+<script src="../assets/th.js"></script>
 <script src="../catalogue.js"></script>
 <script src="../assets/site.js"></script>
+<script>
+(function () {
+  var f = document.getElementById("form"), err = document.getElementById("err"), go = document.getElementById("go");
+  var q = new URLSearchParams(location.search);
+  if (q.get("erreur") === "compte") err.textContent = "Ce compte n'est pas (ou plus) actif. Vois avec ton professeur.";
+  f.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var id = document.getElementById("id").value.trim(), mdp = document.getElementById("mdp").value;
+    if (!id || !mdp) { err.textContent = "Remplis l'identifiant et le mot de passe."; return; }
+    go.disabled = true; go.textContent = "Connexion…"; err.textContent = "";
+    try {
+      var a = await TH.connexion(id, mdp);
+      if (!a || a.erreur) { await TH.deconnexion(); throw { message: "compte" }; }
+      var retour = q.get("retour");
+      var dest = "../index.html";
+      if (a.role === "prof") dest = "../prof/index.html";
+      else if (a.classe) dest = "../" + a.classe + "/index.html";
+      if (retour && retour.charAt(0) === "/" && retour.indexOf("//") !== 0 && retour.indexOf("/connexion/") < 0) dest = retour;
+      location.href = dest;
+    } catch (e) {
+      go.disabled = false; go.textContent = "Se connecter";
+      if (e && e.message === "compte") err.textContent = "Ce compte n'est rattaché à aucune classe. Vois avec ton professeur.";
+      else if (e && (e.status === 400 || e.code === "invalid_credentials")) err.textContent = "Identifiant ou mot de passe incorrect.";
+      else if (e && e.status === 429) err.textContent = "Trop de tentatives. Attends une minute et réessaie.";
+      else err.textContent = "Connexion impossible pour le moment. Vérifie ta connexion Internet.";
+    }
+  });
+})();
+</script>
 </body>
 </html>

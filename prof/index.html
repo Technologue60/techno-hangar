@@ -3,17 +3,107 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Espace professeur · Mes cours</title>
+<title>Espace prof · Techno-Hangar</title>
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/prof.css">
 </head>
 <body data-racine="../" data-page="prof">
 <main>
-  <h1>Espace professeur</h1>
-  <p class="lead">Tableau de bord à venir : classe → élève → activité, export CSV, archivage, plages d'ouverture.</p>
-  <div class="encart">Cette page s'activera en phase 2 (comptes) et phase 3 (suivi des activités).</div>
+  <h1>Espace prof</h1>
+  <div class="onglets" role="tablist" id="ongletsProf">
+    <button class="onglet actif" data-vue="eleves" type="button">Élèves</button>
+    <button class="onglet" data-vue="suivi" type="button">Suivi</button>
+    <button class="onglet" data-vue="horaires" type="button">Horaires</button>
+    <button class="onglet" data-vue="chiffrer" type="button">Ajouter une ressource</button>
+  </div>
+
+  <!-- ============ ÉLÈVES ============ -->
+  <section class="vue" id="vue-eleves">
+    <div class="ligne-outils">
+      <label>Classe <select class="choix-classe" id="e-classe"></select></label>
+      <span class="aide" id="e-compte"></span>
+    </div>
+    <div class="tableau-wrap"><table class="tableau" id="e-table"></table></div>
+
+    <h2>Ajouter des élèves</h2>
+    <p class="aide">Une ligne par élève : <b>NOM Prénom</b> (ou <b>Nom;Prénom</b>, ou copié depuis un tableur sur deux colonnes).
+      Un identifiant et un mot de passe sont générés ; ils s'affichent une seule fois, pense à imprimer les fiches.</p>
+    <textarea id="e-liste" rows="6" placeholder="DUPONT Léa&#10;MARTIN Tom&#10;Bernard;Inès"></textarea>
+    <div class="ligne-outils">
+      <button class="btn primary" id="e-creer" type="button">Créer les comptes</button>
+      <span class="aide" id="e-etat"></span>
+    </div>
+    <div id="e-resultats"></div>
+  </section>
+
+  <!-- ============ SUIVI ============ -->
+  <section class="vue" id="vue-suivi" hidden>
+    <div class="ligne-outils">
+      <label>Classe <select class="choix-classe" id="s-classe"></select></label>
+      <button class="btn" id="s-maj" type="button">Actualiser</button>
+      <button class="btn" id="s-csv" type="button">Exporter (CSV)</button>
+    </div>
+    <p class="aide">✓ terminé · un pourcentage = avancement signalé par la page · ● ouvert (date de dernier passage au survol).</p>
+    <div class="tableau-wrap"><table class="tableau suivi" id="s-table"></table></div>
+  </section>
+
+  <!-- ============ HORAIRES ============ -->
+  <section class="vue" id="vue-horaires" hidden>
+    <div class="ligne-outils">
+      <label>Classe <select class="choix-classe" id="h-classe"></select></label>
+    </div>
+    <p class="aide">Heure de Paris. Laisse les deux heures vides pour fermer un jour. Toi, tu as accès 24 h/24.</p>
+    <table class="tableau horaires" id="h-table"></table>
+    <div class="ligne-outils">
+      <button class="btn primary" id="h-enr" type="button">Enregistrer</button>
+      <button class="btn" id="h-tous" type="button">Appliquer à toutes les classes</button>
+      <span class="aide" id="h-etat"></span>
+    </div>
+
+    <h2>Fermetures et ouvertures exceptionnelles</h2>
+    <p class="aide">Une exception l'emporte sur les horaires habituels (ex. fermeture pendant un contrôle, ouverture un dimanche soir avant un rendu).</p>
+    <div class="form-exc">
+      <label>Classe <select id="x-classe"></select></label>
+      <label>Du <input type="datetime-local" id="x-du"></label>
+      <label>Au <input type="datetime-local" id="x-au"></label>
+      <label>Type <select id="x-ouvert"><option value="false">Fermé</option><option value="true">Ouvert</option></select></label>
+      <label>Motif <input id="x-motif" placeholder="facultatif"></label>
+      <button class="btn primary" id="x-ajout" type="button">Ajouter</button>
+    </div>
+    <div class="tableau-wrap"><table class="tableau" id="x-table"></table></div>
+  </section>
+
+  <!-- ============ CHIFFRER ============ -->
+  <section class="vue" id="vue-chiffrer" hidden>
+    <p class="aide">Les ressources sont stockées <b>chiffrées</b> sur GitHub : sans compte, personne ne peut les lire.</p>
+    <ol class="etapes">
+      <li>Choisis la classe et glisse le ou les fichiers (HTML, PDF, images…).</li>
+      <li>Clique sur <b>Chiffrer</b> : chaque fichier ressort avec l'extension <code>.enc</code> (téléchargement).</li>
+      <li>Sur GitHub, dépose les fichiers <code>.enc</code> dans le dossier de la classe.</li>
+      <li>Dans <code>catalogue.js</code>, mets le nom du fichier <b>sans</b> <code>.enc</code> et <code>en_ligne: true</code>.</li>
+    </ol>
+    <div class="ligne-outils">
+      <label>Classe <select class="choix-classe" id="c-classe"></select></label>
+    </div>
+    <label class="depot" id="c-depot">
+      <input type="file" id="c-fichiers" multiple hidden>
+      <span>Glisse tes fichiers ici ou clique pour choisir</span>
+    </label>
+    <div class="ligne-outils">
+      <button class="btn primary" id="c-go" type="button">Chiffrer</button>
+      <span class="aide" id="c-etat"></span>
+    </div>
+    <div id="c-liens"></div>
+  </section>
+
+  <!-- Fiches à imprimer -->
+  <div id="fiches" class="fiches"></div>
 </main>
+<script src="../assets/config.js"></script>
+<script src="../assets/th.js"></script>
 <script src="../catalogue.js"></script>
+<script src="../assets/prof.js"></script>
 <script src="../assets/site.js"></script>
 </body>
 </html>

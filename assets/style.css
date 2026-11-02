@@ -170,3 +170,9 @@ footer { max-width: 1040px; margin: 0 auto; padding: 1rem; color: var(--muted); 
 .onglet:hover { color: var(--text); }
 .onglet.actif { color: var(--accent); border-bottom-color: var(--accent); }
 .res h3 { flex: 1; }
+
+/* Garde : rien ne s'affiche avant la vérification de connexion */
+html:not(.th-ok) main { visibility: hidden; }
+.qui { font-size: .88rem; color: var(--muted); align-self: center; white-space: nowrap; }
+.erreur { color: #c0392b; font-size: .9rem; margin-top: .8rem; min-height: 1.2em; }
+:root[data-theme="dark"] .erreur { color: #ff8a7a; }
