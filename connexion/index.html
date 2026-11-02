@@ -3,23 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#09090b">
 <title>Connexion · Techno-Hangar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body data-racine="../" data-page="connexion">
 <main>
-  <section class="accueil" style="padding-top:2.5rem">
-    <h1>Techno-Hangar</h1>
-    <p class="lead">Connecte-toi avec l'identifiant donné par ton professeur.</p>
-    <form class="carte-form" id="form" style="margin:0 auto; text-align:left" novalidate>
+  <section class="cx">
+    <form id="form" novalidate>
+      <div class="logo-g"><svg width="22" height="20" viewBox="0 0 34 30" fill="none" stroke="#ededf0" stroke-width="2.6" stroke-linejoin="round"><path d="M3 28V14a14 11 0 0 1 28 0v14"/><path d="M11 28V18h12v10"/></svg></div>
+      <h1>Techno-Hangar</h1>
+      <p>Connecte-toi avec l'identifiant donné par ton professeur.</p>
       <label for="id">Identifiant</label>
       <input id="id" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="prenom.nom" required>
       <label for="mdp">Mot de passe</label>
       <input id="mdp" type="password" autocomplete="current-password" required>
       <button class="btn primary" id="go" type="submit">Se connecter</button>
       <div class="erreur" id="err" role="alert"></div>
+      <small>Mot de passe oublié ? Demande à ton professeur.</small>
     </form>
-    <p style="color:var(--muted);font-size:.85rem;margin-top:1.2rem">Mot de passe oublié ? Demande à ton professeur.</p>
   </section>
 </main>
 <script src="../assets/config.js"></script>

@@ -3,19 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#09090b">
 <title>Ressource · Techno-Hangar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <style>
   html, body { height: 100%; }
   body { display: flex; flex-direction: column; }
   body > footer { display: none; }
-  .barre { display: flex; align-items: center; gap: .6rem; padding: .45rem 1rem; background: var(--surface);
+  .barre { position: relative; z-index: 2; display: flex; align-items: center; gap: .6rem; padding: .45rem 1rem; background: var(--bg2);
     border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .barre h1 { font-size: 1rem; margin: 0; flex: 1; min-width: 10rem; }
   .etat { font-size: .82rem; color: var(--muted); white-space: nowrap; }
   .etat.ok { color: var(--ok); } .etat.ko { color: var(--warn); }
   main#voir { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  #cadre { flex: 1; width: 100%; border: 0; background: #fff; min-height: 70vh; }
+  #cadre { position: relative; z-index: 1; flex: 1; width: 100%; border: 0; background: #fff; min-height: 70vh; }
   #msg:empty { display: none; }
   #msg { padding: 2rem 1rem; max-width: 640px; margin: 0 auto; }
 </style>

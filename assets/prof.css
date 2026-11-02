@@ -19,7 +19,7 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
 .suivi td.c { text-align: center; min-width: 2.4rem; }
 .suivi .fait { color: var(--ok); font-weight: 700; }
 .suivi .cours { color: var(--accent); }
-.suivi .rien { color: var(--border); }
+.suivi .rien { color: var(--faible); }
 .horaires input[type="time"] { width: 7.5rem; }
 .form-exc { display: flex; gap: .7rem; flex-wrap: wrap; align-items: end; margin: .8rem 0 1rem; }
 .depot { display: flex; align-items: center; justify-content: center; min-height: 120px; border: 2px dashed var(--border);
@@ -27,8 +27,8 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
 .depot.survol { border-color: var(--accent); color: var(--accent); }
 .etapes { color: var(--text); font-size: .92rem; padding-left: 1.2rem; }
 .etapes li { margin: .25rem 0; }
-.mdp { font-family: ui-monospace, Consolas, monospace; background: var(--accent-soft); padding: .1rem .4rem; border-radius: 6px; }
-.btn.danger { color: #c0392b; }
+.mdp { font-family: var(--mono); background: var(--accent-soft); padding: .1rem .4rem; border-radius: 6px; }
+.btn.danger { color: var(--danger); }
 
 /* Fiches d'identifiants */
 .fiches { display: none; }
@@ -41,3 +41,7 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
   .fiche p { margin: 1.5mm 0; font-size: 11pt; }
   .fiche .mdp { background: none; font-size: 13pt; font-weight: 700; }
 }
+
+.vue { position: relative; }
+.depot.survol { box-shadow: 0 0 22px rgba(91,140,255,.3); }
+.tableau { border-radius: 10px; overflow: hidden; }
