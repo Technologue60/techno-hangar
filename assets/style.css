@@ -174,3 +174,28 @@ html:not(.th-ok) main { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .carte, .carte:before, .niveau .fl { transition: none; } .carte:hover { transform: none; } }
 .a-venir { grid-column: 1 / -1; font-family: var(--mono); font-size: .75rem; color: var(--faible); border: 1px dashed var(--border);
   border-radius: 10px; padding: .7rem 1rem; }
+
+/* ---------- Groupes dépliants (menu déroulant) ---------- */
+.seq-contenu { display: flex; flex-direction: column; gap: .7rem; }
+.seq-contenu > .ressources { margin-bottom: .2rem; }
+.groupe { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .25s, box-shadow .25s; }
+.groupe:hover { border-color: color-mix(in srgb, var(--c, var(--accent)) 45%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c, var(--accent)) 18%, transparent); }
+.groupe[open] { border-color: color-mix(in srgb, var(--c, var(--accent)) 40%, transparent); }
+.groupe summary { list-style: none; display: flex; align-items: center; gap: 1rem; padding: .9rem 1.1rem; cursor: pointer; user-select: none; }
+.groupe summary::-webkit-details-marker { display: none; }
+.g-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.g-titre { font-weight: 600; font-size: 1.05rem; letter-spacing: -.01em; }
+.g-sous { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+.chevron { font-size: 1.5rem; line-height: 1; color: var(--muted); transition: transform .25s, color .25s; }
+.groupe[open] .chevron { transform: rotate(90deg); color: var(--c, var(--accent)); }
+.g-corps { padding: .2rem 1.1rem 1.1rem; animation: deplie .25s ease; }
+@keyframes deplie { from { opacity: 0; transform: translateY(-4px); } }
+.illu { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 9px; color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c, var(--accent)) 25%, transparent); }
+.illu svg { width: 24px; height: 24px; }
+.illu.grande { width: 60px; height: 60px; border-radius: 14px; }
+.illu.grande svg { width: 42px; height: 42px; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c, var(--accent)) 45%, transparent)); }
+.res-haut { display: flex; align-items: center; gap: .75rem; }
+.carte.off .illu { filter: grayscale(1); opacity: .6; }
+@media (prefers-reduced-motion: reduce) { .g-corps { animation: none; } .chevron { transition: none; } }
