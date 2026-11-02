@@ -11,7 +11,8 @@
      fichier   : nom du fichier dans le dossier de la classe,
                  ou adresse complète (https://...) pour un lien externe (Drive, Google Sites)
      type      : "activite" | "td" | "pdf" | "video" | "lien"
-     onglet    : (Terminale STI2D) "2i2d" ou "itec" ; inutile pour les autres classes
+     onglet    : (Terminale STI2D) "revision", "2i2d" ou "itec" ; inutile pour les autres classes
+     sequence  : doit reprendre exactement un nom de séquence défini dans assets/site.js
      en_ligne  : true quand le fichier est bien déposé ; false = affiché « bientôt »
    Les versions prof et les corrigés ne vont PAS ici (dépôt public).
    ========================================================================= */
@@ -19,22 +20,27 @@
 window.CATALOGUE = [
 
   /* ---------------- Terminale STI2D ---------------- */
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "StatGraph Web · la potence", fichier: "statgraph-web-potence.html", type: "activite", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "StatGraph Web · logiciel", fichier: "statgraph-web.html", type: "activite", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "TD lève-moto", fichier: "td-levemoto-eleve.html", type: "td", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "TD lève-moto · énoncé PDF", fichier: "TD-leve-moto-STI2D.pdf", type: "pdf", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "TD échelle de pompier", fichier: "td-echelle-pompier.html", type: "td", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Statique · Principe fondamental de la statique",
-    titre: "TD potence", fichier: "td-potence.html", type: "td", en_ligne: false },
+  /* 2I2D */
+  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
+    titre: "Étude de cas · Webcam motorisée (partie commune)", fichier: "edc-securisation-webcam.html", type: "activite", en_ligne: true },
+  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
+    titre: "Spécialité ITEC · Motorisation & support de caméra", fichier: "edc-securisation-itec.html", type: "activite", en_ligne: true },
 
-  { classe: "terminale-sti2d", onglet: "itec", sequence: "Portail automatisé",
-    titre: "Suivi de TP · Portail automatisé", fichier: "suivi-tp-portail.html", type: "activite",
-    en_ligne: false },
+  /* ITEC */
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Le PFS · Échelle de pompier", fichier: "td-echelle-pompier.html", type: "td", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Le PFS · Structure de potence", fichier: "td-potence.html", type: "td", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Le PFS · Lève-moto", fichier: "td-levemoto-eleve.html", type: "td", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Le PFS · Lève-moto (énoncé PDF)", fichier: "TD-leve-moto-STI2D.pdf", type: "pdf", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "StatGraph · la potence", fichier: "statgraph-web-potence.html", type: "activite", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "StatGraph · logiciel", fichier: "statgraph-web.html", type: "activite", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "TP · Portail automatisé", fichier: "suivi-tp-portail.html", type: "activite", en_ligne: false },
 
   /* ---------------- 1ère IT ---------------- */
   /* (aucune ressource pour l'instant : projet casque de vélo connecté à venir) */

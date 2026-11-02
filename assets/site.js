@@ -9,7 +9,12 @@
      sequences : ordre d'affichage des séquences (les séquences sans ressource affichent « Bientôt »). */
   var CLASSES = [
     { id: "terminale-sti2d", nom: "Terminale STI2D", court: "Tle STI2D", code: "TLE", det: "2I2D · ITEC", couleur: "--c-sti2d",
-      onglets: [ { id: "2i2d", nom: "2I2D" }, { id: "itec", nom: "ITEC" } ] },
+      onglets: [
+        { id: "revision", nom: "Révision de 1re", sequences: [ "0 · Révision de 1re" ] },
+        { id: "2i2d", nom: "2I2D", defaut: true,
+          sequences: [ "Thème 1 · Gérer la ville du futur", "Thème 2 · Comment sécuriser un bâtiment ?", "Thème 3 · Robotique" ] },
+        { id: "itec", nom: "ITEC",
+          sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] } ] },
     { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique", couleur: "--c-it", onglets: [] },
     { id: "snt", nom: "SNT seconde", court: "SNT", code: "2DE", det: "Sciences numériques", couleur: "--c-snt", onglets: [],
       sequences: [ "Séquence 1 · Renseignement & découverte de la SNT", "Thème 0 · Python", "Thème 1 · Les réseaux sociaux",
@@ -164,7 +169,9 @@
 
     function ongletDepuisHash() {
       var h = (location.hash || "").replace("#", "");
-      return onglets.some(function (o) { return o.id === h; }) ? h : (onglets[0] ? onglets[0].id : null);
+      if (onglets.some(function (o) { return o.id === h; })) return h;
+      var d = onglets.filter(function (o) { return o.defaut; })[0] || onglets[0];
+      return d ? d.id : null;
     }
     function dessinerOnglets() {
       barre.innerHTML = "";
@@ -194,7 +201,8 @@
     function afficher() {
       zone.innerHTML = "";
       var vis = liste.filter(function (r) { return !actif || r.onglet === actif; });
-      var ordre = actif ? [] : (infos.sequences || []).slice(), groupes = {};
+      var og = onglets.filter(function (o) { return o.id === actif; })[0];
+      var ordre = ((og ? og.sequences : infos.sequences) || []).slice(), groupes = {};
       ordre.forEach(function (s) { groupes[s] = []; });
       vis.forEach(function (r) {
         if (!groupes[r.sequence]) { groupes[r.sequence] = []; ordre.push(r.sequence); }
