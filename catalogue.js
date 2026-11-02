@@ -40,10 +40,10 @@ window.CATALOGUE = [
   /* (aucune ressource pour l'instant : projet casque de vélo connecté à venir) */
 
   /* ---------------- SNT seconde ---------------- */
-  { classe: "snt", sequence: "Le Web",
-    titre: "Chapitre · Le Web", fichier: "", type: "lien", en_ligne: false },
-  { classe: "snt", sequence: "Le Web",
-    titre: "Activités · QCM interactifs", fichier: "", type: "activite", en_ligne: false },
+  { classe: "snt", sequence: "Thème 2 · Le Web",
+    titre: "Chapitre · Le Web", fichier: "snt-le-web.html", type: "activite", en_ligne: true },
+  { classe: "snt", sequence: "Thème 2 · Le Web",
+    titre: "Activités · QCM Le Web", fichier: "snt-le-web-activites.html", type: "activite", en_ligne: false },
 
   /* ---------------- BTS maintenance ---------------- */
   { classe: "bts-maintenance", sequence: "ETLV · A volumetric pump",

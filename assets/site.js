@@ -10,7 +10,9 @@
     { id: "terminale-sti2d", nom: "Terminale STI2D", court: "Tle STI2D", couleur: "--c-sti2d",
       onglets: [ { id: "2i2d", nom: "2I2D" }, { id: "itec", nom: "ITEC" } ] },
     { id: "premiere-it", nom: "1ère IT", court: "1ère IT", couleur: "--c-it", onglets: [] },
-    { id: "snt", nom: "SNT seconde", court: "SNT", couleur: "--c-snt", onglets: [] },
+    { id: "snt", nom: "SNT seconde", court: "SNT", couleur: "--c-snt", onglets: [],
+      sequences: [ "Séquence 1 · Renseignement & découverte de la SNT", "Thème 0 · Python", "Thème 1 · Les réseaux sociaux",
+                   "Thème 2 · Le Web", "Thème 3 · Internet", "Thème 4 · La géolocalisation" ] },
     { id: "bts-maintenance", nom: "BTS maintenance", court: "BTS MS", couleur: "--c-bts", onglets: [] }
   ];
   window.TH_CLASSES = CLASSES;
@@ -135,14 +137,16 @@
     function afficher() {
       zone.innerHTML = "";
       var vis = liste.filter(function (r) { return !actif || r.onglet === actif; });
-      if (!vis.length) { zone.appendChild(el("div", { class: "vide", texte: "Les ressources arrivent bientôt." })); return; }
-      var ordre = [], groupes = {};
+      if (!vis.length && !(infos.sequences || []).length) { zone.appendChild(el("div", { class: "vide", texte: "Les ressources arrivent bientôt." })); return; }
+      var ordre = (infos.sequences || []).slice(), groupes = {};
+      ordre.forEach(function (s) { groupes[s] = []; });
       vis.forEach(function (r) {
         if (!groupes[r.sequence]) { groupes[r.sequence] = []; ordre.push(r.sequence); }
         groupes[r.sequence].push(r);
       });
       ordre.forEach(function (s) {
         var grille = el("div", { class: "ressources" });
+        if (!groupes[s].length) grille.appendChild(el("div", { class: "vide", texte: "Bientôt disponible." }));
         groupes[s].forEach(function (r) {
           var dispo = r.en_ligne && r.fichier;
           var action = dispo
