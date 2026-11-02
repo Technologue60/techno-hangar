@@ -199,3 +199,18 @@ html:not(.th-ok) main { visibility: hidden; }
 .res-haut { display: flex; align-items: center; gap: .75rem; }
 .carte.off .illu { filter: grayscale(1); opacity: .6; }
 @media (prefers-reduced-motion: reduce) { .g-corps { animation: none; } .chevron { transition: none; } }
+
+/* Documents à télécharger sur les cartes */
+.docs-carte { display: flex; flex-wrap: wrap; gap: .4rem; }
+.doc-lien { font-size: .8rem; color: var(--text); text-decoration: none; border: 1px solid var(--border2); background: var(--bg2);
+  border-radius: 7px; padding: .2rem .55rem; transition: border-color .15s, color .15s; }
+.doc-lien:hover { border-color: var(--c, var(--accent)); color: #fff; }
+.carte.cliquable { cursor: pointer; }
+.carte.off.avec-docs { opacity: 1; }
+.carte.off.avec-docs h3, .carte.off.avec-docs .bas, .carte.off.avec-docs .illu { opacity: .5; }
+
+/* Outil (ex. logiciel StatGraph) : ligne pleine largeur qui s'ouvre directement */
+.carte.outil { display: flex; align-items: center; gap: 1rem; padding: .9rem 1.1rem; }
+.carte.outil .chevron { font-size: 1.2rem; }
+.carte.outil:hover .chevron { color: var(--c, var(--accent)); }
+.carte.outil.off .g-titre { color: var(--muted); }

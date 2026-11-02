@@ -44,7 +44,7 @@
   };
   window.TH_ICONES = ICONES;
 
-  var TYPES = { activite: "Activité", td: "TD", pdf: "PDF", video: "Vidéo", lien: "Lien" };
+  var TYPES = { activite: "Activité", td: "TD", pdf: "PDF", video: "Vidéo", lien: "Lien", outil: "Outil" };
   var LOGO = '<svg width="15" height="14" viewBox="0 0 34 30" fill="none" stroke="#ededf0" stroke-width="3" stroke-linejoin="round"><path d="M3 28V14a14 11 0 0 1 28 0v14"/><path d="M11 28V18h12v10"/></svg>';
   window.TH_LOGO = LOGO;
 
@@ -233,6 +233,17 @@
       if (!ordre.length) { zone.appendChild(el("div", { class: "vide", texte: "Les ressources arrivent bientôt." })); return; }
       function carteRessource(r) {
         var dispo = r.en_ligne && r.fichier;
+        if (r.type === "outil") {
+          var contenu = [
+            r.icone && ICONES[r.icone] ? el("span", { class: "illu grande", html: ICONES[r.icone] }) : el("span", { class: "illu grande vide-illu" }),
+            el("span", { class: "g-txt" }, [el("span", { class: "g-titre", texte: r.titre }),
+              el("span", { class: "g-sous", texte: dispo ? (r.note || "Outil · s'ouvre directement") : "Bientôt disponible" })]),
+            el("span", { class: "chevron", "aria-hidden": "true", texte: dispo ? "↗" : "" })
+          ];
+          return dispo
+            ? el("a", { class: "carte outil", href: lienRessource(r), "data-c": infos.couleur }, contenu)
+            : el("div", { class: "carte outil off" }, contenu);
+        }
         var etat = dispo ? etatRessource(r) : null;
         var bas = el("div", { class: "bas" }, [
           etat || el("span", { class: "badge", texte: TYPES[r.type] || r.type }),
@@ -243,9 +254,21 @@
         var haut = el("div", { class: "res-haut" }, [
           r.icone && ICONES[r.icone] ? el("span", { class: "illu", html: ICONES[r.icone] }) : null,
           el("h3", { texte: r.titre })]);
-        return dispo
-          ? el("a", { class: "carte res", href: lienRessource(r), "data-c": infos.couleur }, [haut, bas])
-          : el("div", { class: "carte res off" }, [haut, bas]);
+        var docs = null;
+        if (r.documents && r.documents.length) {
+          docs = el("div", { class: "docs-carte" });
+          r.documents.forEach(function (d) {
+            docs.appendChild(el("a", { class: "doc-lien", href: d.url, target: "_blank", rel: "noopener", texte: "📎 " + d.titre }));
+          });
+        }
+        if (!dispo) return el("div", { class: "carte res off" + (docs ? " avec-docs" : "") }, [haut, docs, bas]);
+        if (!docs) return el("a", { class: "carte res", href: lienRessource(r), "data-c": infos.couleur }, [haut, bas]);
+        // Carte avec documents : liens séparés (pas de lien dans un lien)
+        var carte = el("div", { class: "carte res cliquable", "data-c": infos.couleur, role: "link", tabindex: "0" }, [haut, docs, bas]);
+        var aller = function () { location.href = lienRessource(r); };
+        carte.addEventListener("click", function (e) { if (!e.target.closest(".doc-lien")) aller(); });
+        carte.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.target.closest(".doc-lien")) aller(); });
+        return carte;
       }
       function ouvertsLire() { try { return JSON.parse(localStorage.getItem("th-groupes") || "{}"); } catch (e) { return {}; } }
       function ouvertsEcrire(o) { try { localStorage.setItem("th-groupes", JSON.stringify(o)); } catch (e) {} }
@@ -254,8 +277,14 @@
         var bloc = el("div", { class: "seq-contenu" });
         if (!groupes[s].length) grille.appendChild(el("div", { class: "a-venir", texte: "Bientôt disponible" }));
         var vus = {};
+        var morceau = null;
         groupes[s].forEach(function (r) {
-          if (!r.groupe) { grille.appendChild(carteRessource(r)); return; }
+          if (!r.groupe) {
+            if (r.type === "outil") { morceau = null; bloc.appendChild(carteRessource(r)); return; }
+            if (!morceau) { morceau = el("div", { class: "ressources" }); bloc.appendChild(morceau); }
+            morceau.appendChild(carteRessource(r)); return;
+          }
+          morceau = null;
           if (vus[r.groupe]) return;
           vus[r.groupe] = true;
           var membres = groupes[s].filter(function (x) { return x.groupe === r.groupe; });

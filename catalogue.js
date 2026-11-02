@@ -16,6 +16,8 @@
      groupe    : (facultatif) regroupe des ressources dans un menu dépliant ; groupe_icone : illustration du groupe
      icone     : (facultatif) illustration de la carte : forces, pfs, echelle, structure, moto, voiture, statgraph,
                  portail, camera, doc, web, quiz, pompe
+     titre_consigne, consigne, documents : (facultatif) texte affiché au-dessus de la ressource
+                 et liens vers des documents, ex. documents: [ { titre: "Document réponse", url: "https://..." } ]
      en_ligne  : true quand le fichier est bien déposé ; false = affiché « bientôt »
    Les versions prof et les corrigés ne vont PAS ici (dépôt public).
    ========================================================================= */
@@ -39,22 +41,30 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS", groupe_icone: "pfs",
     titre: "Cours à compléter · Statique analytique", fichier: "statique-analytique.html", type: "activite", icone: "pfs", en_ligne: true },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
-    titre: "TD1 · Échelle de pompier", fichier: "td-echelle-pompier.html", type: "td", icone: "echelle", en_ligne: true },
+    titre: "TD1 · Échelle de pompier", fichier: "td-echelle-pompier.html", type: "td", icone: "echelle", en_ligne: true,
+    titre_consigne: "TD : Étude statique de l'échelle de pompier",
+    consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
+    documents: [ { titre: "Document réponse", url: "https://drive.google.com/file/d/14tmo6KVN9GtCMnNQ55ih8CzlMyQscrSa/view" } ] },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "Activité · Échelle en équilibre", fichier: "echelle-equilibre.html", type: "activite", icone: "echelle", en_ligne: true },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
-    titre: "TD2 · Structure métallique", fichier: "td-potence.html", type: "td", icone: "structure", en_ligne: true },
+    titre: "TD2 · Structure métallique", fichier: "td-potence.html", type: "td", icone: "structure", en_ligne: true,
+    titre_consigne: "TD : Structure métallique",
+    consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
+    documents: [ { titre: "Document réponse", url: "https://drive.google.com/file/d/1mjWqssl9KTCoHwsSH24YnD_ZiWSa7lDi/view?usp=sharing" } ] },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
-    titre: "TD3 · Lève-moto", fichier: "td-levemoto-eleve.html", type: "td", icone: "moto", en_ligne: false },
+    titre: "TD3 · Lève-moto", fichier: "td-levemoto-eleve.html", type: "td", icone: "moto", en_ligne: false,
+    titre_consigne: "TD : Lève-moto",
+    consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
+    documents: [ { titre: "Document réponse 1", url: "https://drive.google.com/file/d/1zQN2ez3Pa1MgSCfohO9LnY6x8D7nkkwz/view?usp=sharing" },
+                 { titre: "Document réponse 2", url: "https://drive.google.com/file/d/1BX2kmLho8Dp3dMVXetER3_GCp2UVz5GH/view?usp=sharing" } ] },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "TD3 · Lève-moto (énoncé PDF)", fichier: "TD-leve-moto-STI2D.pdf", type: "pdf", icone: "doc", en_ligne: false },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "TD4 · Voiture (analytique)", fichier: "td-voiture-analytique.html", type: "td", icone: "voiture", en_ligne: false },
 
-  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Logiciel StatGraph", groupe_icone: "statgraph",
-    titre: "StatGraph · la potence", fichier: "statgraph-web-potence.html", type: "activite", icone: "structure", en_ligne: false },
-  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Logiciel StatGraph",
-    titre: "StatGraph · logiciel", fichier: "statgraph-web.html", type: "activite", icone: "statgraph", en_ligne: false },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Logiciel StatGraph", fichier: "statgraph-web.html", type: "outil", icone: "statgraph", en_ligne: true },
 
   /* ---------------- 1ère IT ---------------- */
   /* (aucune ressource pour l'instant : projet casque de vélo connecté à venir) */

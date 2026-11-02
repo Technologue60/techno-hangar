@@ -20,6 +20,14 @@
   main#voir { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #cadre { position: relative; z-index: 1; flex: 1; width: 100%; border: 0; background: #fff; min-height: 70vh; }
   #msg:empty { display: none; }
+  .consigne { position: relative; z-index: 2; background: var(--bg2); border-bottom: 1px solid var(--border); padding: .9rem 1rem; }
+  .consigne-in { max-width: 1080px; margin: 0 auto; display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+  .consigne .txt { flex: 1; min-width: 260px; }
+  .consigne h2 { margin: 0 0 .3rem; font-size: 1rem; }
+  .consigne p { margin: .2rem 0; color: var(--muted); font-size: .9rem; white-space: pre-line; }
+  .consigne .docs { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .consigne .docs .btn { border-color: color-mix(in srgb, var(--c-sti2d) 50%, transparent); }
+  .consigne .fermer { background: none; border: 0; color: var(--faible); cursor: pointer; font-size: 1.1rem; padding: 0 .2rem; }
   #msg { padding: 2rem 1rem; max-width: 640px; margin: 0 auto; }
 </style>
 </head>
@@ -31,6 +39,7 @@
     <span class="etat" id="etat"></span>
     <button class="btn" id="plein" type="button" title="Plein écran">⛶</button>
   </div>
+  <div id="consigne" class="consigne" hidden></div>
   <div id="msg"></div>
   <iframe id="cadre" title="Ressource" allow="fullscreen; clipboard-write" allowfullscreen hidden></iframe>
 </main>
@@ -52,6 +61,21 @@ window.TH_VOIR = async function (acces) {
   function erreur(t) { titre.textContent = "Ressource indisponible"; msg.innerHTML = ""; var d = document.createElement("div"); d.className = "vide"; d.textContent = t; msg.appendChild(d); }
 
   if (!classe || !fichier || /\.\.|^\//.test(r)) return erreur("Adresse de ressource invalide.");
+
+  /* Consigne et documents associés (champs « consigne » et « documents » du catalogue) */
+  if (infos && (infos.consigne || (infos.documents && infos.documents.length))) {
+    var bloc = document.getElementById("consigne"), el = window.TH_el;
+    var docs = el("div", { class: "docs" });
+    (infos.documents || []).forEach(function (d) {
+      docs.appendChild(el("a", { class: "btn", href: d.url, target: "_blank", rel: "noopener", texte: "📎 " + d.titre }));
+    });
+    var fermer = el("button", { class: "fermer", type: "button", title: "Masquer la consigne", texte: "✕" });
+    fermer.onclick = function () { bloc.hidden = true; };
+    bloc.appendChild(el("div", { class: "consigne-in" }, [
+      el("div", { class: "txt" }, [infos.titre_consigne ? el("h2", { texte: infos.titre_consigne }) : null, infos.consigne ? el("p", { texte: infos.consigne }) : null]),
+      docs, fermer ]));
+    bloc.hidden = false;
+  }
   var cle = acces.cles && acces.cles[classe];
   if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
 
