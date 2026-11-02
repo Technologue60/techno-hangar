@@ -15,7 +15,7 @@
      sequence  : doit reprendre exactement un nom de séquence défini dans assets/site.js
      groupe    : (facultatif) regroupe des ressources dans un menu dépliant ; groupe_icone : illustration du groupe
      icone     : (facultatif) illustration de la carte : forces, pfs, echelle, structure, moto, voiture, statgraph,
-                 portail, camera, doc, web, quiz, pompe
+                 portail, camera, doc, web, quiz, pompe, casque, telephone
      titre_consigne, consigne, documents : (facultatif) texte affiché au-dessus de la ressource
                  et liens vers des documents, ex. documents: [ { titre: "Document réponse", url: "https://..." } ]
      en_ligne  : true quand le fichier est bien déposé ; false = affiché « bientôt »
@@ -65,7 +65,8 @@ window.CATALOGUE = [
     titre: "Logiciel StatGraph", fichier: "statgraph-web.html", type: "outil", icone: "statgraph", en_ligne: true },
 
   /* ---------------- 1ère IT ---------------- */
-  /* (aucune ressource pour l'instant : projet casque de vélo connecté à venir) */
+  { classe: "premiere-it", sequence: "Projet 1 · Le casque connecté",
+    titre: "Projet · Casque de vélo connecté", fichier: "projet-casque-connecte.html", type: "activite", icone: "casque", en_ligne: false },
 
   /* ---------------- SNT seconde ---------------- */
   { classe: "snt", sequence: "Thème 2 · Le Web",
