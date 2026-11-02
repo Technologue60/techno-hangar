@@ -46,8 +46,6 @@ window.CATALOGUE = [
     consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
     documents: [ { titre: "Document réponse", url: "https://drive.google.com/file/d/14tmo6KVN9GtCMnNQ55ih8CzlMyQscrSa/view" } ] },
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
-    titre: "Activité · Échelle en équilibre", fichier: "echelle-equilibre.html", type: "activite", icone: "echelle", en_ligne: true },
-  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "TD2 · Structure métallique", fichier: "td-potence.html", type: "td", icone: "structure", en_ligne: true,
     titre_consigne: "TD : Structure métallique",
     consigne: "Ce TD est interactif. Vous travaillez sur le document papier distribué par le professeur : c'est là que vous rédigez vos réponses et faites vos tracés.\nÀ chaque étape, vérifiez vos réponses avec le TD interactif ci-dessous avant de passer à la suite.",
