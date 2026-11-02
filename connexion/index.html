@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion · Mes cours</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-racine="../" data-page="connexion">
+<main>
+  <h1>Connexion</h1>
+  <p class="lead">La connexion n'est pas encore ouverte. En attendant, toutes les ressources sont accessibles sans compte.</p>
+  <form class="carte-form" onsubmit="return false">
+    <label for="id">Identifiant</label>
+    <input id="id" autocomplete="username" disabled placeholder="fourni par ton professeur">
+    <label for="mdp">Mot de passe</label>
+    <input id="mdp" type="password" autocomplete="current-password" disabled>
+    <button class="btn primary" disabled>Se connecter</button>
+  </form>
+  <p style="margin-top:1.2rem"><a href="../prof/index.html">Espace professeur</a></p>
+</main>
+<script src="../catalogue.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>
