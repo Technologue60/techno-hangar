@@ -30,6 +30,8 @@ window.CATALOGUE = [
     titre: "Étude de cas · Webcam motorisée (partie commune)", fichier: "edc-securisation-webcam.html", type: "activite", icone: "camera", en_ligne: true },
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
     titre: "Spécialité ITEC · Motorisation & support de caméra", fichier: "edc-securisation-itec.html", type: "activite", icone: "camera", en_ligne: true },
+  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
+    titre: "Partie SIN · Vidéosurveillance", fichier: "sin-videosurveillance.html", type: "activite", icone: "camera", en_ligne: true },
 
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Étude de système",
     titre: "TP · Portail automatisé", fichier: "suivi-tp-portail.html", type: "activite", icone: "portail", en_ligne: false },
