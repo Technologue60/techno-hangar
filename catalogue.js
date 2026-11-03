@@ -66,7 +66,7 @@ window.CATALOGUE = [
 
   /* ---------------- 1ère IT ---------------- */
   { classe: "premiere-it", sequence: "Projet 1 · Le casque connecté",
-    titre: "Projet · Casque de vélo connecté", fichier: "projet-casque-connecte.html", type: "activite", icone: "casque", en_ligne: false },
+    titre: "Séance 1 · Lancement et cahier des charges", fichier: "it-casque-seance1-eleve.html", type: "activite", icone: "casque", en_ligne: true },
 
   /* ---------------- SNT seconde ---------------- */
   { classe: "snt", sequence: "Thème 2 · Le Web",
