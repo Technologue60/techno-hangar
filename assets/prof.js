@@ -61,9 +61,13 @@ window.TH_PROF = function (acces) {
   function joliNom(n) { return n.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, function (m, a, b) { return a + b.toUpperCase(); }); }
 
   /* ---------- Fiches ---------- */
-  function preparerFiches(liste) {
-    var f = $("fiches"); vider(f);
+  function preparerFiches(liste, parClasse) {
+    var f = $("fiches"); vider(f); var derniere = null;
     liste.forEach(function (x) {
+      if (parClasse && x.classe !== derniere) {
+        f.appendChild(el("h2", { class: "fiche-classe" + (derniere ? " saut" : ""), texte: nomClasse(x.classe) + " · identifiants et mots de passe" }));
+        derniere = x.classe;
+      }
       f.appendChild(el("div", { class: "fiche" }, [
         el("h3", { texte: x.prenom + " " + x.nom + " · " + (x.collegue ? "Accès collègue · " : "") + nomClasse(x.classe) }),
         el("p", { texte: "Site : " + TH_CONFIG.adresseSite }),
@@ -72,6 +76,17 @@ window.TH_PROF = function (acces) {
         el("p", { texte: "Garde ce papier. En cas d'oubli, demande à ton professeur." })
       ]));
     });
+  }
+
+  /* ---------- Mots de passe gardés (table mots_de_passe, lecture prof seulement) ---------- */
+  async function memoMdp(id, mdp) {
+    try { await TH.rest("mots_de_passe", { method: "POST", headers: { "Prefer": "resolution=merge-duplicates,return=minimal" }, body: { compte: id, mdp: mdp } }); return true; }
+    catch (e) { return false; }
+  }
+  async function lireMdp() {
+    var m = {};
+    (await TH.rest("mots_de_passe?select=compte,mdp")).forEach(function (x) { m[x.compte] = x.mdp; });
+    return m;
   }
 
   /* =================== ÉLÈVES =================== */
@@ -83,16 +98,18 @@ window.TH_PROF = function (acces) {
       var tous = await TH.rest("profils?select=id,identifiant,nom,prenom,classe,role&order=nom,prenom");
       tousIdentifiants = tous.map(function (p) { return p.identifiant; });
       var liste = tous.filter(function (p) { return p.classe === classe && p.role === "eleve"; });
+      var mdps = {}; try { mdps = await lireMdp(); } catch (e) {}
       $("e-compte").textContent = liste.length + " élève" + (liste.length > 1 ? "s" : "");
       if (!liste.length) { t.appendChild(el("tr", {}, [el("td", { texte: "Aucun élève dans cette classe pour l'instant." })])); return; }
-      t.appendChild(el("tr", {}, ["Nom", "Prénom", "Identifiant", ""].map(function (h) { return el("th", { texte: h }); })));
+      t.appendChild(el("tr", {}, ["Nom", "Prénom", "Identifiant", "Mot de passe", ""].map(function (h) { return el("th", { texte: h }); })));
       liste.forEach(function (p) {
+        var cMdp = el("span", { class: mdps[p.id] ? "mdp" : "aide", texte: mdps[p.id] || "non enregistré" }), cMdpTd = el("td", {}, [cMdp]);
         var info = el("span", { class: "aide" });
         var bMdp = el("button", { class: "btn", type: "button", texte: "Nouveau mot de passe" });
         bMdp.onclick = async function () {
           var m = genMdp(); bMdp.disabled = true;
           try {
-            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m });
+            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m }); await memoMdp(p.id, m); if (cMdp) cMdp.textContent = m;
             vider(info); info.appendChild(el("span", { class: "mdp", texte: m }));
             preparerFiches([{ nom: p.nom, prenom: p.prenom, classe: p.classe, identifiant: p.identifiant, mdp: m }]);
             var imp = el("button", { class: "btn", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
@@ -107,7 +124,7 @@ window.TH_PROF = function (acces) {
           catch (e) { alert("Erreur : " + message(e)); }
         };
         t.appendChild(el("tr", {}, [
-          el("td", { texte: p.nom }), el("td", { texte: p.prenom }), el("td", { texte: p.identifiant }),
+          el("td", { texte: p.nom }), el("td", { texte: p.prenom }), el("td", { texte: p.identifiant }), cMdpTd,
           el("td", {}, [el("div", { class: "actions" }, [bMdp, bSup, info])])
         ]));
       });
@@ -127,6 +144,7 @@ window.TH_PROF = function (acces) {
           body: Object.assign({ id: user.id, identifiant: id, nom: e.nom, prenom: e.prenom, classe: e.classe, role: e.role || "eleve" },
                               e.ressources ? { ressources: e.ressources } : {}) });
         tousIdentifiants.push(id);
+        await memoMdp(user.id, e.mdp);
         e.identifiant = id; return e;
       } catch (err) {
         if (err.status === 422 && /already|registered|exists/i.test(message(err) + (err.code || ""))) { tousIdentifiants.push(id); continue; }
@@ -189,12 +207,13 @@ window.TH_PROF = function (acces) {
       if (!liste.length) { t.appendChild(el("tr", {}, [el("td", { class: "aide", texte: "Aucun compte collègue pour l'instant." })])); return; }
       t.appendChild(el("tr", {}, ["Collègue", "Identifiant", "Classe", "Ressources ouvertes", ""].map(function (h) { return el("th", { texte: h }); })));
       liste.forEach(function (p) {
+        var cMdp = null;
         var info = el("span", { class: "aide" });
         var bMdp = el("button", { class: "btn", type: "button", texte: "Nouveau mot de passe" });
         bMdp.onclick = async function () {
           var m = genMdp(); bMdp.disabled = true;
           try {
-            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m });
+            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m }); await memoMdp(p.id, m); if (cMdp) cMdp.textContent = m;
             vider(info); info.appendChild(el("span", { class: "mdp", texte: m }));
             preparerFiches([{ nom: p.nom, prenom: p.prenom, classe: p.classe, identifiant: p.identifiant, mdp: m, collegue: true }]);
             var imp = el("button", { class: "btn", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
@@ -246,6 +265,39 @@ window.TH_PROF = function (acces) {
       } catch (err) { etat.textContent = "Erreur : " + message(err); }
       this.disabled = false;
     };
+  }
+
+  /* ---------- Imprimer les identifiants d'une classe ou de toutes, à tout moment ---------- */
+  async function imprimerIdentifiants(classes) {
+    var etat = $("e-imp-etat"); etat.textContent = "Préparation…";
+    try {
+      var eleves = (await TH.rest("profils?select=id,identifiant,nom,prenom,classe&role=eq.eleve&order=nom,prenom"))
+        .filter(function (p) { return classes.indexOf(p.classe) >= 0; })
+        .sort(function (a, b) { return classes.indexOf(a.classe) - classes.indexOf(b.classe); });
+      if (!eleves.length) { etat.textContent = "Aucun élève à imprimer."; return; }
+      var mdps;
+      try { mdps = await lireMdp(); }
+      catch (e) { etat.textContent = "Lance d'abord le script 03-mots-de-passe.sql dans Supabase (SQL Editor)."; return; }
+      var manquants = eleves.filter(function (p) { return !mdps[p.id]; });
+      if (manquants.length && confirm(manquants.length + " élève(s) n'ont pas de mot de passe enregistré (comptes créés avant cette mise à jour).\n\nOK : leur donner un nouveau mot de passe maintenant (l'ancien ne marchera plus).\nAnnuler : imprimer leur fiche sans mot de passe.")) {
+        for (var i = 0; i < manquants.length; i++) {
+          var p = manquants[i], m = genMdp();
+          etat.textContent = "Nouveau mot de passe " + (i + 1) + " / " + manquants.length + "…";
+          await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m });
+          if (await memoMdp(p.id, m)) mdps[p.id] = m;
+        }
+        chargerEleves();
+      }
+      preparerFiches(eleves.map(function (p) {
+        return { nom: p.nom, prenom: p.prenom, classe: p.classe, identifiant: p.identifiant, mdp: mdps[p.id] || "(demande-le à ton professeur)" };
+      }), true);
+      etat.textContent = eleves.length + " fiche(s) prête(s).";
+      window.print();
+    } catch (e) { etat.textContent = "Erreur : " + message(e); }
+  }
+  if ($("e-imp")) {
+    $("e-imp").onclick = function () { imprimerIdentifiants([$("e-classe").value]); };
+    $("e-imp-tout").onclick = function () { imprimerIdentifiants(CLASSES.map(function (c) { return c.id; })); };
   }
 
   /* =================== SUIVI =================== */
