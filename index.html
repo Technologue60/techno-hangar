@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/quiz.css?v=4">
 </head>
 <body data-racine="./" data-page="accueil">
 <main>
@@ -24,7 +25,15 @@
 <script src="assets/config.js"></script>
 <script src="assets/th.js"></script>
 <script src="catalogue.js"></script>
-<script src="assets/quiz.js"></script>
-<script src="assets/site.js"></script>
+<script src="assets/quiz.js?v=4"></script>
+<script src="assets/site.js?v=4"></script>
+<script>
+/* Si la carte reste vide, on le dit au lieu de ne rien afficher */
+setTimeout(function () {
+  var q = document.getElementById("quiz");
+  if (q && !q.children.length && document.documentElement.classList.contains("th-ok"))
+    q.innerHTML = '<p style="padding:1.2rem;color:#ff9a3d;font-size:.9rem">La question du jour n\'a pas pu se charger. Fais Ctrl+F5, puis vérifie que le dossier assets (quiz.js, quiz.css, quiz-scene.jpg, site.js) est bien à jour sur GitHub.</p>';
+}, 5000);
+</script>
 </body>
 </html>
