@@ -76,6 +76,7 @@ window.TH_VOIR = async function (acces) {
       docs, fermer ]));
     bloc.hidden = false;
   }
+  if (acces.role === "collegue" && (acces.ressources || []).indexOf(r) < 0) return erreur("Cette ressource ne fait pas partie de celles qui te sont ouvertes.");
   var cle = acces.cles && acces.cles[classe];
   if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
 
@@ -89,8 +90,19 @@ window.TH_VOIR = async function (acces) {
   try {
     var rep = await fetch(classe + "/" + fichier + ".enc", { cache: "no-cache" });
     if (!rep.ok) return erreur("Le fichier n'est pas encore en ligne.");
-    clair = await TH.dechiffrer(await rep.arrayBuffer(), cle);
-  } catch (e) { return erreur("Impossible d'ouvrir la ressource (fichier abîmé ou mauvaise clé)."); }
+    var brut = await rep.arrayBuffer();
+    clair = await TH.dechiffrer(brut, cle);
+  } catch (e) {
+    // Diagnostic pour le prof : avec quelle classe le fichier a-t-il été chiffré ?
+    if (acces.role === "prof" && acces.cles && typeof brut !== "undefined") {
+      for (var c in acces.cles) {
+        if (c === classe) continue;
+        try { await TH.dechiffrer(brut, acces.cles[c]); return erreur("Ce fichier a été chiffré avec la clé de la classe « " + c + " » au lieu de « " + classe + " ». Rechiffre-le en choisissant la bonne classe dans Espace prof → Ajouter une ressource, puis redépose le .enc."); } catch (x) {}
+      }
+      return erreur("Impossible de déchiffrer ce fichier : il est peut-être abîmé, ou ce n'est pas un fichier .enc produit par l'Espace prof.");
+    }
+    return erreur("Impossible d'ouvrir la ressource. Préviens ton professeur.");
+  }
 
   var ext = (fichier.split(".").pop() || "").toLowerCase();
   var types = { html: "text/html", htm: "text/html", pdf: "application/pdf", png: "image/png", jpg: "image/jpeg",
