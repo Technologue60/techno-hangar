@@ -117,7 +117,7 @@
         bulle.appendChild(el("p", { class: "q-texte", texte: "Prépare-toi…" }));
         setTimeout(function () { api.demarrer().then(dessiner).catch(erreur); }, 800);
       });
-      zone.appendChild(bandeau());
+      if (bandeau()) zone.appendChild(bandeau());
       zone.appendChild(tete(st, "Question du jour · " + jourLong()));
       zone.appendChild(el("h2", { class: "q-titre", texte: "Une question. " + (st.duree || 20) + " secondes." }));
       zone.appendChild(el("p", { class: "q-texte", texte: "La même pour toutes les classes, renouvelée chaque jour. Chaque point compte pour le futur classement." }));
@@ -179,7 +179,7 @@
         var cls = "q-rep" + (i === st.position_bonne ? " bon" : (i === st.position ? " mauvais" : " neutre"));
         return el("div", { class: cls }, [el("span", { class: "l", texte: LETTRES[i] }), el("span", { texte: txt })]);
       });
-      if (!dansModal) cible.appendChild(bandeau());
+      if (!dansModal && bandeau()) cible.appendChild(bandeau());
       cible.appendChild(tete(st, "Question du jour · " + jourLong()));
       cible.appendChild(el("div", { class: "q-verdict " + (st.correct ? "ok" : "ko") }, [
         el("h2", { class: "q-titre", texte: st.correct ? "Bonne réponse" : (perdu ? "Temps écoulé" : "Raté") }),
@@ -215,6 +215,7 @@
     var courant = null;
 
     function erreur(e) {
+      try { console.error("Question du jour :", e); } catch (x) {}
       var absent = e && (e.status === 404 || e.code === "PGRST202" || /could not find|not find the function/i.test(e.message || ""));
       if (absent && !apercu) { apercu = "install"; api = apiApercu(); if (modal) fermerModal(true); return api.etat().then(dessiner); }
       var cible = modal ? bulle : zone;
@@ -223,7 +224,11 @@
       var b = el("button", { class: "btn", type: "button", texte: "Réessayer" });
       b.addEventListener("click", function () { if (modal) fermerModal(true); charger(); });
       cible.appendChild(tete(null, "Question du jour"));
-      cible.appendChild(el("p", { class: "q-texte", texte: "Impossible de joindre le serveur. Ta tentative du jour n'est pas perdue : réessaie dans un instant." }));
+      var reseau = e && (e.status === 0 || e.name === "TypeError" && /fetch|network/i.test(e.message || ""));
+      cible.appendChild(el("p", { class: "q-texte", texte: reseau
+        ? "Impossible de joindre le serveur. Ta tentative du jour n'est pas perdue : réessaie dans un instant."
+        : "Un problème est survenu. Ta tentative du jour n'est pas perdue : réessaie dans un instant." }));
+      cible.appendChild(el("p", { class: "q-note", texte: "Détail technique : " + ((e && (e.message || e.code)) || "inconnu") }));
       cible.appendChild(b);
     }
 
