@@ -11,7 +11,7 @@
      fichier   : nom du fichier dans le dossier de la classe,
                  ou adresse complète (https://...) pour un lien externe (Drive, Google Sites)
      type      : "activite" | "td" | "pdf" | "video" | "lien"
-     onglet    : (Terminale STI2D) "revision", "2i2d" ou "itec" ; inutile pour les autres classes
+     onglet    : (Terminale STI2D) "revision", "2i2d" ou "itec" ; (1ère IT) "it" ou "etlv" ; inutile pour les autres classes
      sequence  : doit reprendre exactement un nom de séquence défini dans assets/site.js
      groupe    : (facultatif) regroupe des ressources dans un menu dépliant ; groupe_icone : illustration du groupe
      icone     : (facultatif) illustration de la carte : forces, pfs, echelle, structure, moto, voiture, statgraph,
@@ -65,7 +65,7 @@ window.CATALOGUE = [
     titre: "Logiciel StatGraph", fichier: "statgraph-web.html", type: "outil", icone: "statgraph", en_ligne: true },
 
   /* ---------------- 1ère IT ---------------- */
-  { classe: "premiere-it", sequence: "Projet 1 · Le casque connecté",
+  { classe: "premiere-it", onglet: "it", sequence: "Projet 1 · Le casque connecté",
     titre: "Séance 1 · Lancement et cahier des charges", fichier: "it-casque-seance1-eleve.html", type: "activite", icone: "casque", en_ligne: true },
 
   /* ---------------- SNT seconde ---------------- */
