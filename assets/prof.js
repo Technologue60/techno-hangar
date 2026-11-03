@@ -1,5 +1,6 @@
 /* Espace prof : comptes élèves, suivi, horaires, chiffrement des ressources. */
 window.TH_PROF = function (acces) {
+  var COLLEGUE = acces.role === "collegue";
   var el = window.TH_el;
   var CLASSES = window.TH_CLASSES;
   var CAT = window.CATALOGUE || [];
@@ -23,12 +24,14 @@ window.TH_PROF = function (acces) {
   /* ---------- Listes de classes ---------- */
   var memo = null; try { memo = localStorage.getItem("th-prof-classe"); } catch (e) {}
   document.querySelectorAll(".choix-classe").forEach(function (s) {
-    CLASSES.forEach(function (c) { s.appendChild(el("option", { value: c.id, texte: c.nom })); });
+    CLASSES.filter(function (c) { return !COLLEGUE || c.id === acces.classe; })
+      .forEach(function (c) { s.appendChild(el("option", { value: c.id, texte: c.nom })); });
+    if (COLLEGUE) s.value = acces.classe;
     if (memo) s.value = memo;
     s.addEventListener("change", function () {
       try { localStorage.setItem("th-prof-classe", s.value); } catch (e) {}
       document.querySelectorAll(".choix-classe").forEach(function (o) { o.value = s.value; });
-      chargerEleves(); if (!$("vue-suivi").hidden) chargerSuivi(); if (!$("vue-horaires").hidden) chargerHoraires();
+      if (!COLLEGUE) chargerEleves(); if (!$("vue-suivi").hidden) chargerSuivi(); if (!$("vue-horaires").hidden) chargerHoraires();
     });
   });
   var xc = $("x-classe"); xc.appendChild(el("option", { value: "", texte: "Toutes" }));
@@ -62,7 +65,7 @@ window.TH_PROF = function (acces) {
     var f = $("fiches"); vider(f);
     liste.forEach(function (x) {
       f.appendChild(el("div", { class: "fiche" }, [
-        el("h3", { texte: x.prenom + " " + x.nom + " · " + nomClasse(x.classe) }),
+        el("h3", { texte: x.prenom + " " + x.nom + " · " + (x.collegue ? "Accès collègue · " : "") + nomClasse(x.classe) }),
         el("p", { texte: "Site : " + TH_CONFIG.adresseSite }),
         el("p", {}, [document.createTextNode("Identifiant : "), el("b", { texte: x.identifiant })]),
         el("p", {}, [document.createTextNode("Mot de passe : "), el("span", { class: "mdp", texte: x.mdp })]),
@@ -121,7 +124,8 @@ window.TH_PROF = function (acces) {
         var user = rep.user || rep;
         if (!rep.access_token) throw new Error("La confirmation par e-mail est encore activée dans Supabase (Authentication → Email → Confirm email).");
         await TH.rest("profils", { method: "POST", headers: { "Prefer": "return=minimal" },
-          body: { id: user.id, identifiant: id, nom: e.nom, prenom: e.prenom, classe: e.classe, role: "eleve" } });
+          body: Object.assign({ id: user.id, identifiant: id, nom: e.nom, prenom: e.prenom, classe: e.classe, role: e.role || "eleve" },
+                              e.ressources ? { ressources: e.ressources } : {}) });
         tousIdentifiants.push(id);
         e.identifiant = id; return e;
       } catch (err) {
@@ -166,6 +170,84 @@ window.TH_PROF = function (acces) {
     chargerEleves();
   };
 
+
+  /* =================== COLLÈGUES =================== */
+  function majChoixRessources() {
+    var classe = $("k-classe").value, zone = $("k-ressources"); vider(zone);
+    var res = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier); });
+    if (!res.length) { zone.appendChild(el("p", { class: "aide", texte: "Aucune ressource pour cette classe dans le catalogue." })); return; }
+    res.forEach(function (r) {
+      var id = r.classe + "/" + r.fichier;
+      zone.appendChild(el("label", { class: "case" }, [el("input", { type: "checkbox", value: id }), document.createTextNode(" " + r.titre + (r.en_ligne ? "" : " (bientôt)"))]));
+    });
+  }
+  function titreRessource(id) { var r = CAT.filter(function (x) { return x.classe + "/" + x.fichier === id; })[0]; return r ? r.titre : id; }
+  async function chargerCollegues() {
+    var t = $("k-table"); if (!t) return; vider(t);
+    try {
+      var liste = await TH.rest("profils?select=id,identifiant,nom,prenom,classe,ressources&role=eq.collegue&order=nom");
+      if (!liste.length) { t.appendChild(el("tr", {}, [el("td", { class: "aide", texte: "Aucun compte collègue pour l'instant." })])); return; }
+      t.appendChild(el("tr", {}, ["Collègue", "Identifiant", "Classe", "Ressources ouvertes", ""].map(function (h) { return el("th", { texte: h }); })));
+      liste.forEach(function (p) {
+        var info = el("span", { class: "aide" });
+        var bMdp = el("button", { class: "btn", type: "button", texte: "Nouveau mot de passe" });
+        bMdp.onclick = async function () {
+          var m = genMdp(); bMdp.disabled = true;
+          try {
+            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m });
+            vider(info); info.appendChild(el("span", { class: "mdp", texte: m }));
+            preparerFiches([{ nom: p.nom, prenom: p.prenom, classe: p.classe, identifiant: p.identifiant, mdp: m, collegue: true }]);
+            var imp = el("button", { class: "btn", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
+            info.appendChild(document.createTextNode(" ")); info.appendChild(imp);
+          } catch (e) { info.textContent = "Erreur : " + message(e); }
+          bMdp.disabled = false;
+        };
+        var bSup = el("button", { class: "btn danger", type: "button", texte: "Supprimer" });
+        bSup.onclick = async function () {
+          if (!confirm("Supprimer le compte de " + p.prenom + " " + p.nom + " ?")) return;
+          try { await TH.rpc("supprimer_eleve", { eleve: p.id }); chargerCollegues(); } catch (e) { alert("Erreur : " + message(e)); }
+        };
+        t.appendChild(el("tr", {}, [
+          el("td", { texte: p.prenom + " " + p.nom }), el("td", { texte: p.identifiant }), el("td", { texte: nomClasse(p.classe) }),
+          el("td", { texte: (p.ressources || []).map(titreRessource).join(" · ") || "—" }),
+          el("td", {}, [el("div", { class: "actions" }, [bMdp, bSup, info])])
+        ]));
+      });
+    } catch (e) {
+      t.appendChild(el("tr", {}, [el("td", { texte: /ressources|column/.test(message(e)) ? "Lance d'abord le script 02-collegues.sql dans Supabase." : "Erreur : " + message(e) })]));
+    }
+  }
+  var kc = $("k-classe");
+  if (kc) {
+    CLASSES.forEach(function (c) { kc.appendChild(el("option", { value: c.id, texte: c.nom })); });
+    kc.addEventListener("change", majChoixRessources); majChoixRessources();
+    $("k-creer").onclick = async function () {
+      var nom = $("k-nom").value.trim(), prenom = $("k-prenom").value.trim(), classe = kc.value;
+      var res = [].slice.call(document.querySelectorAll("#k-ressources input:checked")).map(function (x) { return x.value; });
+      var etat = $("k-etat");
+      if (!nom || !prenom) { etat.textContent = "Indique le nom et le prénom."; return; }
+      if (!res.length) { etat.textContent = "Coche au moins une ressource."; return; }
+      this.disabled = true; etat.textContent = "Création…";
+      try {
+        var tous = await TH.rest("profils?select=identifiant");
+        tousIdentifiants = tous.map(function (p) { return p.identifiant; });
+        var e = { nom: nom.toUpperCase(), prenom: joliNom(prenom), classe: classe, mdp: genMdp(), role: "collegue", ressources: res };
+        await creerCompte(e);
+        etat.textContent = "Compte créé.";
+        $("k-nom").value = ""; $("k-prenom").value = "";
+        preparerFiches([Object.assign({ collegue: true }, e)]);
+        var z = $("k-resultat"); vider(z);
+        var imp = el("button", { class: "btn primary", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
+        z.appendChild(el("p", {}, [document.createTextNode("Identifiant : "), el("b", { texte: e.identifiant }),
+          document.createTextNode("   Mot de passe : "), el("span", { class: "mdp", texte: e.mdp })]));
+        z.appendChild(el("p", { class: "aide", texte: "Le mot de passe ne sera plus affiché ensuite : note-le ou imprime la fiche." }));
+        z.appendChild(imp);
+        chargerCollegues();
+      } catch (err) { etat.textContent = "Erreur : " + message(err); }
+      this.disabled = false;
+    };
+  }
+
   /* =================== SUIVI =================== */
   var dernierSuivi = null;
   async function chargerSuivi() {
@@ -174,7 +256,8 @@ window.TH_PROF = function (acces) {
     try {
       var eleves = await TH.rest("profils?select=id,nom,prenom,identifiant&role=eq.eleve&classe=eq." + classe + "&order=nom,prenom");
       var prog = eleves.length ? await TH.rest("progression?select=eleve,ressource,avancement,score,termine,debut_le,maj_le&eleve=in.(" + eleves.map(function (e) { return e.id; }).join(",") + ")") : [];
-      var colonnes = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier); })
+      var colonnes = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier)
+          && (!COLLEGUE || (acces.ressources || []).indexOf(r.classe + "/" + r.fichier) >= 0); })
         .map(function (r) { return { id: r.classe + "/" + r.fichier, titre: r.titre }; });
       prog.forEach(function (p) { if (!colonnes.some(function (c) { return c.id === p.ressource; })) colonnes.push({ id: p.ressource, titre: p.ressource.split("/").pop() }); });
       var index = {}; prog.forEach(function (p) { index[p.eleve + "|" + p.ressource] = p; });
@@ -313,7 +396,18 @@ window.TH_PROF = function (acces) {
   };
 
   /* ---------- Démarrage ---------- */
+  if (COLLEGUE) {
+    document.querySelector("main h1").textContent = "Suivi de mes élèves";
+    boutons.forEach(function (b) { if (b.getAttribute("data-vue") !== "suivi") b.remove(); });
+    document.querySelectorAll(".vue").forEach(function (v) { if (v.id !== "vue-suivi") v.remove(); });
+    $("vue-suivi").hidden = false; boutons = document.querySelectorAll("#ongletsProf .onglet");
+    boutons.forEach(function (b) { b.classList.add("actif"); });
+    var sel = $("s-classe"); if (sel) sel.disabled = true;
+    chargerSuivi();
+    return;
+  }
   chargerEleves();
+  chargerCollegues();
   var h = (location.hash || "").replace("#", "");
   if (["eleves", "suivi", "horaires", "chiffrer"].indexOf(h) >= 0) montrer(h);
 };

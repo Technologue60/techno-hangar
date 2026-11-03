@@ -127,6 +127,17 @@
     var nav = el("nav", { class: "nav", "aria-label": "Classes" });
     var visibles = !acces ? [] : (acces.role === "prof" ? CLASSES
       : CLASSES.filter(function (c) { return c.id === acces.classe; }));
+    if (acces && acces.role === "collegue") {
+      visibles.forEach(function (c) {
+        var a = el("a", { href: racine + c.id + "/index.html", texte: c.court });
+        if (c.id === classeCourante) a.className = "actif";
+        nav.appendChild(a);
+      });
+      var sv = el("a", { href: racine + "prof/index.html#suivi", texte: "Suivi des élèves" });
+      if (page === "prof") sv.className = "actif";
+      nav.appendChild(sv);
+      visibles = [];
+    }
     visibles.forEach(function (c) {
       var a = el("a", { href: racine + c.id + "/index.html", texte: c.court });
       if (c.id === classeCourante) a.className = "actif";
@@ -191,6 +202,13 @@
     var barre = document.getElementById("onglets");
     var liste = catalogue.filter(function (r) { return r.classe === classeCourante; });
     var onglets = infos.onglets || [];
+    var collegue = acces.role === "collegue";
+    if (collegue) {
+      var autorisees = acces.ressources || [];
+      liste = liste.filter(function (r) { return autorisees.indexOf(r.classe + "/" + r.fichier) >= 0; });
+      onglets = onglets.filter(function (o) { return liste.some(function (r) { return r.onglet === o.id; }); })
+                       .map(function (o) { return Object.assign({}, o, { sequences: [], defaut: false }); });
+    }
     var actif = null, progression = {};
 
     function ongletDepuisHash() {
@@ -228,7 +246,7 @@
       zone.innerHTML = "";
       var vis = liste.filter(function (r) { return !actif || r.onglet === actif; });
       var og = onglets.filter(function (o) { return o.id === actif; })[0];
-      var ordre = ((og ? og.sequences : infos.sequences) || []).slice(), groupes = {};
+      var ordre = collegue ? [] : ((og ? og.sequences : infos.sequences) || []).slice(), groupes = {};
       ordre.forEach(function (s) { groupes[s] = []; });
       vis.forEach(function (r) {
         if (!groupes[r.sequence]) { groupes[r.sequence] = []; ordre.push(r.sequence); }
@@ -295,7 +313,8 @@
           var reels = membres.filter(function (x) { return x.fichier; });
           var dispo = reels.filter(function (x) { return x.en_ligne; }).length;
           var cle = classeCourante + "|" + s + "|" + r.groupe, ouverts = ouvertsLire();
-          var icone = membres.map(function (x) { return x.groupe_icone; }).filter(Boolean)[0];
+          var icone = catalogue.filter(function (x) { return x.classe === classeCourante && x.groupe === r.groupe && x.groupe_icone; })
+            .map(function (x) { return x.groupe_icone; })[0];
           var d = el("details", { class: "groupe", "data-c": infos.couleur });
           if (ouverts[cle]) d.setAttribute("open", "");
           var sous = reels.length ? (reels.length + " ressource" + (reels.length > 1 ? "s" : "") + (dispo < reels.length ? " · " + dispo + " en ligne" : "")) : "Bientôt disponible";
@@ -341,7 +360,7 @@
     if (page === "accueil") pageAccueil(acces);
     if (page === "classe") pageClasse(acces);
     if (page === "prof") {
-      if (acces.role !== "prof") { location.replace(racine + "index.html"); return; }
+      if (acces.role !== "prof" && acces.role !== "collegue") { location.replace(racine + "index.html"); return; }
       if (window.TH_PROF) window.TH_PROF(acces);
     }
     if (page === "voir" && window.TH_VOIR) window.TH_VOIR(acces);
