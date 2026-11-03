@@ -27,11 +27,16 @@
       <label>Classe <select class="choix-classe" id="e-classe"></select></label>
       <span class="aide" id="e-compte"></span>
     </div>
+    <div class="ligne-outils">
+      <button class="btn primary" id="e-imp" type="button">🖨 Imprimer les identifiants de la classe</button>
+      <button class="btn" id="e-imp-tout" type="button">🖨 Toutes les classes</button>
+      <span class="aide" id="e-imp-etat"></span>
+    </div>
     <div class="tableau-wrap"><table class="tableau" id="e-table"></table></div>
 
     <h2>Ajouter des élèves</h2>
     <p class="aide">Une ligne par élève : <b>NOM Prénom</b> (ou <b>Nom;Prénom</b>, ou copié depuis un tableur sur deux colonnes).
-      Un identifiant et un mot de passe sont générés ; ils s'affichent une seule fois, pense à imprimer les fiches.</p>
+      Un identifiant et un mot de passe sont générés. Ils restent visibles dans le tableau et tu peux réimprimer les fiches à tout moment.</p>
     <textarea id="e-liste" rows="6" placeholder="DUPONT Léa&#10;MARTIN Tom&#10;Bernard;Inès"></textarea>
     <div class="ligne-outils">
       <button class="btn primary" id="e-creer" type="button">Créer les comptes</button>
