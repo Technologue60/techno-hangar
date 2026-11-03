@@ -214,3 +214,4 @@ html:not(.th-ok) main { visibility: hidden; }
 .carte.outil .chevron { font-size: 1.2rem; }
 .carte.outil:hover .chevron { color: var(--c, var(--accent)); }
 .carte.outil.off .g-titre { color: var(--muted); }
+

@@ -1,0 +1,120 @@
+/* ---------- Accueil : question du jour + mon espace ---------- */
+.accueil-grille { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: .9rem; text-align: left; align-items: stretch; margin-top: -.6rem; }
+.accueil-grille.prof { grid-template-columns: 1fr; }
+.accueil-grille.prof #classes { order: -1; }
+.accueil-grille .niveaux { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.accueil-grille:not(.prof) .niveaux { grid-template-columns: 1fr; }
+.mon-cours { min-height: 100%; }
+.mon-cours .nom { font-size: 1.6rem; letter-spacing: -.02em; }
+.mon-cours .btn { margin-top: 1.2rem; }
+
+.quiz { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.6rem 1.6rem 1.4rem; overflow: hidden; min-height: 300px; }
+.quiz:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, var(--c-sti2d), var(--c-it), var(--c-snt), var(--c-bts)); }
+.quiz:after { content: ""; position: absolute; right: -90px; top: -110px; width: 340px; height: 340px; pointer-events: none;
+  background: radial-gradient(circle, rgba(91,140,255,.11), transparent 65%); }
+.quiz > * { position: relative; z-index: 1; }
+.q-tete { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.q-label { font-family: var(--mono); font-size: .75rem; color: var(--muted); display: flex; align-items: center; gap: .5rem; }
+.q-label i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.q-stats { display: flex; gap: .4rem; }
+.q-puce { font-family: var(--mono); font-size: .72rem; color: var(--muted); border: 1px solid var(--border2); border-radius: 999px; padding: .15rem .6rem; background: var(--bg2); }
+.q-puce b { color: var(--text); font-weight: 500; }
+.quiz .q-titre { margin: 0 0 .6rem; font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
+.q-texte { color: var(--muted); margin: 0 0 1.2rem; max-width: 52ch; font-size: .95rem; }
+.q-regles { list-style: none; padding: 0; margin: 0 0 1.6rem; display: grid; gap: .45rem; font-size: .88rem; color: var(--muted); }
+.q-regles li { padding-left: 1.1rem; position: relative; }
+.q-regles li:before { content: ""; position: absolute; left: 0; top: .6em; width: 5px; height: 5px; border-radius: 50%; background: var(--faible); }
+.q-go { padding: .65rem 1.1rem; font-size: .92rem; }
+
+.q-chrono { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.3rem; }
+.q-barre { flex: 1; height: 5px; border-radius: 5px; background: #222228; overflow: hidden; }
+.q-barre i { display: block; height: 100%; width: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width .12s linear, background .3s; }
+.q-temps { font-family: var(--mono); font-size: 1.5rem; min-width: 2.2ch; text-align: right; font-variant-numeric: tabular-nums; }
+.q-chrono.urgent .q-barre i { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+.q-chrono.urgent .q-temps { color: var(--danger); }
+
+.q-enonce { font-size: clamp(1.15rem, 2.6vw, 1.5rem); font-weight: 600; letter-spacing: -.02em; line-height: 1.25; margin: 0 0 1.2rem; user-select: none; -webkit-user-select: none; }
+.q-enonce.q-rappel { font-size: 1rem; font-weight: 500; color: var(--muted); }
+.q-reps { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.q-rep { font: inherit; text-align: left; color: var(--text); background: var(--bg2); border: 1px solid var(--border2); border-radius: 11px; padding: .8rem .9rem;
+  display: flex; gap: .75rem; align-items: center; cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: border-color .15s, background .15s, box-shadow .15s; }
+.q-rep:hover:not([disabled]) { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 18px rgba(91,140,255,.22); }
+.q-rep:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.q-rep[disabled], div.q-rep { cursor: default; }
+.q-rep .l { font-family: var(--mono); font-size: .75rem; width: 1.7rem; height: 1.7rem; flex: none; display: grid; place-items: center; border-radius: 7px; border: 1px solid var(--border2); color: var(--muted); }
+.q-rep.choisi { border-color: var(--accent); background: var(--accent-soft); }
+.q-rep.bon { border-color: var(--ok); background: rgba(47,211,154,.1); box-shadow: 0 0 18px rgba(47,211,154,.2); }
+.q-rep.bon .l { background: var(--ok); border-color: var(--ok); color: #06241a; }
+.q-rep.mauvais { border-color: var(--danger); background: rgba(255,107,107,.08); }
+.q-rep.mauvais .l { background: var(--danger); border-color: var(--danger); color: #2a0b0b; }
+.q-rep.neutre { opacity: .45; }
+
+.q-verdict { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.q-verdict .q-titre { margin: 0; }
+.q-verdict.ok .q-titre { color: var(--ok); } .q-verdict.ko .q-titre { color: var(--danger); }
+.q-points { font-family: var(--mono); font-size: 1.1rem; color: var(--text); }
+.q-note { font-size: .82rem; color: var(--faible); margin-top: 1.1rem; }
+.q-note.alerte { color: var(--warn); }
+.q-apercu { font-family: var(--mono); font-size: .72rem; color: var(--warn); border: 1px dashed color-mix(in srgb, var(--warn) 45%, transparent);
+  border-radius: 8px; padding: .35rem .6rem; margin-bottom: 1rem; }
+
+@media (max-width: 860px) { .accueil-grille { grid-template-columns: 1fr; margin-top: 0; } }
+@media (max-width: 520px) { .q-reps { grid-template-columns: 1fr; } .quiz { padding: 1.25rem 1.1rem; } }
+@media (prefers-reduced-motion: reduce) { .q-barre i, .q-rep { transition: none; } }
+
+/* ---------- Pop-up : la question sort de la bouche du personnage ---------- */
+.q-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 1rem; overflow-y: auto;
+  background: rgba(4,4,6,.74); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .25s; }
+.q-modal.ouvert { opacity: 1; }
+.q-modal.verrou .q-fermer { display: none; }
+.q-scene { position: relative; width: min(1100px, 100%); min-height: 470px; display: flex; align-items: center; justify-content: flex-end;
+  padding: 1.8rem; border-radius: 18px; overflow: hidden; background: #1a1612; border: 1px solid var(--border2);
+  box-shadow: 0 30px 90px rgba(0,0,0,.6), 0 0 0 1px rgba(91,140,255,.15);
+  transform: translateY(16px) scale(.96); transition: transform .45s cubic-bezier(.2,.9,.3,1.15), box-shadow .3s; }
+.q-modal.ouvert .q-scene { transform: none; }
+.q-fond { position: absolute; inset: 0; background-size: cover; background-position: 18% center; animation: arrive .9s cubic-bezier(.2,.8,.3,1) both; }
+.q-fond:after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(9,9,11,0) 28%, rgba(9,9,11,.5) 60%, rgba(9,9,11,.78)); }
+@keyframes arrive { from { transform: translateX(-34px) scale(1.07); opacity: .2; } to { transform: none; opacity: 1; } }
+.q-fermer { position: absolute; top: .8rem; right: .9rem; z-index: 3; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2);
+  background: rgba(9,9,11,.7); color: var(--text); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.q-fermer:hover { border-color: var(--accent); }
+
+.q-bulle { position: relative; z-index: 2; width: min(520px, 55%); padding: 1.2rem 1.3rem 1.1rem; border-radius: 16px;
+  background: rgba(12,12,16,.84); border: 1px solid var(--border2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  transform-origin: left center; animation: bulle .5s .3s cubic-bezier(.2,.9,.3,1.2) both; }
+.q-bulle:before { content: ""; position: absolute; left: -9px; top: 46px; width: 16px; height: 16px; transform: rotate(45deg);
+  background: rgba(12,12,16,.95); border-left: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+@keyframes bulle { from { opacity: 0; transform: translateX(-14px) scale(.9); } to { opacity: 1; transform: none; } }
+.q-bulle .q-tete { margin-bottom: .8rem; }
+.q-bulle .q-chrono { margin-bottom: .9rem; }
+.q-bulle .q-enonce { font-size: 1.15rem; margin-bottom: .95rem; }
+.q-bulle .q-enonce.q-rappel { font-size: .92rem; margin-bottom: .8rem; }
+.q-bulle .q-titre { font-size: 1.6rem; }
+.q-bulle .q-rep { padding: .65rem .75rem; font-size: .92rem; animation: surgit .42s both cubic-bezier(.2,.9,.3,1.2); animation-delay: calc(.6s + var(--i, 0) * 90ms); }
+.q-bulle .q-reps.fini .q-rep { animation-delay: 0s; }
+@keyframes surgit { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+.q-rep:active:not([disabled]) { transform: scale(.97); }
+.q-rep.choisi { animation: impulsion .35s both !important; }
+@keyframes impulsion { 50% { transform: scale(1.035); box-shadow: 0 0 28px rgba(91,140,255,.55); } }
+.q-rep.bon { animation: pop .5s both !important; }
+@keyframes pop { 40% { transform: scale(1.05); } }
+.q-rep.mauvais { animation: secoue .42s both !important; }
+@keyframes secoue { 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+.q-scene.ok { box-shadow: 0 30px 90px rgba(0,0,0,.6), 0 0 0 2px var(--ok), 0 0 70px rgba(47,211,154,.32); }
+.q-scene.ko { animation: tremble .45s; box-shadow: 0 30px 90px rgba(0,0,0,.6), 0 0 0 2px var(--danger), 0 0 70px rgba(255,107,107,.25); }
+@keyframes tremble { 20% { transform: translateX(-8px); } 60% { transform: translateX(8px); } }
+.q-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; }
+
+@media (max-width: 760px) {
+  .q-scene { flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 0; min-height: 0; }
+  .q-fond { position: relative; inset: auto; height: 180px; flex: none; background-position: 17% 25%; }
+  .q-fond:after { background: linear-gradient(180deg, rgba(9,9,11,0) 55%, rgba(12,12,16,.95)); }
+  .q-bulle { width: 100%; border: 0; border-radius: 0; margin-top: -1px; }
+  .q-bulle:before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .q-fond, .q-bulle, .q-bulle .q-rep, .q-rep.choisi, .q-rep.bon, .q-rep.mauvais, .q-scene.ko { animation: none !important; }
+  .q-modal, .q-scene { transition: none; }
+}

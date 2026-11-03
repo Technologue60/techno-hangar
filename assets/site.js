@@ -174,15 +174,30 @@
 
   /* ---------- Accueil ---------- */
   function pageAccueil(acces) {
-    if (acces.role !== "prof") { location.replace(racine + acces.classe + "/index.html"); return; }
     var grille = document.getElementById("classes");
-    CLASSES.forEach(function (c) {
-      grille.appendChild(el("a", { class: "carte niveau", href: racine + c.id + "/index.html",
-        style: "--c: var(" + c.couleur + ")", "data-c": c.couleur }, [
-        el("div", { class: "haut" }, [el("span", { class: "pastille" }, [el("i"), document.createTextNode(c.code)]), el("span", { class: "fl", texte: "↗" })]),
-        el("div", {}, [el("div", { class: "nom", texte: c.nom }), el("div", { class: "det", texte: c.det })])
+    var enveloppe = document.getElementById("grille");
+    var estEleve = acces.role === "eleve" && infosClasse(acces.classe);
+    if (acces.role !== "prof" && !estEleve) { location.replace(racine + acces.classe + "/index.html"); return; }
+    if (estEleve) {
+      var m = infosClasse(acces.classe);
+      if (acces.prenom) document.getElementById("salut").textContent = "Bonjour " + acces.prenom;
+      grille.appendChild(el("a", { class: "carte niveau mon-cours", href: racine + m.id + "/index.html",
+        style: "--c: var(" + m.couleur + ")", "data-c": m.couleur }, [
+        el("div", { class: "haut" }, [el("span", { class: "pastille" }, [el("i"), document.createTextNode(m.code)]), el("span", { class: "fl", texte: "↗" })]),
+        el("div", {}, [el("div", { class: "nom", texte: m.nom }), el("div", { class: "det", texte: m.det }),
+          el("span", { class: "btn", texte: "Ouvrir mes cours" })])
       ]));
-    });
+    } else {
+      enveloppe.classList.add("prof");
+      CLASSES.forEach(function (c) {
+        grille.appendChild(el("a", { class: "carte niveau", href: racine + c.id + "/index.html",
+          style: "--c: var(" + c.couleur + ")", "data-c": c.couleur }, [
+          el("div", { class: "haut" }, [el("span", { class: "pastille" }, [el("i"), document.createTextNode(c.code)]), el("span", { class: "fl", texte: "↗" })]),
+          el("div", {}, [el("div", { class: "nom", texte: c.nom }), el("div", { class: "det", texte: c.det })])
+        ]));
+      });
+    }
+    if (window.TH_QUIZ) window.TH_QUIZ(document.getElementById("quiz"), acces);
   }
 
   /* ---------- Page de classe ---------- */
