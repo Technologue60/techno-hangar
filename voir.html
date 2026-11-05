@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/pass.css?v=1">
 <style>
   html, body { height: 100%; }
   body { display: flex; flex-direction: column; }
@@ -80,6 +81,27 @@ window.TH_VOIR = async function (acces) {
   var cle = acces.cles && acces.cles[classe];
   if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
 
+  /* Ouverture de l'activité et points (script Supabase 03 ; sans lui, tout reste ouvert) */
+  var statut = null;
+  function toast(html) {
+    var t = document.createElement("div"); t.className = "pa-toast"; t.innerHTML = html; document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 6000);
+  }
+  if (acces.role === "eleve") {
+    try { statut = ((await TH.rpc("mes_activites")) || {})[r] || null; } catch (e) { statut = null; }
+    if (statut && statut.statut === "ferme") {
+      var o = statut.ouvre_le && new Date(statut.ouvre_le) > new Date()
+        ? " Elle ouvrira le " + new Date(statut.ouvre_le).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) + "." : "";
+      return erreur("Cette activité est fermée pour le moment." + o);
+    }
+    if (statut && statut.statut === "revision") {
+      var bd = document.createElement("div"); bd.className = "pa-bandeau";
+      bd.textContent = "Mode révision : tu peux faire cette activité pour t'entraîner, mais elle ne rapporte pas de points en ce moment.";
+      document.getElementById("voir").insertBefore(bd, document.getElementById("msg"));
+    }
+    if (window.TH_PRESENCE) { TH_PRESENCE.demarrer(acces, titre.textContent); TH_PRESENCE.suivreCadre(cadre); }
+  }
+
   document.getElementById("plein").onclick = function () {
     var e = document.documentElement;
     try { if (!document.fullscreenElement) e.requestFullscreen(); else document.exitFullscreen(); } catch (x) {}
@@ -120,7 +142,17 @@ window.TH_VOIR = async function (acces) {
   /* 2. Reprise de la progression (pages HTML) */
   var eleve = acces.role === "eleve" ? (TH.session() || {}).user.id : null;
   var suivi = eleve && /^html?$/.test(ext);
-  var surveilles = {}, base = {}, dernierEnvoi = "", infosPage = {};
+  var surveilles = {}, base = {}, dernierEnvoi = "", infosPage = {}, pointsVus = false;
+  async function verifierPoints() {
+    if (!statut || statut.type !== "activite" || statut.gagne != null) return;
+    try {
+      var s2 = ((await TH.rpc("mes_activites")) || {})[r];
+      if (!s2 || s2.gagne == null) return;
+      statut = s2;
+      if (s2.gagne > 0) toast("Activité terminée : <b>+" + s2.gagne + " pts</b> pour ton pass !");
+      else toast("Activité terminée, mais un peu trop vite : ton professeur vérifiera avant de valider tes points.");
+    } catch (e) {}
+  }
 
   function cles() {
     var a = []; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("th-") !== 0) a.push(k); } } catch (e) {}
@@ -158,6 +190,7 @@ window.TH_VOIR = async function (acces) {
       await TH.rest("progression?on_conflict=eleve,ressource", { method: "POST", body: ligne,
         headers: { "Prefer": "resolution=merge-duplicates,return=minimal" } });
       dernierEnvoi = empreinte;
+      if (infosPage.termine && !pointsVus) { pointsVus = true; setTimeout(verifierPoints, 800); }
       etat.textContent = "Enregistré à " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
       etat.className = "etat ok";
     } catch (e) {
@@ -173,6 +206,18 @@ window.TH_VOIR = async function (acces) {
 
   // Les pages peuvent aussi signaler leur avancement :
   // parent.postMessage({ type: "th-progression", avancement: 60, score: 12, termine: false }, "*")
+  // Entraînement et jeux (rejouables) : parent.postMessage({ type: "th-entrainement", score: 16 }, "*")  (score sur 20, facultatif)
+  window.addEventListener("message", function (ev) {
+    if (ev.source !== cadre.contentWindow || !ev.data || ev.data.type !== "th-entrainement") return;
+    enregistrer();
+    TH.rpc("entrainement_valider", { p_ressource: r, p_score: ev.data.score == null ? null : Number(ev.data.score) }).then(function (x) {
+      if (!x) return;
+      if (x.ok && x.points > 0) toast("Bravo : <b>+" + x.points + " pts</b> · aujourd'hui " + x.jour + " / " + x.plafond);
+      else if (x.ok) toast("Plafond du jour atteint (" + x.plafond + " pts). Reviens demain pour gagner encore des points !");
+      else if (x.raison === "trop_tot") toast("Points déjà comptés il y a peu : refais-la encore un peu plus tard.");
+      else if (x.raison === "revision") toast("Mode révision : pas de points en ce moment.");
+    }).catch(function () {});
+  });
   window.addEventListener("message", function (ev) {
     if (ev.source !== cadre.contentWindow || !ev.data || ev.data.type !== "th-progression") return;
     ["avancement", "score", "termine"].forEach(function (k) { if (ev.data[k] !== undefined) infosPage[k] = ev.data[k]; });
@@ -180,6 +225,7 @@ window.TH_VOIR = async function (acces) {
   });
 };
 </script>
-<script src="assets/site.js"></script>
+<script src="assets/presence.js?v=1"></script>
+<script src="assets/site.js?v=5"></script>
 </body>
 </html>

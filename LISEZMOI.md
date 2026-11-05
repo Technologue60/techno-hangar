@@ -26,3 +26,10 @@ assets/site.js               en-tête, pages de classe
 assets/prof.js / prof.css    espace prof
 connexion/  prof/  terminale-sti2d/  premiere-it/  snt/  bts-maintenance/
 ```
+
+## Pass de progression (script Supabase 03)
+- Installer une fois `03-pass-progression.sql` (Supabase → SQL Editor → Run). Sans lui, le site marche comme avant.
+- Espace prof → **Activités & points** : cocher les ressources qui rapportent des points, type (activité / entraînement / jeu), points, bonus, temps minimum, interrupteur, dates et horaires, ouverture pour un seul élève.
+- Espace prof → **Pass** : saisons, objectif par classe, paliers, titres et avatars, donner une récompense ou des points.
+- Espace prof → **En direct** (qui est connecté, actif / inactif / onglet quitté) et **Alertes & stats**.
+- Une page d'entraînement ou de jeu signale une réussite avec : `parent.postMessage({ type: "th-entrainement", score: 16 }, "*")` (score sur 20, facultatif). Les activités normales n'ont rien à changer : les points tombent quand la page envoie `termine: true`.
