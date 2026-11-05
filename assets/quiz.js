@@ -140,12 +140,7 @@
       if (bandeau()) zone.appendChild(bandeau());
       zone.appendChild(tete(st, "Question du jour · " + jourLong()));
       zone.appendChild(el("h2", { class: "q-titre", texte: "Une question. " + (st.duree || 20) + " secondes." }));
-      zone.appendChild(el("p", { class: "q-texte", texte: "La même pour toutes les classes, renouvelée chaque jour. Chaque point compte pour le classement de ta classe." }));
-      zone.appendChild(el("ul", { class: "q-regles" }, [
-        el("li", { texte: "Le chrono démarre dès que la question apparaît." }),
-        el("li", { texte: "Une seule tentative par jour, actualiser la page ne relance rien." }),
-        el("li", { texte: "Si tu quittes la page, la question ne rapporte plus de points." })
-      ]));
+      zone.appendChild(el("p", { class: "q-texte", texte: "Une seule tentative par jour. Le chrono démarre dès que la question apparaît : ne quitte pas la page avant d'avoir répondu." }));
       zone.appendChild(b);
     }
 

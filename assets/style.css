@@ -226,3 +226,19 @@ h1, h2, h3, .brand, .niveau .nom, .g-titre, .mon-cours .nom, .quiz .q-titre, .q-
 h1, .accueil h1, .mon-cours .nom, .quiz .q-titre { font-weight: 700; }
 .accueil h1 { letter-spacing: -.02em; }
 .fiche h3, .fiche-classe { font-family: system-ui, sans-serif; }
+
+/* ---------- Accueil élève : plus compact, centré sur les cours ---------- */
+body[data-page="accueil"] .accueil h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: .7rem 0 .4rem; }
+body[data-page="accueil"] .accueil { padding-bottom: .4rem; }
+.mon-cours .nom { font-size: 1.5rem; }
+.reprendre { padding: 1rem 1.1rem; display: grid; gap: .35rem; margin-top: .8rem; }
+.rep-titre { font-family: var(--mono); font-size: .74rem; color: var(--muted); margin-bottom: .2rem; }
+.rep-ligne { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: .8rem; padding: .55rem .6rem; border-radius: 10px;
+  color: var(--text); text-decoration: none; border: 1px solid transparent; transition: background .2s, border-color .2s, transform .2s; }
+.rep-ligne:hover { background: var(--surface2); border-color: var(--border2); transform: translateX(3px); }
+.rep-ligne .illu { width: 38px; height: 38px; }
+.rep-txt { display: flex; flex-direction: column; min-width: 0; }
+.rep-txt b { font-family: var(--titre); font-weight: 600; font-size: .98rem; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rep-txt small { color: var(--muted); font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rep-ligne .btn { padding: .3rem .7rem; font-size: .8rem; }
+@media (max-width: 680px) { .rep-ligne { grid-template-columns: auto minmax(0, 1fr) auto; } .rep-ligne .prog { display: none; } }

@@ -2,9 +2,11 @@
 .accueil-grille { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: .9rem; text-align: left; align-items: stretch; margin-top: -.6rem; }
 .accueil-grille.prof { grid-template-columns: 1fr; }
 .accueil-grille.prof #classes { order: -1; }
+.accueil-grille.prof .col-droite { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: .9rem; align-items: start; }
+@media (max-width: 760px) { .accueil-grille.prof .col-droite { grid-template-columns: 1fr; } }
 .accueil-grille .niveaux { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .accueil-grille:not(.prof) .niveaux { grid-template-columns: 1fr; }
-.mon-cours { min-height: 100%; }
+.mon-cours { min-height: 0; }
 .mon-cours .nom { font-size: 1.6rem; letter-spacing: -.02em; }
 .mon-cours .btn { margin-top: 1.2rem; }
 
@@ -131,12 +133,13 @@
 .q-ligne .q-points { font-family: var(--mono); font-size: .88rem; }
 .q-demain { color: var(--faible); font-size: .8rem; margin-left: auto; }
 .q-revoir { padding: .3rem .7rem; font-size: .8rem; }
-.accueil-grille.quiz-reduit { grid-template-columns: 1fr; }
-.accueil-grille.quiz-reduit .mon-cours { min-height: 0; padding: 1rem 1.3rem; text-align: left; }
-.accueil-grille.quiz-reduit .mon-cours .haut { display: none; }
-.accueil-grille.quiz-reduit .mon-cours > div:last-child { display: flex; align-items: center; gap: .4rem 1.1rem; flex-wrap: wrap; }
-.accueil-grille.quiz-reduit .mon-cours .nom { font-size: 1.3rem; }
-.accueil-grille.quiz-reduit .mon-cours .nom:before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .6rem; vertical-align: middle;
-  background: var(--c); box-shadow: 0 0 10px var(--c); }
-.accueil-grille.quiz-reduit .mon-cours .btn { margin: 0 0 0 auto; }
+/* Accueil élève : la carte « Mes cours » d'abord, la question du jour à côté */
+.accueil-grille:not(.prof) { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
+.accueil-grille:not(.prof) .quiz { min-height: 0; padding: 1.2rem 1.3rem; }
+.accueil-grille:not(.prof) .quiz .q-titre { font-size: 1.35rem; }
+.accueil-grille:not(.prof) .quiz .q-texte { font-size: .86rem; margin-bottom: 1rem; }
+.accueil-grille:not(.prof) .quiz:after { width: 220px; height: 220px; right: -80px; top: -90px; }
+.quiz.reduit .q-ligne { gap: .45rem .6rem; }
+.quiz.reduit .q-demain { margin-left: 0; width: 100%; order: 9; }
+.quiz.reduit .q-revoir { order: 10; }
 @media (max-width: 680px) { .q-demain { margin-left: 0; width: 100%; } }

@@ -203,3 +203,62 @@ a.pa-act:hover { border-color: var(--border2); transform: translateX(3px); }
   .pa-apparait, .pa-case.prochain, .pa-case.nouveau, .pa-barre i:after, .pa-objet:after, .pa-case:after, .quiz.reduit { animation: none !important; }
 }
 .pa-act > .pa-statut { justify-self: end; }
+
+/* ---------- Accueil : bandeau fin du pass + rangée classe ---------- */
+.pa-accueil { display: block; margin-top: .9rem; }
+.pa-bandeau-pass { display: flex; align-items: center; gap: 1rem; padding: .7rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  transition: border-color .2s, transform .2s, box-shadow .2s; }
+.pa-bandeau-pass:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.pa-bandeau-pass.nouveau { border-color: rgba(47,211,154,.5); box-shadow: 0 0 24px rgba(47,211,154,.18); }
+.pb-id { min-width: 9rem; } .pb-id .pa-titre-eq { font-size: .98rem; }
+.pb-prog { flex: 1; min-width: 8rem; }
+.pb-prog .pa-barre { margin: .35rem 0 0; height: 7px; }
+.pb-prog .pa-cran { top: -2px; height: 11px; width: 3px; }
+.pb-chiffres { display: flex; justify-content: space-between; gap: .5rem; font-size: .8rem; color: var(--muted); }
+.pb-chiffres b { color: var(--text); font-family: var(--titre); font-size: .98rem; }
+.pb-prochain { display: flex; align-items: center; gap: .5rem; padding: .3rem .7rem .3rem .35rem; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--r) 45%, var(--border));
+  color: var(--text); text-decoration: none; background: color-mix(in srgb, var(--r) 7%, transparent); }
+.pb-prochain span:last-child { display: flex; flex-direction: column; line-height: 1.15; }
+.pb-prochain b { font-size: .8rem; font-weight: 600; } .pb-prochain small { font-size: .7rem; color: var(--muted); }
+.pa-titre-ico.petit { width: 30px; height: 30px; font-size: .8rem; border-radius: 8px; }
+.pb-fleche { color: var(--muted); font-size: 1.1rem; }
+.pa-rangee { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: .9rem; margin-top: .9rem; align-items: start; }
+.pa-accueil.prof .pa-rangee { grid-template-columns: 1fr; }
+.pa-rangee > [hidden] { display: none; }
+.pa-voir { font: inherit; font-size: .78rem; color: var(--muted); background: none; border: 0; cursor: pointer; margin-top: .4rem; padding: .2rem 0; }
+.pa-voir:hover { color: var(--text); }
+.pa-classement small.r-rare { color: var(--r-rare); } .pa-classement small.r-epique { color: var(--r-epique); } .pa-classement small.r-legendaire { color: var(--r-legendaire); }
+.pa-qui, .pa-classement li { cursor: default; }
+@media (max-width: 760px) {
+  .pa-rangee { grid-template-columns: 1fr; }
+  .pa-bandeau-pass { flex-wrap: wrap; } .pb-fleche { display: none; } .pb-prog { order: 5; flex-basis: 100%; }
+}
+
+/* ---------- Fiche d'un élève au survol (façon Dofus) ---------- */
+.pa-fiche { position: fixed; z-index: 80; width: 260px; pointer-events: none; opacity: 0; transform: translateY(4px) scale(.98); transition: opacity .12s, transform .12s;
+  background: linear-gradient(180deg, #1a1a21, #121216); border: 1px solid #3a3a46; border-radius: 12px; padding: .8rem .85rem .75rem;
+  box-shadow: 0 14px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05); }
+.pa-fiche.vue { opacity: 1; transform: none; }
+.pa-fiche:before { content: ""; position: absolute; inset: 3px; border: 1px solid rgba(255,255,255,.04); border-radius: 9px; pointer-events: none; }
+.pf-tete { display: flex; gap: .7rem; align-items: center; }
+.pf-id { min-width: 0; flex: 1; }
+.pf-nom { display: flex; align-items: center; justify-content: space-between; gap: .4rem; font-family: var(--titre); font-weight: 700; font-size: 1.05rem; }
+.pf-niveau { font-family: var(--mono); font-size: .64rem; font-weight: 500; color: #09090b; background: var(--warn); border-radius: 5px; padding: .08rem .35rem; white-space: nowrap; }
+.pf-titre { font-style: italic; font-size: .82rem; color: var(--r, var(--muted)); margin-top: .05rem; }
+.pf-titre.vide { color: var(--faible); }
+.pf-classe { display: flex; align-items: center; gap: .35rem; font-size: .72rem; color: var(--muted); margin-top: .15rem; }
+.pf-charge { color: var(--faible); text-align: center; padding-top: .4rem; }
+.pf-saison { margin-top: .7rem; }
+.pf-ligne { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
+.pf-ligne b { color: var(--text); font-weight: 500; }
+.pf-barre { height: 5px; border-radius: 5px; background: #23232b; overflow: hidden; margin-top: .3rem; }
+.pf-barre i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); }
+.pf-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; margin-top: .7rem; padding-top: .6rem; border-top: 1px solid #2a2a33; text-align: center; }
+.pf-stats span { display: flex; flex-direction: column; }
+.pf-stats b { font-size: .86rem; font-weight: 600; }
+.pf-stats small { font-size: .64rem; color: var(--faible); }
+.pf-titre.pf-sans { color: var(--faible); }
+.col-droite { display: grid; gap: .9rem; align-content: start; min-width: 0; }
+.col-droite > [hidden] { display: none; }
+.col-droite .pa-carte { padding: 1rem 1.1rem; }
+.col-droite .pa-tete-cl { flex-direction: column; align-items: flex-start; }

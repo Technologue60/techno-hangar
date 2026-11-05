@@ -192,8 +192,9 @@
         style: "--c: var(" + m.couleur + ")", "data-c": m.couleur }, [
         el("div", { class: "haut" }, [el("span", { class: "pastille" }, [el("i"), document.createTextNode(m.code)]), el("span", { class: "fl", texte: "↗" })]),
         el("div", {}, [el("div", { class: "nom", texte: m.nom }), el("div", { class: "det", texte: m.det }),
-          el("span", { class: "btn", texte: "Ouvrir mes cours" })])
+          el("span", { class: "btn primary", texte: "Ouvrir mes cours" })])
       ]));
+      reprendre(grille, acces, m);
     } else {
       enveloppe.classList.add("prof");
       CLASSES.forEach(function (c) {
@@ -206,6 +207,34 @@
     }
     if (window.TH_QUIZ) window.TH_QUIZ(document.getElementById("quiz"), acces);
     if (window.TH_ACCUEIL_PASS) window.TH_ACCUEIL_PASS(acces);
+  }
+
+  /* ---------- Accueil élève : reprendre là où on s'est arrêté ---------- */
+  async function reprendre(zone, acces, m) {
+    var bloc = el("div", { class: "carte reprendre", style: "--c: var(" + m.couleur + ")", "data-c": m.couleur });
+    zone.appendChild(bloc);
+    var res = catalogue.filter(function (r) { return r.classe === m.id && r.en_ligne && r.fichier && !/^https?:/.test(r.fichier) && r.type !== "lien" && r.type !== "outil"; });
+    var prog = [];
+    try { prog = await TH.rest("progression?select=ressource,avancement,termine,maj_le&eleve=eq." + TH.session().user.id + "&order=maj_le.desc"); } catch (e) {}
+    var trouve = function (id) { return res.filter(function (r) { return r.classe + "/" + r.fichier === id; })[0]; };
+    var enCours = prog.filter(function (p) { return !p.termine && trouve(p.ressource); }).slice(0, 3);
+    var titre = "Reprendre là où tu t'es arrêté", liste = enCours.map(function (p) { return { r: trouve(p.ressource), p: p }; });
+    if (!liste.length) {
+      var vus = prog.map(function (p) { return p.ressource; });
+      liste = res.filter(function (r) { return vus.indexOf(r.classe + "/" + r.fichier) < 0; }).slice(0, 3).map(function (r) { return { r: r }; });
+      titre = "À découvrir";
+    }
+    if (!liste.length) { bloc.remove(); return; }
+    bloc.appendChild(el("div", { class: "rep-titre", texte: titre }));
+    liste.forEach(function (x) {
+      var pct = x.p ? Math.round(Number(x.p.avancement) || 0) : 0;
+      bloc.appendChild(el("a", { class: "rep-ligne", href: lienRessource(x.r) }, [
+        x.r.icone && ICONES[x.r.icone] ? el("span", { class: "illu", html: ICONES[x.r.icone] }) : el("span", { class: "illu vide-illu" }),
+        el("span", { class: "rep-txt" }, [el("b", { texte: x.r.titre }), el("small", { texte: x.r.sequence || "" })]),
+        x.p ? el("span", { class: "prog" }, [el("span", { class: "barre" }, [el("i", { style: "width:" + Math.max(6, pct) + "%" })]), document.createTextNode(x.p.avancement != null ? pct + " %" : "Commencé")]) : null,
+        el("span", { class: "btn" + (x.p ? " primary" : ""), texte: x.p ? "Reprendre" : "Ouvrir" })
+      ]));
+    });
   }
 
   /* ---------- Page de classe ---------- */
