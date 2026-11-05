@@ -158,7 +158,7 @@
   }
   function remplirFiche(base, d) {
     fiche.innerHTML = "";
-    var av = (d && d.avatar) || base.avatar, ti = d ? d.titre : (base.titre ? { nom: base.titre, rarete: base.titre_rarete || "commun" } : null);
+    var av = (d && d.avatar) || base.avatar, ti = d && !d.simple ? d.titre : (base.titre ? { nom: base.titre, rarete: base.titre_rarete || "commun" } : null);
     var tete = el("div", { class: "pf-tete" }, [
       avatar(av, 54, base.prenom),
       el("div", { class: "pf-id" }, [
@@ -170,6 +170,7 @@
     ]);
     fiche.appendChild(tete);
     if (!d) { fiche.appendChild(el("div", { class: "pf-charge", texte: "…" })); return; }
+    if (d.simple) return;
     if (d.saison) {
       var pct = d.saison.objectif ? Math.min(100, d.saison.points / d.saison.objectif * 100) : 0;
       fiche.appendChild(el("div", { class: "pf-saison" }, [
@@ -184,20 +185,25 @@
     ]));
   }
   function attacherFiche(noeud, base) {
-    if (!base || !base.id) return;
+    if (!base) return;
+    base.id = base.id || null;   // sans le script 05, pas d'identifiant : fiche simple (avatar, prénom, titre)
     function montrer(e) {
       clearTimeout(ficheMasque);
       if (!fiche) { fiche = el("div", { class: "pa-fiche", role: "tooltip" }); document.body.appendChild(fiche); }
-      ficheId = base.id;
+      ficheId = base.id || base.prenom;
       remplirFiche(base, ficheCache[base.id] && ficheCache[base.id].d);
       fiche.classList.add("vue");
       placerFiche(e.clientX, e.clientY);
       var c = ficheCache[base.id];
+      if (!base.id) { remplirFiche(base, { simple: true }); placerFiche(e.clientX, e.clientY); return; }
       if (!c || Date.now() - c.t > 60000) {
         TH.rpc("fiche_eleve", { p_id: base.id }).then(function (d) {
           ficheCache[base.id] = { d: d, t: Date.now() };
           if (ficheId === base.id && fiche.classList.contains("vue")) { remplirFiche(base, d); placerFiche(e.clientX, e.clientY); }
-        }).catch(function () {});
+        }).catch(function (err) {
+          try { console.warn("Fiche élève :", err && err.message); } catch (x) {}
+          if (ficheId === base.id && fiche.classList.contains("vue")) { remplirFiche(base, { simple: true }); }
+        });
       }
     }
     function cacher() { ficheMasque = setTimeout(function () { if (fiche) fiche.classList.remove("vue"); ficheId = null; }, 60); }
