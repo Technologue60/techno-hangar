@@ -18,6 +18,7 @@ window.TH_PROF = function (acces) {
     try { history.replaceState(null, "", "#" + v); } catch (e) {}
     if (v === "suivi") chargerSuivi();
     if (v === "horaires") { chargerHoraires(); chargerExceptions(); }
+    if (window.TH_PROF_VUE) window.TH_PROF_VUE(v);
   }
   boutons.forEach(function (b) { b.addEventListener("click", function () { montrer(b.getAttribute("data-vue")); }); });
 
@@ -32,6 +33,8 @@ window.TH_PROF = function (acces) {
       try { localStorage.setItem("th-prof-classe", s.value); } catch (e) {}
       document.querySelectorAll(".choix-classe").forEach(function (o) { o.value = s.value; });
       if (!COLLEGUE) chargerEleves(); if (!$("vue-suivi").hidden) chargerSuivi(); if (!$("vue-horaires").hidden) chargerHoraires();
+      var vue = document.querySelector(".vue:not([hidden])");
+      if (vue && window.TH_PROF_VUE && /^vue-(direct|activites|pass|alertes)$/.test(vue.id)) window.TH_PROF_VUE(vue.id.slice(4));
     });
   });
   var xc = $("x-classe"); xc.appendChild(el("option", { value: "", texte: "Toutes" }));
@@ -460,6 +463,7 @@ window.TH_PROF = function (acces) {
   }
   chargerEleves();
   chargerCollegues();
+  if (window.TH_PROF_PASS) window.TH_PROF_PASS(acces);
   var h = (location.hash || "").replace("#", "");
-  if (["eleves", "suivi", "horaires", "chiffrer"].indexOf(h) >= 0) montrer(h);
+  if (["eleves", "suivi", "horaires", "chiffrer", "direct", "activites", "pass", "alertes"].indexOf(h) >= 0) montrer(h);
 };

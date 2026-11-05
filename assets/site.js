@@ -147,6 +147,11 @@
       if (c.id === classeCourante) a.className = "actif";
       nav.appendChild(a);
     });
+    if (acces && acces.role === "eleve") {
+      var mp = el("a", { href: racine + "pass/index.html", texte: "Mon pass" });
+      if (page === "pass") mp.className = "actif";
+      nav.appendChild(mp);
+    }
     if (acces && acces.role === "prof") {
       var p = el("a", { href: racine + "prof/index.html", texte: "Espace prof" });
       if (page === "prof") p.className = "actif";
@@ -198,6 +203,7 @@
       });
     }
     if (window.TH_QUIZ) window.TH_QUIZ(document.getElementById("quiz"), acces);
+    if (window.TH_ACCUEIL_PASS) window.TH_ACCUEIL_PASS(acces);
   }
 
   /* ---------- Page de classe ---------- */
@@ -228,7 +234,7 @@
       onglets = onglets.filter(function (o) { return liste.some(function (r) { return r.onglet === o.id; }); })
                        .map(function (o) { return Object.assign({}, o, { sequences: [], defaut: false }); });
     }
-    var actif = null, progression = {};
+    var actif = null, progression = {}, statuts = {};
 
     function ongletDepuisHash() {
       var h = (location.hash || "").replace("#", "");
@@ -249,6 +255,17 @@
         });
         barre.appendChild(b);
       });
+    }
+    /* Statut de l'activité (script Supabase 03) : points à gagner, gagnés, révision, fermée */
+    function statutRessource(r) {
+      var s = statuts[r.classe + "/" + r.fichier];
+      if (!s) return null;
+      var puces = [];
+      if (s.statut === "ferme") puces.push(el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" + (s.ouvre_le && new Date(s.ouvre_le) > new Date() ? " · ouvre le " + new Date(s.ouvre_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") }));
+      else if (s.statut === "revision") puces.push(el("span", { class: "pa-statut", texte: "Révision · sans points" }));
+      if (s.gagne != null) puces.push(el("span", { class: "pa-statut gagne", texte: "✓ +" + s.gagne + " pts" }));
+      else if (s.statut === "ouvert") puces.push(el("span", { class: "pa-statut pts", texte: s.type === "activite" ? "+" + s.points + (s.bonus_max ? " à " + (s.points + s.bonus_max) : "") + " pts" : "Entraînement · +" + s.points + " pts" }));
+      return el("div", { class: "res-statut" }, puces);
     }
     function etatRessource(r) {
       var p = progression[r.classe + "/" + r.fichier];
@@ -295,6 +312,8 @@
         var haut = el("div", { class: "res-haut" }, [
           r.icone && ICONES[r.icone] ? el("span", { class: "illu", html: ICONES[r.icone] }) : null,
           el("h3", { texte: r.titre })]);
+        var stat = dispo ? statutRessource(r) : null;
+        if (stat) haut = el("div", {}, [haut, stat]);
         var docs = null;
         if (r.documents && r.documents.length) {
           docs = el("div", { class: "docs-carte" });
@@ -366,6 +385,12 @@
         afficher();
       } catch (e) {}
     }
+    if (acces.role === "eleve" || acces.role === "prof") {
+      try {
+        statuts = (await TH.rpc("mes_activites")) || {};
+        afficher();
+      } catch (e) {}
+    }
   }
 
   /* ---------- Démarrage ---------- */
@@ -382,6 +407,8 @@
       if (acces.role !== "prof" && acces.role !== "collegue") { location.replace(racine + "index.html"); return; }
       if (window.TH_PROF) window.TH_PROF(acces);
     }
+    if (page === "pass" && window.TH_PAGE_PASS) window.TH_PAGE_PASS(acces);
+    if (window.TH_PRESENCE && acces.role === "eleve" && page !== "voir") window.TH_PRESENCE.demarrer(acces);
     if (page === "voir" && window.TH_VOIR) window.TH_VOIR(acces);
   }
   demarrer();

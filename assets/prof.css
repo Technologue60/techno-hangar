@@ -50,3 +50,32 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
 
 .cases { display: flex; flex-direction: column; gap: .35rem; margin: .4rem 0 .6rem; }
 .case { font-size: .9rem; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+
+/* Pass, activités, en direct */
+.pp-resume { display: flex; gap: 1rem; flex-wrap: wrap; margin: .4rem 0 1rem; font-size: .9rem; }
+.pp-etat { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.pp-etat i { width: 9px; height: 9px; border-radius: 50%; background: var(--faible); }
+.pp-etat.actif i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.pp-etat.inactif i { background: var(--warn); }
+.pp-etat.ailleurs i { background: var(--danger); }
+.pp-l-hors_ligne td { opacity: .5; }
+.pp-act td { white-space: nowrap; }
+.pp-act .pp-titre, .pp-titre { white-space: normal; min-width: 11rem; max-width: 16rem; }
+.tableau input.pp-n { width: 4.6rem; }
+.tableau input, .tableau select { font: inherit; font-size: .84rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: .25rem .4rem; }
+.tableau input[type="color"] { padding: 0; width: 2.4rem; height: 1.9rem; }
+.pp-hor { width: 12rem; } .pp-nom { width: 11rem; } .pp-sym { width: 3.6rem; text-align: center; font-size: 1.1rem !important; }
+.pp-multi { min-width: 13rem; height: 4.2rem; }
+.form-exc input[type="number"], .form-exc select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .4rem .55rem; }
+.pp-al { font-size: .78rem; border-radius: 6px; padding: .12rem .45rem; border: 1px solid var(--border2); white-space: nowrap; }
+.pp-al.trop_rapide { color: var(--warn); border-color: rgba(245,183,74,.4); }
+.pp-al.rafale { color: var(--c-it); border-color: rgba(176,124,255,.4); }
+.pp-al.decrochage { color: var(--danger); border-color: rgba(255,107,107,.4); }
+.pp-pastille { margin-left: .4rem; font-size: .7rem; background: var(--danger); color: #fff; border-radius: 999px; padding: 0 .4rem; }
+.pp-sous td { background: var(--bg2); }
+.pp-sous .form-exc { margin: .2rem 0; }
+.pp-act .btn { white-space: nowrap; }
+.pp-nom.large { width: 16rem; }
+.pp-cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .25rem .8rem; }
+.tableau input:disabled { opacity: .35; }
+.pp-img { width: 8.5rem; }
