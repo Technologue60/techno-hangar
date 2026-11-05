@@ -328,7 +328,7 @@
     var c = classeChoisie(), t = $("p-eleves"); vider(t);
     var l = await eleves(c);
     ["p-don-eleve", "p-bonus-eleve"].forEach(function (id) { vider($(id)); l.forEach(function (e) { $(id).appendChild(el("option", { value: e.id, texte: e.nom + " " + e.prenom })); }); });
-    t.appendChild(th(["Élève", "Total", "Saison en cours", "Paliers", "Réserve", "Titre · avatar"]));
+    t.appendChild(th(["Élève", "Total", "Saison en cours", "Paliers", "Réserve", "Titre · avatar", ""]));
     for (var i = 0; i < l.length; i++) {
       var e = l[i];
       try {
@@ -340,7 +340,8 @@
           el("td", { texte: Math.round(s.points) + " / " + s.objectif + " (" + Math.round(s.points / s.objectif * 100) + " %)" }),
           el("td", { texte: s.paliers.filter(function (x) { return x.debloque; }).length + " / " + s.paliers.length }),
           el("td", { texte: p.reserve ? p.reserve + " pts" : "" }),
-          el("td", { texte: (ti ? ti.nom : "—") + " · " + (a ? a.symbole + " " + a.nom : "—") })]));
+          el("td", { texte: (ti ? ti.nom : "—") + " · " + (a ? a.symbole + " " + a.nom : "—") }),
+          el("td", {}, [el("a", { class: "btn", href: "../profil/index.html?eleve=" + e.id + "#pass", texte: "Profil" })])]));
       } catch (x) { t.appendChild(el("tr", {}, [el("td", { texte: e.nom + " " + e.prenom }), el("td", { colspan: "5", texte: msg(x) })])); }
     }
     if (!l.length) t.appendChild(el("tr", {}, [el("td", { texte: "Aucun élève." })]));

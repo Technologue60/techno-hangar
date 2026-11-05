@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap");
 /* =========================================================================
    Techno-Hangar · style « Tech sombre »
    ========================================================================= */
@@ -215,3 +216,13 @@ html:not(.th-ok) main { visibility: hidden; }
 .carte.outil:hover .chevron { color: var(--c, var(--accent)); }
 .carte.outil.off .g-titre { color: var(--muted); }
 
+
+/* ---------- Titres : Chakra Petch (angles coupés, style « interface de machine ») ---------- */
+:root { --titre: "Chakra Petch", var(--f); }
+h1, h2, h3, .brand, .niveau .nom, .g-titre, .mon-cours .nom, .quiz .q-titre, .q-enonce,
+.pa-titre-eq, .pa-tuile b, .pa-total b, .pa-score b, .pa-chiffres b, .pa-case .pa-nom, .pa-objet .pa-nom, .pa-act-t b, .q-ligne .q-pastille {
+  font-family: var(--titre); letter-spacing: -.01em;
+}
+h1, .accueil h1, .mon-cours .nom, .quiz .q-titre { font-weight: 700; }
+.accueil h1 { letter-spacing: -.02em; }
+.fiche h3, .fiche-classe { font-family: system-ui, sans-serif; }

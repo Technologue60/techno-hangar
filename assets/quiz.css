@@ -118,3 +118,25 @@
   .q-fond, .q-bulle, .q-bulle .q-rep, .q-rep.choisi, .q-rep.bon, .q-rep.mauvais, .q-scene.ko { animation: none !important; }
   .q-modal, .q-scene { transition: none; }
 }
+
+/* ---------- Question du jour jouée : carte réduite à une ligne ---------- */
+.quiz.reduit { min-height: 0; padding: .85rem 1.2rem; animation: q-reduit .45s ease-out; }
+.quiz.reduit:after { display: none; }
+@keyframes q-reduit { from { opacity: 0; transform: scaleY(.85); } }
+.q-ligne { display: flex; align-items: center; gap: .55rem .8rem; flex-wrap: wrap; }
+.q-ligne .q-label { margin-right: .2rem; }
+.q-pastille { font-size: .82rem; font-weight: 600; border-radius: 999px; padding: .18rem .65rem; border: 1px solid var(--border2); }
+.q-pastille.ok { color: var(--ok); border-color: rgba(47,211,154,.4); background: rgba(47,211,154,.08); }
+.q-pastille.ko { color: var(--danger); border-color: rgba(255,107,107,.4); background: rgba(255,107,107,.07); }
+.q-ligne .q-points { font-family: var(--mono); font-size: .88rem; }
+.q-demain { color: var(--faible); font-size: .8rem; margin-left: auto; }
+.q-revoir { padding: .3rem .7rem; font-size: .8rem; }
+.accueil-grille.quiz-reduit { grid-template-columns: 1fr; }
+.accueil-grille.quiz-reduit .mon-cours { min-height: 0; padding: 1rem 1.3rem; text-align: left; }
+.accueil-grille.quiz-reduit .mon-cours .haut { display: none; }
+.accueil-grille.quiz-reduit .mon-cours > div:last-child { display: flex; align-items: center; gap: .4rem 1.1rem; flex-wrap: wrap; }
+.accueil-grille.quiz-reduit .mon-cours .nom { font-size: 1.3rem; }
+.accueil-grille.quiz-reduit .mon-cours .nom:before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .6rem; vertical-align: middle;
+  background: var(--c); box-shadow: 0 0 10px var(--c); }
+.accueil-grille.quiz-reduit .mon-cours .btn { margin: 0 0 0 auto; }
+@media (max-width: 680px) { .q-demain { margin-left: 0; width: 100%; } }

@@ -60,7 +60,27 @@
       return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" });
     }
     function arreter() { if (minuteur) { clearInterval(minuteur); minuteur = null; } enCours = false; }
-    function vider(c) { arreter(); c.innerHTML = ""; }
+    function vider(c) { arreter(); c.innerHTML = ""; if (c === zone) reduire(false); }
+    // Une fois la question du jour jouée, la carte se réduit à une ligne sur l'accueil
+    function reduire(oui) {
+      zone.classList.toggle("reduit", oui);
+      var g = document.getElementById("grille"); if (g) g.classList.toggle("quiz-reduit", oui);
+    }
+    function ecranReduit(st) {
+      vider(zone); reduire(true);
+      var perdu = st.position == null || st.position < 0;
+      var voir = el("button", { class: "btn q-revoir", type: "button", texte: "Revoir la question" });
+      voir.addEventListener("click", function () { ecranResultat(st, false, true); });
+      zone.appendChild(el("div", { class: "q-ligne" }, [
+        el("span", { class: "q-label" }, [el("i"), document.createTextNode("Question du jour")]),
+        el("span", { class: "q-pastille " + (st.correct ? "ok" : "ko"), texte: st.correct ? "✓ Bonne réponse" : (perdu ? "⏱ Temps écoulé" : "✗ Raté") }),
+        el("span", { class: "q-points", texte: st.points > 0 ? "+" + st.points + " pts" : "0 pt" }),
+        el("span", { class: "q-puce" }, [document.createTextNode("Série "), el("b", { texte: (st.serie || 0) + " j" })]),
+        el("span", { class: "q-puce" }, [document.createTextNode("Total "), el("b", { texte: (st.total || 0) + " pts" })]),
+        el("span", { class: "q-demain", texte: "Nouvelle question demain" }),
+        voir
+      ]));
+    }
 
     function tete(st, label) {
       var stats = el("div", { class: "q-stats" });
@@ -105,7 +125,7 @@
 
     /* ---------- Carte de l'accueil ---------- */
     function dessinerCarte(st) {
-      if (st.statut === "termine") return ecranResultat(st, false);
+      if (st.statut === "termine") return apercu ? ecranResultat(st, false) : ecranReduit(st);
       ecranPret(st);
     }
     function ecranPret(st) {
@@ -169,7 +189,7 @@
     }
 
     /* ---------- Résultat (dans le pop-up, puis sur la carte) ---------- */
-    function ecranResultat(st, dansModal) {
+    function ecranResultat(st, dansModal, deplie) {
       var cible;
       if (dansModal && modal) {
         arreter(); bulle.innerHTML = ""; cible = bulle; modal.classList.remove("verrou"); scene.classList.add(st.correct ? "ok" : "ko");
@@ -190,6 +210,11 @@
       if (st.correct && (st.sorties || 0) > 0) cible.appendChild(el("div", { class: "q-note alerte", texte: "Bonne réponse, mais tu as quitté la page : aucun point pour cette fois." }));
       cible.appendChild(el("div", { class: "q-note", texte: apercu ? "" : "Reviens demain pour une nouvelle question." }));
       var actions = el("div", { class: "q-actions" });
+      if (deplie && !dansModal) {
+        var red = el("button", { class: "btn", type: "button", texte: "Réduire" });
+        red.addEventListener("click", function () { ecranReduit(st); });
+        actions.appendChild(red);
+      }
       if (dansModal) {
         var f = el("button", { class: "btn primary", type: "button", texte: "Fermer" });
         f.addEventListener("click", function () { fermerModal(); });
@@ -208,7 +233,7 @@
       if (st.statut === "non_eleve") { apercu = "prof"; api = apiApercu(); return api.etat().then(dessiner); }
       derniere = st; courant = st;
       if (st.statut === "en_cours") return ecranQuestion(st);
-      if (st.statut === "termine") return ecranResultat(st, !!modal);
+      if (st.statut === "termine") return modal || apercu ? ecranResultat(st, !!modal) : ecranReduit(st);
       if (modal) fermerModal(true);
       ecranPret(st);
     }

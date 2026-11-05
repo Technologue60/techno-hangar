@@ -148,8 +148,8 @@
       nav.appendChild(a);
     });
     if (acces && acces.role === "eleve") {
-      var mp = el("a", { href: racine + "pass/index.html", texte: "Mon pass" });
-      if (page === "pass") mp.className = "actif";
+      var mp = el("a", { href: racine + "profil/index.html#pass", texte: "Mon pass" });
+      if (page === "profil") mp.className = "actif";
       nav.appendChild(mp);
     }
     if (acces && acces.role === "prof") {
@@ -160,8 +160,10 @@
     var outils = el("div", { class: "tools" });
     if (acces) {
       var nom = ((acces.prenom || "") + " " + (acces.nom || "")).trim() || (acces.role === "prof" ? "Prof" : "");
-      outils.appendChild(el("span", { class: "qui", style: "--c: " + (acces.role === "prof" ? "var(--accent)" : couleurVar(acces.classe)) },
-        [el("i"), el("span", { texte: nom })]));
+      var qui = el("span", { class: "qui", style: "--c: " + (acces.role === "prof" ? "var(--accent)" : couleurVar(acces.classe)) },
+        [el("i"), el("span", { texte: nom })]);
+      outils.appendChild(qui);
+      if (acces.role === "eleve" && window.TH_BULLE) window.TH_BULLE(qui, acces);
       var out = el("button", { class: "btn", type: "button", texte: "Déconnexion" });
       out.addEventListener("click", async function () {
         await TH.deconnexion(); location.href = racine + "connexion/index.html";
@@ -264,8 +266,8 @@
       if (s.statut === "ferme") puces.push(el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" + (s.ouvre_le && new Date(s.ouvre_le) > new Date() ? " · ouvre le " + new Date(s.ouvre_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") }));
       else if (s.statut === "revision") puces.push(el("span", { class: "pa-statut", texte: "Révision · sans points" }));
       if (s.gagne != null) puces.push(el("span", { class: "pa-statut gagne", texte: "✓ +" + s.gagne + " pts" }));
-      else if (s.statut === "ouvert") puces.push(el("span", { class: "pa-statut pts", texte: s.type === "activite" ? "+" + s.points + (s.bonus_max ? " à " + (s.points + s.bonus_max) : "") + " pts" : "Entraînement · +" + s.points + " pts" }));
-      return el("div", { class: "res-statut" }, puces);
+      else if (s.type !== "activite" && s.statut === "ouvert") puces.push(el("span", { class: "pa-statut", texte: "Entraînement" }));
+      return puces.length ? el("div", { class: "res-statut" }, puces) : null;
     }
     function etatRessource(r) {
       var p = progression[r.classe + "/" + r.fichier];
@@ -407,7 +409,7 @@
       if (acces.role !== "prof" && acces.role !== "collegue") { location.replace(racine + "index.html"); return; }
       if (window.TH_PROF) window.TH_PROF(acces);
     }
-    if (page === "pass" && window.TH_PAGE_PASS) window.TH_PAGE_PASS(acces);
+    if (page === "profil" && window.TH_PAGE_PROFIL) window.TH_PAGE_PROFIL(acces);
     if (window.TH_PRESENCE && acces.role === "eleve" && page !== "voir") window.TH_PRESENCE.demarrer(acces);
     if (page === "voir" && window.TH_VOIR) window.TH_VOIR(acces);
   }
