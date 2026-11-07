@@ -37,7 +37,7 @@
       ecouter(document);
       document.addEventListener("visibilitychange", function () { envoyer(true); });
       setInterval(function () { envoyer(false); }, 5000);
-      envoyer(true);
+      setTimeout(function () { envoyer(true); }, 2500);   // après le chargement, pour ne pas le ralentir
     },
     page: function (nom) { page = nom; envoyer(true); },
     // Pour les ressources affichées dans un cadre (voir.html) : leurs actions comptent aussi

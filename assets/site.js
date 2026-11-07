@@ -407,21 +407,15 @@
     window.addEventListener("hashchange", function () { actif = ongletDepuisHash(); dessinerOnglets(); afficher(); });
     dessinerOnglets(); afficher();
 
-    // Progression de l'élève (affichée sur les cartes)
-    if (acces.role === "eleve") {
-      try {
-        var s = TH.session();
-        var lignes = await TH.rest("progression?select=ressource,avancement,score,termine&eleve=eq." + s.user.id);
-        lignes.forEach(function (l) { progression[l.ressource] = l; });
-        afficher();
-      } catch (e) {}
-    }
-    if (acces.role === "eleve" || acces.role === "prof") {
-      try {
-        statuts = (await TH.rpc("mes_activites")) || {};
-        afficher();
-      } catch (e) {}
-    }
+    // Progression de l'élève et statut des activités : chargés en parallèle, un seul affichage
+    var s = TH.session();
+    var r = await Promise.all([
+      acces.role === "eleve" ? TH.rest("progression?select=ressource,avancement,score,termine&eleve=eq." + s.user.id).catch(function () { return []; }) : [],
+      acces.role === "eleve" || acces.role === "prof" ? TH.rpc("mes_activites").catch(function () { return {}; }) : {}
+    ]);
+    (r[0] || []).forEach(function (l) { progression[l.ressource] = l; });
+    statuts = r[1] || {};
+    afficher();
   }
 
   /* ---------- Démarrage ---------- */

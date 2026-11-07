@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#09090b">
 <title>Ressource · Techno-Hangar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/pass.css?v=4">
 <style>
@@ -149,7 +149,7 @@ window.TH_VOIR = async function (acces) {
       var s2 = ((await TH.rpc("mes_activites")) || {})[r];
       if (!s2 || s2.gagne == null) return;
       statut = s2;
-      try { sessionStorage.removeItem("th-equip"); } catch (e) {}
+      try { sessionStorage.removeItem("th-equip"); sessionStorage.removeItem("th-pass"); } catch (e) {}
       if (s2.gagne > 0) toast("Activité terminée : <b>+" + s2.gagne + " pts</b> pour ton pass !");
       else toast("Activité terminée, mais un peu trop vite : ton professeur vérifiera avant de valider tes points.");
     } catch (e) {}
@@ -213,7 +213,7 @@ window.TH_VOIR = async function (acces) {
     enregistrer();
     TH.rpc("entrainement_valider", { p_ressource: r, p_score: ev.data.score == null ? null : Number(ev.data.score) }).then(function (x) {
       if (!x) return;
-      try { sessionStorage.removeItem("th-equip"); } catch (e) {}
+      try { sessionStorage.removeItem("th-equip"); sessionStorage.removeItem("th-pass"); } catch (e) {}
       if (x.ok && x.points > 0) toast("Bravo : <b>+" + x.points + " pts</b> · aujourd'hui " + x.jour + " / " + x.plafond);
       else if (x.ok) toast("Plafond du jour atteint (" + x.plafond + " pts). Reviens demain pour gagner encore des points !");
       else if (x.raison === "trop_tot") toast("Points déjà comptés il y a peu : refais-la encore un peu plus tard.");
@@ -227,8 +227,8 @@ window.TH_VOIR = async function (acces) {
   });
 };
 </script>
-<script src="assets/presence.js?v=1"></script>
-<script src="assets/pass.js?v=5"></script>
-<script src="assets/site.js?v=7"></script>
+<script src="assets/presence.js?v=2"></script>
+<script src="assets/pass.js?v=6"></script>
+<script src="assets/site.js?v=8"></script>
 </body>
 </html>

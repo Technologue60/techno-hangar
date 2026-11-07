@@ -78,9 +78,13 @@
   function charger(eleve, force) {
     var k = eleve || "moi";
     if (caches[k] && !force) return caches[k];
-    caches[k] = TH.rpc("mon_pass", eleve ? { p_eleve: eleve } : {}).catch(function (e) { caches[k] = null; throw e; });
+    caches[k] = TH.rpc("mon_pass", eleve ? { p_eleve: eleve } : {}).then(function (p) {
+      if (!eleve) try { sessionStorage.setItem("th-pass", JSON.stringify(p)); } catch (e) {}
+      return p;
+    }).catch(function (e) { caches[k] = null; throw e; });
     return caches[k];
   }
+  function passEnCache() { try { return JSON.parse(sessionStorage.getItem("th-pass") || "null"); } catch (e) { return null; } }
   function trouver(p, id) { return (p.recompenses || []).filter(function (r) { return r.id === id; })[0]; }
   function saisonCourante(p) { return (p.saisons || []).filter(function (s) { return s.id === p.courante; })[0]; }
 
@@ -99,10 +103,12 @@
       pts.textContent = nb(d.total) + " pts"; pts.hidden = false;
       lien.title = "Mon profil" + (d.titre ? " · " + d.titre : "");
     }
-    try { var c = JSON.parse(sessionStorage.getItem("th-equip") || "null"); if (c) maj(c); } catch (e) {}
-    TH.rpc("mon_equipement").then(function (d) { try { sessionStorage.setItem("th-equip", JSON.stringify(d)); } catch (e) {} maj(d); }).catch(function () { pts.hidden = true; });
+    var c = null;
+    try { c = JSON.parse(sessionStorage.getItem("th-equip") || "null"); if (c) maj(c); } catch (e) {}
+    var frais = c && c._t && Date.now() - c._t < 5 * 60000;
+    if (!frais) TH.rpc("mon_equipement").then(function (d) { d._t = Date.now(); try { sessionStorage.setItem("th-equip", JSON.stringify(d)); } catch (e) {} maj(d); }).catch(function () { pts.hidden = true; });
   };
-  function oublierBulle() { try { sessionStorage.removeItem("th-equip"); } catch (e) {} }
+  function oublierBulle() { try { sessionStorage.removeItem("th-equip"); sessionStorage.removeItem("th-pass"); } catch (e) {} }
 
   /* ---------- Une case de palier (la récompense est visible directement) ---------- */
   function casePalier(p, pl, saison, prochain, nouveau) {
@@ -339,6 +345,8 @@
     if (acces.role === "eleve") {
       grille.parentNode.insertBefore(zPass, grille.nextSibling);
       colonne.appendChild(zLigne);
+      var dejaVu = passEnCache();
+      if (dejaVu) carteAccueil(zPass, dejaVu);
       charger().then(function (p) { carteAccueil(zPass, p); }).catch(function () {});
       enLigne(zLigne);
     }
