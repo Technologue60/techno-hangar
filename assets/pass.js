@@ -95,7 +95,7 @@
     zone.parentNode.replaceChild(lien, zone);
     function maj(d) {
       if (!d) return;
-      var nouv = avatar(d.avatar, 26, acces.prenom); lien.replaceChild(nouv, lien.firstChild);
+      var nouv = cadre(d.avatar, 26, acces.prenom, d.ornement); lien.replaceChild(nouv, lien.firstChild);
       pts.textContent = nb(d.total) + " pts"; pts.hidden = false;
       lien.title = "Mon profil" + (d.titre ? " · " + d.titre : "");
     }
@@ -158,9 +158,13 @@
   }
   function remplirFiche(base, d) {
     fiche.innerHTML = "";
+    var orn = d && d.ornement && d.ornement.style, bnr = d && d.banniere && d.banniere.style;
+    fiche.className = "pa-fiche vue" + (orn ? " orn-" + orn : "");
+    if (bnr) fiche.appendChild(el("span", { class: "pf-fond bn bn-" + bnr }));
+    if (orn) { fiche.appendChild(el("span", { class: "pf-coin hg" })); fiche.appendChild(el("span", { class: "pf-coin hd" })); fiche.appendChild(el("span", { class: "pf-coin bg" })); fiche.appendChild(el("span", { class: "pf-coin bd" })); }
     var av = (d && d.avatar) || base.avatar, ti = d && !d.simple ? d.titre : (base.titre ? { nom: base.titre, rarete: base.titre_rarete || "commun" } : null);
     var tete = el("div", { class: "pf-tete" }, [
-      avatar(av, 54, base.prenom),
+      cadre(av, 54, base.prenom, orn),
       el("div", { class: "pf-id" }, [
         el("div", { class: "pf-nom" }, [document.createTextNode(base.prenom + " " + base.initiale + "."),
           d && d.saison ? el("span", { class: "pf-niveau", texte: "Palier " + d.saison.palier }) : null]),
@@ -178,6 +182,7 @@
         el("div", { class: "pf-barre" }, [el("i", { style: "width:" + pct + "%" })])
       ]));
     }
+    if (d.vitrine && d.vitrine.length) fiche.appendChild(el("div", { class: "pf-vitrine" }, d.vitrine.map(function (b) { return badge(b, 30); })));
     fiche.appendChild(el("div", { class: "pf-stats" }, [
       el("span", {}, [el("b", { texte: "🔥 " + d.serie + " j" }), el("small", { texte: "série" })]),
       el("span", {}, [el("b", { texte: "🏅 " + d.recompenses }), el("small", { texte: "récompenses" })]),
@@ -342,7 +347,38 @@
   };
 
   /* =================== Page « Mon profil » =================== */
-  var ONGLETS = [["pass", "Pass"], ["activites", "Activités"], ["quiz", "Question du jour"], ["collection", "Collection"], ["points", "Points"]];
+  var REGLES = {
+    activites: ["Activités", function (n) { return n === 0 ? "Offert" : "Terminer " + n + " activité" + (n > 1 ? "s" : ""); }],
+    sans_faute: ["Sans faute", function (n) { return "Obtenir 20/20 à " + n + " activité" + (n > 1 ? "s" : ""); }],
+    points: ["Points", function (n) { return "Atteindre " + nb(n) + " points"; }],
+    quiz_justes: ["Question du jour", function (n) { return n + " bonne" + (n > 1 ? "s" : "") + " réponse" + (n > 1 ? "s" : "") + " à la question du jour"; }],
+    serie: ["Séries", function (n) { return "Série de " + n + " jours à la question du jour"; }],
+    entrainements: ["Entraînement", function (n) { return n + " entraînement" + (n > 1 ? "s" : "") + " réussi" + (n > 1 ? "s" : ""); }],
+    paliers: ["Pass", function (n) { return "Débloquer " + n + " palier" + (n > 1 ? "s" : "") + " du pass"; }],
+    saisons: ["Saisons", function (n) { return "Compléter " + n + " saison" + (n > 1 ? "s" : "") + " à 100 %"; }]
+  };
+  function regleTexte(r) {
+    if (!r || !r.type) return null;
+    var g = REGLES[r.type]; return g ? g[1](Number(r.seuil) || 0) : null;
+  }
+  function conditionTexte(r) {
+    if (r.condition === "auto") return regleTexte(r.regle) || "Automatique";
+    return r.condition === "pass" ? "Dans le pass" : r.condition === "ressources" ? "En terminant certaines activités" : "Donné par le prof";
+  }
+  // Avatar dans son cadre (ornement)
+  function cadre(a, taille, prenom, orn) {
+    var c = el("span", { class: "orn-cadre" + (orn ? " orn-" + orn : ""), style: "--t:" + taille + "px" }, [avatar(a, taille, prenom)]);
+    return c;
+  }
+  // Badge hexagonal
+  function badge(b, taille, verrou) {
+    var n = el("span", { class: "bdg r-" + ((b && b.rarete) || "commun") + (verrou ? " verrou" : ""), style: "--t:" + (taille || 44) + "px", title: b ? b.nom : "" },
+      [el("span", { class: "bdg-in", texte: verrou ? "🔒" : ((b && b.symbole) || "★") })]);
+    return n;
+  }
+  function apercuBanniere(style, h) { return el("span", { class: "bn bn-" + (style || "atelier") + " bn-mini", style: "height:" + (h || 56) + "px" }); }
+
+  var ONGLETS = [["pass", "Pass"], ["badges", "Badges"], ["collection", "Collection"], ["activites", "Activités"], ["points", "Points"]];
   window.TH_PAGE_PROFIL = async function (acces) {
     var zone = document.getElementById("profil");
     var q = new URLSearchParams(location.search);
@@ -360,9 +396,10 @@
       document.title = "Profil de " + eleve.prenom + " · Techno-Hangar";
     }
     var onglet = (location.hash || "").replace("#", "");
+    if (onglet === "quiz" || onglet === "collection-badges") onglet = "badges";
     if (!ONGLETS.some(function (o) { return o[0] === onglet; })) onglet = "pass";
     var vueSaison = null, ongletColl = "avatar";
-    var donnees = { pass: null, quiz: null, acts: null, prog: null };
+    var D = { pass: null, quiz: null, acts: {}, prog: [] };
 
     function erreur(e) {
       zone.innerHTML = "";
@@ -376,53 +413,62 @@
         TH.rpc("activites_eleve", id ? { p_eleve: id } : {}).catch(function () { return {}; }),
         TH.rest("progression?select=ressource,avancement,score,termine,maj_le&eleve=eq." + (id || (TH.session() || { user: {} }).user.id)).catch(function () { return []; })
       ]);
-      donnees = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [] };
+      D = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [] };
     }
+    var rec = function (id) { return trouver(D.pass, id); };
+    var possede = function (id) { return (D.pass.obtenues || []).indexOf(id) >= 0; };
 
-    function tuile(titre, valeur, sous, cle, lienOnglet) {
-      var v = el("b");
-      if (typeof valeur === "number") compteur(v, valeur, moiMeme && cle ? cle : null); else v.textContent = valeur;
-      var t = el(lienOnglet ? "a" : "div", { class: "pa-tuile", href: lienOnglet ? "#" + lienOnglet : null }, [el("span", { class: "pa-sur", texte: titre }), v, sous ? el("small", { texte: sous }) : null]);
-      if (lienOnglet) t.onclick = function (e) { e.preventDefault(); aller(lienOnglet); };
-      if (!lienOnglet) t.removeAttribute("href");
-      return t;
+    /* ----- Couverture façon Clash Royale ----- */
+    function couverture() {
+      var p = D.pass, s = saisonCourante(p) || p.saisons[0];
+      var av = rec(p.avatar), ti = rec(p.titre), orn = rec(p.ornement), bn = rec(p.banniere);
+      var paliers = (p.stats && p.stats.paliers) || 0;
+      var classeNom = ((window.TH_CLASSES || []).filter(function (c) { return c.id === eleve.classe; })[0] || {}).nom || "";
+      var cov = el("section", { class: "pr-cover bn bn-" + ((bn && bn.style) || "atelier") });
+      var cad = cadre(av, 112, eleve.prenom, orn && orn.style);
+      cad.appendChild(el("span", { class: "pr-niveau", title: "Paliers débloqués", texte: paliers }));
+      if (moiMeme) { cad.classList.add("pa-cliquable"); cad.title = "Changer d'avatar"; cad.onclick = function () { ongletColl = "avatar"; aller("collection"); }; }
+      var trophee = el("b");
+      cov.appendChild(el("div", { class: "pr-haut" }, [
+        cad,
+        el("div", { class: "pr-id" }, [
+          el("h1", { texte: (eleve.prenom || "") + " " + (eleve.nom || "") }),
+          ti ? el("div", { class: "pr-titre r-" + ti.rarete, texte: ti.nom }) : el("div", { class: "pr-titre vide-t", texte: moiMeme ? "Choisis un titre dans ta collection" : "Sans titre" }),
+          el("div", { class: "pr-classe", texte: classeNom })
+        ]),
+        el("div", { class: "pr-trophees" }, [
+          el("div", { class: "pr-tr" }, [el("span", { class: "pr-tr-ico", texte: "🏆" }), compteur(trophee, p.total, moiMeme ? "total" : null), el("small", { texte: "points" })]),
+          s ? el("div", { class: "pr-saison-mini" }, [el("small", { texte: s.nom.split("·")[0].trim() + " · " + Math.round(s.points / s.objectif * 100) + " %" }), barreSaison(s)]) : null,
+          D.quiz ? el("div", { class: "pr-serie", texte: "🔥 " + (D.quiz.serie || 0) + " j de série" }) : null
+        ])
+      ]));
+      // Vitrine de badges (5 emplacements)
+      var vit = el("div", { class: "pr-vitrine" });
+      var liste = (p.vitrine || []).map(rec).filter(Boolean);
+      for (var k = 0; k < 5; k++) {
+        var b = liste[k];
+        var slot = el(moiMeme ? "button" : "span", { class: "pr-slot" + (b ? "" : " vide"), type: moiMeme ? "button" : null, title: b ? b.nom + " · " + (regleTexte(b.regle) || "") : (moiMeme ? "Ajouter un badge" : "") },
+          [b ? badge(b, 54) : el("span", { class: "pr-plus", texte: moiMeme ? "+" : "" })]);
+        if (!moiMeme) slot.removeAttribute("type");
+        if (moiMeme) slot.onclick = function () { aller("badges"); };
+        vit.appendChild(slot);
+      }
+      var nbB = (p.recompenses || []).filter(function (r) { return r.type === "badge"; }).length;
+      var nbO = (p.recompenses || []).filter(function (r) { return r.type === "badge" && possede(r.id); }).length;
+      cov.appendChild(el("div", { class: "pr-bas" }, [
+        el("div", {}, [el("div", { class: "pr-lab", texte: "Vitrine · " + nbO + " / " + nbB + " badges" }), vit]),
+        moiMeme ? el("button", { class: "btn pr-perso", type: "button", texte: "🎨 Personnaliser" }) : null
+      ]));
+      var bp = cov.querySelector(".pr-perso"); if (bp) bp.onclick = function () { ongletColl = "banniere"; aller("collection"); };
+      return cov;
     }
 
     function dessiner() {
-      var p = donnees.pass, qz = donnees.quiz;
       zone.innerHTML = "";
-      var s = saisonCourante(p) || p.saisons[0];
-      var av = trouver(p, p.avatar), ti = trouver(p, p.titre);
-      var classeNom = ((window.TH_CLASSES || []).filter(function (c) { return c.id === eleve.classe; })[0] || {}).nom || "";
-
       if (!moiMeme) zone.appendChild(el("div", { class: "pa-vue-prof" }, [
         document.createTextNode("Vue prof · profil de " + eleve.prenom + " " + eleve.nom + " (lecture seule)"),
         el("a", { class: "btn", href: racine() + "prof/index.html#pass", texte: "← Espace prof" })]));
-
-      // En-tête
-      var bAv = avatar(av, 84, eleve.prenom);
-      if (moiMeme) { bAv.classList.add("pa-cliquable"); bAv.title = "Changer d'avatar"; bAv.onclick = function () { ongletColl = "avatar"; aller("collection"); }; }
-      zone.appendChild(el("div", { class: "pa-profil pa-apparait" }, [
-        bAv,
-        el("div", { class: "pa-qui-txt" }, [
-          el("h1", { texte: (eleve.prenom || "") + " " + (eleve.nom || "") }),
-          el("div", { class: "pa-titre-eq" + (ti ? " r-" + ti.rarete : "") }, [ti ? puceRarete(ti.rarete) : null, document.createTextNode(ti ? " " + ti.nom : "Pas encore de titre")]),
-          el("div", { class: "aide", texte: classeNom })
-        ])
-      ]));
-
-      // Tuiles de résumé
-      var nbAct = Object.keys(donnees.acts).filter(function (k) { return donnees.acts[k].type === "activite"; }).length;
-      var faites = donnees.prog.filter(function (x) { return x.termine; }).length;
-      var tuiles = el("div", { class: "pa-tuiles" }, [
-        tuile("Points au total", p.total, null, "total", "points"),
-        tuile(s ? s.nom.split("·")[0].trim() : "Saison", s ? s.points : 0, s ? "sur " + nb(s.objectif) + " · " + Math.round(s.points / s.objectif * 100) + " %" : "", s ? "saison-" + s.id : null, "pass"),
-        tuile("Activités terminées", faites, nbAct ? "sur " + nbAct : "", null, "activites"),
-        tuile("Question du jour", qz ? (qz.serie || 0) + " j 🔥" : "—", qz ? "série en cours" : "", null, "quiz")
-      ]);
-      zone.appendChild(tuiles); cascade(tuiles);
-
-      // Onglets
+      zone.appendChild(couverture());
       var bar = el("div", { class: "onglets pa-onglets", role: "tablist" });
       ONGLETS.forEach(function (o) {
         var b = el("button", { type: "button", class: "onglet" + (o[0] === onglet ? " actif" : ""), texte: o[1] });
@@ -432,7 +478,7 @@
       zone.appendChild(bar);
       var corps = el("div", { class: "pa-corps pa-apparait" });
       zone.appendChild(corps);
-      ({ pass: vuePass, activites: vueActivites, quiz: vueQuiz, collection: vueCollection, points: vuePoints })[onglet](corps, p, qz);
+      ({ pass: vuePass, badges: vueBadges, collection: vueCollection, activites: vueActivites, points: vuePoints })[onglet](corps, D.pass);
     }
     function aller(o) {
       onglet = o;
@@ -441,8 +487,9 @@
       var b = document.querySelector(".pa-onglets"); if (b && b.getBoundingClientRect().top < 0) b.scrollIntoView({ behavior: CALME ? "auto" : "smooth" });
     }
     window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (h !== onglet && ONGLETS.some(function (o) { return o[0] === h; })) aller(h); });
+    async function recharger() { oublierBulle(); D.pass = await charger(cible, true); dessiner(); majBulle(); }
 
-    /* ----- Onglet Pass ----- */
+    /* ----- Onglet Pass : piste verticale façon Brawl Stars ----- */
     function vuePass(corps, p) {
       if (!vueSaison) vueSaison = p.courante || (p.saisons[0] || {}).id;
       var bar = el("div", { class: "pa-choix pa-saisons" });
@@ -455,107 +502,133 @@
       corps.appendChild(bar);
       var sv = p.saisons.filter(function (x) { return x.id === vueSaison; })[0];
       if (!sv) return;
-      var info = sv.statut === "a_venir"
-        ? "Cette saison commence le " + dateCourte(sv.debut) + ". " + (sv.points > 0 ? "Les " + nb(sv.points) + " pts de réserve débloqueront ces récompenses dès l'ouverture." : "Les points au-delà de la saison en cours sont gardés en réserve.")
-        : sv.statut === "terminee" ? "Saison terminée (" + dateCourte(sv.debut) + " → " + dateCourte(sv.fin) + ")."
-        : "Du " + dateCourte(sv.debut) + " au " + dateCourte(sv.fin) + " · objectif de la saison : " + nb(sv.objectif) + " pts.";
-      var score = el("b");
-      corps.appendChild(el("div", { class: "pa-saison" }, [
-        el("div", { class: "pa-saison-tete" }, [el("h2", { texte: sv.nom }),
-          el("span", { class: "pa-score" }, [compteur(score, sv.points), document.createTextNode(" / " + nb(sv.objectif) + " pts")])]),
-        barreSaison(sv),
-        el("p", { class: "aide", texte: info }),
-        sv.id === p.courante && p.reserve > 0 ? el("p", { class: "pa-reserve", texte: "🎒 Réserve : " + nb(p.reserve) + " pts gardés pour la saison suivante (une saison d'avance au maximum)." }) : null
+      var info = sv.statut === "a_venir" ? "Commence le " + dateCourte(sv.debut) + (sv.points > 0 ? " · " + nb(sv.points) + " pts de réserve t'attendent" : "")
+        : sv.statut === "terminee" ? "Terminée (" + dateCourte(sv.debut) + " → " + dateCourte(sv.fin) + ")"
+        : "Du " + dateCourte(sv.debut) + " au " + dateCourte(sv.fin);
+      var sc = el("b");
+      corps.appendChild(el("div", { class: "vp-tete" }, [
+        el("div", {}, [el("h2", { texte: sv.nom }), el("small", { texte: info })]),
+        el("div", { class: "vp-score" }, [compteur(sc, sv.points), el("span", { texte: " / " + nb(sv.objectif) + " pts" })]),
+        sv.id === p.courante && p.reserve > 0 ? el("div", { class: "pa-reserve", texte: "🎒 " + nb(p.reserve) + " pts en réserve pour la saison suivante" }) : null
       ]));
       var nouveaux = moiMeme && sv.id === p.courante ? nouveauxPaliers(p, sv, "moi") : [];
-      var prochain = (sv.paliers || []).filter(function (x) { return !x.debloque && !x.en_attente; })[0];
-      var chemin = el("div", { class: "pa-chemin" });
-      sv.paliers.forEach(function (pl) { chemin.appendChild(casePalier(p, pl, sv, sv.statut === "en_cours" && pl === prochain, nouveaux.indexOf(pl.rang) >= 0)); });
-      if (!sv.paliers.length) chemin.appendChild(el("p", { class: "aide", texte: "Aucun palier pour cette saison." }));
-      corps.appendChild(chemin);
-      cascade(chemin);
-      if (nouveaux.length) setTimeout(function () { confettis(chemin.querySelector(".nouveau")); }, 600);
-      corps.appendChild(el("p", { class: "aide pa-jour", texte: "Entraînement et jeux aujourd'hui : " + nb(p.entrainement_jour) + " / " + nb(p.plafond_jour) + " pts (plafond quotidien : mieux vaut un peu chaque jour)." }));
+      var piste = el("div", { class: "vp-piste" });
+      var prec = 0, marque = false;
+      (sv.paliers || []).forEach(function (pl, k) {
+        var r = rec(pl.recompense) || { nom: "—", type: "titre", rarete: "commun" };
+        var etat = pl.debloque ? "obtenu" : pl.en_attente ? "attente" : "avenir";
+        // segment de piste entre le palier précédent et celui-ci
+        var seg = el("i");
+        var pctSeg = sv.points >= pl.seuil ? 100 : sv.points <= prec ? 0 : (sv.points - prec) / (pl.seuil - prec) * 100;
+        var ligne = el("div", { class: "vp-ligne " + etat + " r-" + r.rarete + (nouveaux.indexOf(pl.rang) >= 0 ? " nouveau" : "") + (sv.points > pl.seuil ? " au-dela" : "") });
+        ligne.appendChild(el("div", { class: "vp-seuil" }, [el("b", { texte: nb(pl.seuil) }), el("small", { texte: "pts" })]));
+        ligne.appendChild(el("div", { class: "vp-rail" }, [el("span", { class: "vp-seg" }, [seg]), el("span", { class: "vp-noeud", texte: etat === "obtenu" ? "✓" : pl.rang })]));
+        var visuel = r.type === "avatar" ? avatar(r, 52) : r.type === "badge" ? badge(r, 52) : r.type === "ornement" ? cadre(null, 40, "?", r.style)
+          : r.type === "banniere" ? apercuBanniere(r.style, 44) : el("span", { class: "pa-titre-ico", texte: r.nom === "???" ? "?" : "“ ”" });
+        var types = { avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" };
+        var bas = etat === "obtenu" ? "✓ Obtenu" : etat === "attente" ? "🔒 Dès le " + dateCourte(sv.debut) : sv.statut === "a_venir" ? nb(pl.seuil) + " pts" : "Encore " + nb(Math.max(0, pl.seuil - sv.points)) + " pts";
+        ligne.appendChild(el("a", { class: "vp-carte", href: "#collection", title: "Voir la collection" }, [
+          el("span", { class: "vp-vis" }, [visuel]),
+          el("span", { class: "vp-txt" }, [el("b", { texte: r.nom }), el("small", { texte: (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), el("span", { class: "vp-bas", texte: bas })])
+        ]));
+        ligne.querySelector(".vp-carte").onclick = function (e) { e.preventDefault(); ongletColl = r.type; aller("collection"); };
+        piste.appendChild(ligne);
+        (function (i, v) { if (CALME) { i.style.height = v + "%"; return; } setTimeout(function () { i.style.height = v + "%"; }, 200 + k * 90); })(seg, pctSeg);
+        // marqueur « tu es ici » juste avant le premier palier non atteint
+        if (!marque && sv.statut === "en_cours" && !pl.debloque) {
+          marque = true;
+          var m = el("div", { class: "vp-ici" }, [el("span"),
+            el("span", { class: "vp-ici-rail" }, [cadre(rec(p.avatar), 30, eleve.prenom, rec(p.ornement) && rec(p.ornement).style)]),
+            el("span", { class: "vp-ici-txt", texte: (moiMeme ? "Tu es ici · " : "Ici · ") + nb(sv.points) + " pts" })]);
+          piste.insertBefore(m, ligne);
+        }
+        prec = pl.seuil;
+      });
+      if (!(sv.paliers || []).length) piste.appendChild(el("p", { class: "aide", texte: "Aucun palier pour cette saison." }));
+      corps.appendChild(piste);
+      cascade(piste);
+      var ici = piste.querySelector(".vp-ici");
+      if (ici && moiMeme) setTimeout(function () { var r = ici.getBoundingClientRect(); if (r.top > innerHeight * .7) ici.scrollIntoView({ behavior: CALME ? "auto" : "smooth", block: "center" }); }, 900);
+      if (nouveaux.length) setTimeout(function () { confettis(piste.querySelector(".nouveau")); }, 700);
+      corps.appendChild(el("p", { class: "aide pa-jour", texte: "Entraînement et jeux aujourd'hui : " + nb(p.entrainement_jour) + " / " + nb(p.plafond_jour) + " pts." }));
     }
 
-    /* ----- Onglet Activités ----- */
-    function vueActivites(corps) {
-      var prog = {}; donnees.prog.forEach(function (x) { prog[x.ressource] = x; });
-      var res = (window.CATALOGUE || []).filter(function (r) { return r.classe === eleve.classe && r.fichier && r.en_ligne && !/^https?:/.test(r.fichier) && r.type !== "lien"; });
-      if (!res.length) { corps.appendChild(el("div", { class: "vide", texte: "Aucune ressource en ligne pour l'instant." })); return; }
-      var parSeq = {}, ordre = [];
-      res.forEach(function (r) { var k = r.sequence || "Autres"; if (!parSeq[k]) { parSeq[k] = []; ordre.push(k); } parSeq[k].push(r); });
-      ordre.forEach(function (seq) {
-        corps.appendChild(el("h3", { class: "pa-seq", texte: seq }));
-        var l = el("div", { class: "pa-acts" });
-        parSeq[seq].forEach(function (r) {
-          var id = r.classe + "/" + r.fichier, g = prog[id], a = donnees.acts[id];
-          var pct = g ? (g.termine ? 100 : Math.round(Number(g.avancement) || 0)) : 0;
-          var etat = g ? (g.termine ? "Terminé" + (g.score != null ? " · " + String(g.score).replace(".", ",") + "/20" : "") : (g.avancement != null ? pct + " %" : "Commencé")) : "Pas commencé";
-          var puce = !a ? null : a.statut === "ferme" ? el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" })
-            : a.gagne != null ? el("span", { class: "pa-statut gagne", texte: (a.suspect ? "⏳ " : "✓ +") + (a.suspect ? "en attente du prof" : a.gagne + " pts") })
-            : a.statut === "revision" ? el("span", { class: "pa-statut", texte: "Révision" })
-            : null;
-          var i = el("i");
-          var ligne = el(moiMeme ? "a" : "div", { class: "pa-act" + (g && g.termine ? " fini" : ""), href: moiMeme ? racine() + "voir.html?r=" + encodeURIComponent(id) : null }, [
-            el("span", { class: "pa-act-t" }, [el("b", { texte: r.titre }), el("small", { texte: etat + (g && g.maj_le ? " · " + new Date(g.maj_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") })]),
-            el("span", { class: "pa-act-b" }, [i]),
-            puce
+    /* ----- Onglet Badges ----- */
+    function vueBadges(corps, p) {
+      var badges = (p.recompenses || []).filter(function (r) { return r.type === "badge"; });
+      var vitrine = (p.vitrine || []).slice();
+      var obt = badges.filter(function (b) { return possede(b.id); }).length;
+      corps.appendChild(el("div", { class: "bg-tete" }, [
+        el("div", {}, [el("h2", { texte: obt + " / " + badges.length + " badges" }),
+          el("small", { texte: moiMeme ? "Clique sur un badge obtenu pour l'ajouter ou le retirer de ta vitrine (5 maximum)." : "Badges obtenus par l'élève." })]),
+        el("div", { class: "pa-barre bg-barre" }, [el("i", { style: "width:" + (badges.length ? obt / badges.length * 100 : 0) + "%" })])
+      ]));
+      var groupes = {}, ordre = [];
+      badges.forEach(function (b) {
+        var k = b.regle && REGLES[b.regle.type] ? REGLES[b.regle.type][0] : (b.condition === "pass" ? "Pass" : "Spéciaux");
+        if (!groupes[k]) { groupes[k] = []; ordre.push(k); } groupes[k].push(b);
+      });
+      ordre.forEach(function (k) {
+        corps.appendChild(el("h3", { class: "pa-seq", texte: k }));
+        var g = el("div", { class: "bg-grille" });
+        groupes[k].forEach(function (b) {
+          var ok = possede(b.id), dans = vitrine.indexOf(b.id) >= 0;
+          var val = b.regle && p.stats ? Number(p.stats[b.regle.type]) || 0 : null, seuil = b.regle ? Number(b.regle.seuil) || 0 : null;
+          var prog = !ok && val != null && seuil ? el("span", { class: "bg-prog" }, [el("span", { class: "pa-act-b" }, [el("i", { style: "width:" + Math.min(100, val / seuil * 100) + "%" })]),
+            el("small", { texte: nb(Math.min(val, seuil)) + " / " + nb(seuil) })]) : null;
+          var c = el(ok && moiMeme ? "button" : "div", { class: "bg-carte r-" + b.rarete + (ok ? " ok" : "") + (dans ? " vitrine" : ""), type: ok && moiMeme ? "button" : null }, [
+            badge(b, 62, !ok && b.nom === "???"),
+            el("b", { texte: b.nom }),
+            el("small", { texte: regleTexte(b.regle) || conditionTexte(b) }),
+            prog,
+            dans ? el("span", { class: "bg-epingle", texte: "📌 En vitrine" }) : null
           ]);
-          if (!moiMeme) ligne.removeAttribute("href");
-          remplir(i, pct);
-          l.appendChild(ligne);
+          if (!(ok && moiMeme)) c.removeAttribute("type");
+          if (ok && moiMeme) c.onclick = async function () {
+            var v = vitrine.slice(), i = v.indexOf(b.id);
+            if (i >= 0) v.splice(i, 1); else { if (v.length >= 5) v.shift(); v.push(b.id); }
+            c.disabled = true;
+            try { await TH.rpc("vitrine_definir", { p_badges: v }); await recharger(); } catch (e) { c.disabled = false; }
+          };
+          g.appendChild(c);
         });
-        corps.appendChild(l); cascade(l);
+        corps.appendChild(g); cascade(g);
       });
     }
 
-    /* ----- Onglet Question du jour ----- */
-    function vueQuiz(corps, p, qz) {
-      if (!qz) { corps.appendChild(el("div", { class: "vide", texte: "Les statistiques de la question du jour ne sont pas disponibles." })); return; }
-      var g = el("div", { class: "pa-tuiles" }, [
-        tuile("Série en cours", (qz.serie || 0) + " j 🔥", qz.serie ? "réponds chaque jour pour la garder" : "réponds aujourd'hui pour la lancer"),
-        tuile("Meilleure série", (qz.meilleure_serie || 0) + " j", null),
-        tuile("Points question du jour", qz.total, null, moiMeme ? "quiz-total" : null),
-        tuile("Questions jouées", qz.parties || 0, null)
-      ]);
-      corps.appendChild(g); cascade(g);
-      if (moiMeme) corps.appendChild(el("p", { class: "aide", texte: "Le classement de ta classe est sur l'accueil." }));
-    }
-
-    /* ----- Onglet Collection ----- */
+    /* ----- Onglet Collection : avatars, titres, ornements, bannières ----- */
     function vueCollection(corps, p) {
+      var TYPES = [["avatar", "Avatars"], ["titre", "Titres"], ["ornement", "Ornements"], ["banniere", "Bannières"]];
+      if (!TYPES.some(function (t) { return t[0] === ongletColl; })) ongletColl = "avatar";
       var ob = el("div", { class: "pa-choix" });
-      [["avatar", "Avatars"], ["titre", "Titres"]].forEach(function (o) {
+      TYPES.forEach(function (o) {
         var n = (p.recompenses || []).filter(function (r) { return r.type === o[0]; }).length;
-        var k = (p.recompenses || []).filter(function (r) { return r.type === o[0] && (p.obtenues || []).indexOf(r.id) >= 0; }).length;
+        var k = (p.recompenses || []).filter(function (r) { return r.type === o[0] && possede(r.id); }).length;
         var b = el("button", { type: "button", class: ongletColl === o[0] ? "actif" : "", texte: o[1] + " · " + k + "/" + n });
         b.onclick = function () { ongletColl = o[0]; dessiner(); };
         ob.appendChild(b);
       });
       corps.appendChild(ob);
-      if (moiMeme) corps.appendChild(el("p", { class: "aide", texte: "Clique sur un objet débloqué pour l'équiper (il s'affiche à côté de ton prénom pour toute la classe)." }));
-      var grille = el("div", { class: "pa-grille" });
-      var ordre = { commun: 0, rare: 1, epique: 2, legendaire: 3 };
+      var aides = { avatar: "ton portrait, visible par toute la classe", titre: "affiché sous ton nom", ornement: "le cadre autour de ton avatar et de ta fiche quand on te survole", banniere: "le fond de ta page de profil et de ta fiche" };
+      if (moiMeme) corps.appendChild(el("p", { class: "aide", texte: "Clique sur un objet débloqué pour l'équiper : " + aides[ongletColl] + "." }));
+      var grille = el("div", { class: "pa-grille" + (ongletColl === "banniere" ? " larges" : "") });
+      var ordreR = { commun: 0, rare: 1, epique: 2, legendaire: 3 };
       (p.recompenses || []).filter(function (r) { return r.type === ongletColl; })
-        .sort(function (a, b) { return ordre[a.rarete] - ordre[b.rarete]; })
+        .sort(function (a, b) { return ordreR[a.rarete] - ordreR[b.rarete]; })
         .forEach(function (r) {
-          var ok = (p.obtenues || []).indexOf(r.id) >= 0;
-          var equipe = (ongletColl === "avatar" ? p.avatar : p.titre) === r.id;
-          var cond = r.condition === "pass" ? "Dans le pass" : r.condition === "ressources" ? "En terminant certaines activités" : "Donné par le prof";
+          var ok = possede(r.id), equipe = p[ongletColl] === r.id;
+          var vis = ongletColl === "avatar" ? avatar(ok ? r : { symbole: "🔒", couleur: "#2e2e36" }, 54)
+            : ongletColl === "ornement" ? cadre(rec(p.avatar), 48, eleve.prenom, r.style)
+            : ongletColl === "banniere" ? apercuBanniere(r.style, 70)
+            : el("span", { class: "pa-titre-ico", texte: ok ? "“ ”" : "🔒" });
           var b = el("button", { type: "button", class: "pa-objet r-" + r.rarete + (ok ? "" : " verrou") + (equipe ? " equipe" : ""),
-            title: ok ? (equipe ? "Équipé · cliquer pour retirer" : "Équiper") : cond }, [
-            ongletColl === "avatar" ? avatar(ok ? r : { symbole: "🔒", couleur: "#2e2e36" }, 54) : el("span", { class: "pa-titre-ico", texte: ok ? "“ ”" : "🔒" }),
-            el("span", { class: "pa-nom", texte: r.nom }),
-            puceRarete(r.rarete),
-            el("span", { class: "pa-type", texte: ok ? (equipe ? "✓ Équipé" : (moiMeme ? "Équiper" : "Obtenu")) : cond })
+            title: ok ? (equipe ? "Équipé · cliquer pour retirer" : "Équiper") : conditionTexte(r) }, [
+            vis, el("span", { class: "pa-nom", texte: r.nom }), puceRarete(r.rarete),
+            el("span", { class: "pa-type", texte: ok ? (equipe ? "✓ Équipé" : (moiMeme ? "Équiper" : "Obtenu")) : conditionTexte(r) })
           ]);
-          if (ok && moiMeme) b.onclick = function () {
+          if (ok && moiMeme) b.onclick = async function () {
             b.disabled = true; b.classList.add("pa-clic");
-            TH.rpc("equiper", { p_type: ongletColl, p_recompense: equipe ? null : r.id })
-              .then(function () { oublierBulle(); return charger(null, true); })
-              .then(function (np) { donnees.pass = np; dessiner(); majBulle(); })
-              .catch(function () { b.disabled = false; });
+            try { await TH.rpc("equiper", { p_type: ongletColl, p_recompense: equipe ? null : r.id }); await recharger(); } catch (e) { b.disabled = false; }
           };
           if (!moiMeme) b.disabled = true;
           grille.appendChild(b);
@@ -566,26 +639,49 @@
       TH.rpc("mon_equipement").then(function (d) {
         try { sessionStorage.setItem("th-equip", JSON.stringify(d)); } catch (e) {}
         var b = document.querySelector(".pa-bulle");
-        if (b) { b.replaceChild(avatar(d.avatar, 26, acces.prenom), b.firstChild); b.classList.remove("pa-pop"); void b.offsetWidth; b.classList.add("pa-pop"); }
+        if (b) { b.replaceChild(cadre(d.avatar, 26, acces.prenom, d.ornement), b.firstChild); b.classList.remove("pa-pop"); void b.offsetWidth; b.classList.add("pa-pop"); }
       }).catch(function () {});
+    }
+
+    /* ----- Onglet Activités ----- */
+    function vueActivites(corps) {
+      var prog = {}; D.prog.forEach(function (x) { prog[x.ressource] = x; });
+      var res = (window.CATALOGUE || []).filter(function (r) { return r.classe === eleve.classe && r.fichier && r.en_ligne && !/^https?:/.test(r.fichier) && r.type !== "lien"; });
+      if (!res.length) { corps.appendChild(el("div", { class: "vide", texte: "Aucune ressource en ligne pour l'instant." })); return; }
+      var parSeq = {}, ordre = [];
+      res.forEach(function (r) { var k = r.sequence || "Autres"; if (!parSeq[k]) { parSeq[k] = []; ordre.push(k); } parSeq[k].push(r); });
+      ordre.forEach(function (seq) {
+        corps.appendChild(el("h3", { class: "pa-seq", texte: seq }));
+        var l = el("div", { class: "pa-acts" });
+        parSeq[seq].forEach(function (r) {
+          var id = r.classe + "/" + r.fichier, g = prog[id], a = D.acts[id];
+          var pct = g ? (g.termine ? 100 : Math.round(Number(g.avancement) || 0)) : 0;
+          var etat = g ? (g.termine ? "Terminé" + (g.score != null ? " · " + String(g.score).replace(".", ",") + "/20" : "") : (g.avancement != null ? pct + " %" : "Commencé")) : "Pas commencé";
+          var puce = !a ? null : a.statut === "ferme" ? el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" })
+            : a.gagne != null ? el("span", { class: "pa-statut gagne", texte: (a.suspect ? "⏳ " : "✓ +") + (a.suspect ? "en attente du prof" : a.gagne + " pts") })
+            : a.statut === "revision" ? el("span", { class: "pa-statut", texte: "Révision" }) : null;
+          var i = el("i");
+          var ligne = el(moiMeme ? "a" : "div", { class: "pa-act" + (g && g.termine ? " fini" : ""), href: moiMeme ? racine() + "voir.html?r=" + encodeURIComponent(id) : null }, [
+            el("span", { class: "pa-act-t" }, [el("b", { texte: r.titre }), el("small", { texte: etat + (g && g.maj_le ? " · " + new Date(g.maj_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") })]),
+            el("span", { class: "pa-act-b" }, [i]), puce]);
+          if (!moiMeme) ligne.removeAttribute("href");
+          remplir(i, pct);
+          l.appendChild(ligne);
+        });
+        corps.appendChild(l); cascade(l);
+      });
     }
 
     /* ----- Onglet Points ----- */
     function vuePoints(corps, p) {
-      var parSource = {};
-      (p.journal || []).forEach(function (x) { parSource[x.source] = (parSource[x.source] || 0) + x.points; });
-      var g = el("div", { class: "pa-tuiles" }, Object.keys(SOURCES).filter(function (k) { return parSource[k]; }).map(function (k) { return tuile(SOURCES[k], parSource[k], "30 derniers gains"); }));
-      if (g.childNodes.length) { corps.appendChild(g); cascade(g); }
       var t = el("table", { class: "pa-table" });
       (p.journal || []).forEach(function (x) {
         var quoi = x.ressource ? titreRessource(x.ressource) : (SOURCES[x.source] || x.source);
         var note = x.suspect && x.points === 0 ? " · terminé trop vite, en attente du prof" : "";
         t.appendChild(el("tr", {}, [
           el("td", { texte: new Date(x.cree_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) }),
-          el("td", { texte: (SOURCES[x.source] || x.source) }),
-          el("td", { texte: quoi + note }),
-          el("td", { class: "pa-pts", texte: (x.points > 0 ? "+" : "") + x.points })
-        ]));
+          el("td", { texte: (SOURCES[x.source] || x.source) }), el("td", { texte: quoi + note }),
+          el("td", { class: "pa-pts", texte: (x.points > 0 ? "+" : "") + x.points })]));
       });
       if (!(p.journal || []).length) t.appendChild(el("tr", {}, [el("td", { texte: "Termine une activité pour gagner tes premiers points." })]));
       corps.appendChild(t);
@@ -595,5 +691,5 @@
     try { await toutCharger(); dessiner(); } catch (e) { erreur(e); }
   };
 
-  window.TH_PASS = { avatar: avatar, charger: charger, absent: absent, compteur: compteur, remplir: remplir, confettis: confettis };
+  window.TH_PASS = { avatar: avatar, cadre: cadre, badge: badge, charger: charger, absent: absent, compteur: compteur, remplir: remplir, confettis: confettis };
 })();

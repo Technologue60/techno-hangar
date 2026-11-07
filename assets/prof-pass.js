@@ -240,7 +240,8 @@
   }
   function optionsRecompenses() {
     return [["", "— aucune —"]].concat(recompenses.map(function (r) {
-      return [r.id, (r.type === "avatar" ? "🖼 " + (r.symbole || "") + " " : "« ") + r.nom + (r.type === "titre" ? " »" : "") + " · " + RARETES[r.rarete] + (r.classe ? " · " + nomClasse(r.classe) : "")];
+      var pre = { avatar: "🖼 " + (r.symbole || "") + " ", titre: "« ", badge: "⬢ " + (r.symbole || "") + " ", ornement: "◎ Ornement ", banniere: "▭ Bannière " }[r.type] || "";
+      return [r.id, pre + r.nom + (r.type === "titre" ? " »" : "") + " · " + RARETES[r.rarete] + (r.classe ? " · " + nomClasse(r.classe) : "")];
     }));
   }
   async function chargerPaliers() {
@@ -276,15 +277,25 @@
   }
   function chargerRecompenses() {
     var t = $("p-recomp"); vider(t);
-    t.appendChild(th(["Type", "Nom", "Rareté", "Symbole", "Couleur", "Image (facultatif)", "Classe", "Mystère", "Condition", ""]));
+    t.appendChild(th(["Type", "Nom", "Rareté", "Symbole", "Couleur", "Image ou motif", "Classe", "Mystère", "Condition", ""]));
     function ligne(r) {
       var neuf = !r.id;
-      var type = select([["titre", "Titre"], ["avatar", "Avatar"]], r.type || "titre");
+      var type = select([["titre", "Titre"], ["avatar", "Avatar"], ["badge", "Badge"], ["ornement", "Ornement"], ["banniere", "Bannière"]], r.type || "titre");
+      var STYLES = { ornement: [["bronze", "Bronze"], ["argent", "Argent"], ["or", "Or"], ["circuit", "Circuit"], ["givre", "Givre"], ["neon", "Néon"], ["flammes", "Flammes"], ["royal", "Royal"]],
+        banniere: [["atelier", "Atelier"], ["plan", "Plan technique"], ["foret", "Forêt"], ["ocean", "Océan"], ["volcan", "Volcan"], ["circuit", "Circuit"], ["galaxie", "Galaxie"], ["royal", "Trône royal"]] };
+      var sty = el("select");
+      var majStyles = function () { vider(sty); (STYLES[type.value] || []).forEach(function (o) { var x = el("option", { value: o[0], texte: o[1] }); if (o[0] === r.style) x.selected = true; sty.appendChild(x); }); };
+      majStyles();
+      var REG = [["", "— aucune —"], ["activites", "Activités terminées ≥"], ["sans_faute", "Activités à 20/20 ≥"], ["points", "Points au total ≥"], ["quiz_justes", "Bonnes réponses question du jour ≥"],
+        ["serie", "Meilleure série (jours) ≥"], ["entrainements", "Entraînements réussis ≥"], ["paliers", "Paliers du pass ≥"], ["saisons", "Saisons à 100 % ≥"]];
+      var regType = select(REG, (r.condition && r.condition.type) || "");
+      var regSeuil = input({ type: "number", min: "0", value: r.condition && r.condition.seuil != null ? r.condition.seuil : "", class: "pp-n", placeholder: "seuil" });
       var nom = input({ value: r.nom || "", class: "pp-nom", placeholder: "Nom" });
       var rar = select(Object.keys(RARETES).map(function (k) { return [k, RARETES[k]]; }), r.rarete || "commun");
       var sym = input({ value: r.symbole || "", class: "pp-sym", list: "pp-symboles", placeholder: "🤖" });
       var col = input({ type: "color", value: r.couleur || "#5b8cff" });
       var img = input({ value: r.image || "", placeholder: "assets/avatars/x.png", class: "pp-img" });
+      var cellImg = el("td", {}, [img, sty]);
       var cl = select([["", "Toutes"]].concat(classes().map(function (c) { return [c.id, c.court]; })), r.classe || "");
       var mys = input({ type: "checkbox" }); mys.checked = !!r.mystere;
       var cases = el("div", { class: "pp-cases" });
@@ -295,14 +306,22 @@
       });
       var choisies = function () { return [].slice.call(cases.querySelectorAll("input:checked")).map(function (o) { return o.value; }); };
       var bCond = bouton("", "", function () { sous.hidden = !sous.hidden; });
-      var majCond = function () { var n = choisies().length; bCond.textContent = (n ? "Terminer " + n + " activité" + (n > 1 ? "s" : "") : "Pass ou prof") + " ▾"; };
-      cases.addEventListener("change", majCond); majCond();
+      var majCond = function () {
+        var n = choisies().length;
+        bCond.textContent = (regType.value ? (REG.filter(function (x) { return x[0] === regType.value; })[0][1] + " " + (regSeuil.value || 0))
+          : n ? "Terminer " + n + " activité" + (n > 1 ? "s" : "") : "Pass ou prof") + " ▾";
+      };
+      cases.addEventListener("change", majCond); regType.addEventListener("change", majCond); regSeuil.addEventListener("input", majCond); majCond();
       var sous = el("tr", { class: "pp-sous", hidden: "" }, [el("td", { colspan: "10" }, [
+        el("div", { class: "form-exc" }, [el("label", {}, [document.createTextNode("Condition automatique "), regType]), el("label", {}, [document.createTextNode("Seuil "), regSeuil]),
+          el("span", { class: "aide", texte: "Obtenu automatiquement dès que l'élève atteint le seuil (0 = offert à tous)." })]),
         el("p", { class: "aide", texte: "Coche des activités : la récompense est obtenue automatiquement quand l'élève les a toutes terminées (ex. « Pro de la statique » pour tous les TD du PFS). Sans case cochée, elle s'obtient par un palier du pass ou quand tu la donnes." }), cases])]);
       var info = el("span", { class: "aide" });
       var corps = function () {
         return { type: type.value, nom: nom.value.trim(), rarete: rar.value, symbole: sym.value.trim(), couleur: col.value, image: img.value.trim() || null,
-          classe: cl.value || null, mystere: mys.checked, ressources: choisies() };
+          classe: cl.value || null, mystere: mys.checked, ressources: choisies(),
+          style: (type.value === "ornement" || type.value === "banniere") ? sty.value : null,
+          condition: regType.value ? { type: regType.value, seuil: +regSeuil.value || 0 } : null };
       };
       var actions = [bouton(neuf ? "Ajouter" : "Enregistrer", "primary", async function () {
         var b = corps(); if (!b.nom) return etat(info, "Nom ?", false);
@@ -314,9 +333,13 @@
       })];
       if (!neuf) actions.push(bouton("Supprimer", "danger", async function () { if (!confirm("Supprimer « " + r.nom + " » ? Les élèves qui l'avaient le perdent.")) return; await supprimer("recompenses", "id=eq." + r.id); chargerPass(); }));
       actions.push(info);
-      var majType = function () { sym.disabled = col.disabled = img.disabled = type.value === "titre"; };
+      var majType = function () {
+        var t = type.value, motif = t === "ornement" || t === "banniere";
+        sym.disabled = t === "titre" || motif; col.disabled = t === "titre" || motif; img.hidden = motif || t === "titre" || t === "badge"; sty.hidden = !motif;
+        majStyles();
+      };
       type.onchange = majType; majType();
-      return [el("tr", {}, [el("td", {}, [type]), el("td", {}, [nom]), el("td", {}, [rar]), el("td", {}, [sym]), el("td", {}, [col]), el("td", {}, [img]),
+      return [el("tr", {}, [el("td", {}, [type]), el("td", {}, [nom]), el("td", {}, [rar]), el("td", {}, [sym]), el("td", {}, [col]), cellImg,
         el("td", {}, [cl]), el("td", {}, [mys]), el("td", {}, [bCond]), el("td", {}, [el("div", { class: "actions" }, actions)])]), sous];
     }
     recompenses.forEach(function (r) { ligne(r).forEach(function (x) { t.appendChild(x); }); });
