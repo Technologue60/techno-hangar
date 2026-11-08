@@ -60,7 +60,7 @@
       return new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Paris" });
     }
     function arreter() { if (minuteur) { clearInterval(minuteur); minuteur = null; } enCours = false; }
-    function vider(c) { arreter(); c.innerHTML = ""; if (c === zone) reduire(false); }
+    function vider(c) { arreter(); c.innerHTML = ""; if (c === zone) { reduire(false); zone.hidden = false; zone.classList.remove("epure"); } }
     // Une fois la question du jour jouée, la carte se réduit à une ligne sur l'accueil
     function reduire(oui) {
       zone.classList.toggle("reduit", oui);
@@ -68,18 +68,7 @@
     }
     function ecranReduit(st) {
       vider(zone); reduire(true);
-      var perdu = st.position == null || st.position < 0;
-      var voir = el("button", { class: "btn q-revoir", type: "button", texte: "Revoir la question" });
-      voir.addEventListener("click", function () { ecranResultat(st, false, true); });
-      zone.appendChild(el("div", { class: "q-ligne" }, [
-        el("span", { class: "q-label" }, [el("i"), document.createTextNode("Question du jour")]),
-        el("span", { class: "q-pastille " + (st.correct ? "ok" : "ko"), texte: st.correct ? "✓ Bonne réponse" : (perdu ? "⏱ Temps écoulé" : "✗ Raté") }),
-        el("span", { class: "q-points", texte: st.points > 0 ? "+" + st.points + " pts" : "0 pt" }),
-        el("span", { class: "q-puce" }, [document.createTextNode("Série "), el("b", { texte: (st.serie || 0) + " j" })]),
-        el("span", { class: "q-puce" }, [document.createTextNode("Total "), el("b", { texte: (st.total || 0) + " pts" })]),
-        el("span", { class: "q-demain", texte: "Nouvelle question demain" }),
-        voir
-      ]));
+      zone.hidden = true; // question répondue : on ne laisse que le classement
     }
 
     function tete(st, label) {
@@ -137,11 +126,13 @@
         bulle.appendChild(el("p", { class: "q-texte", texte: "Prépare-toi…" }));
         setTimeout(function () { api.demarrer().then(dessiner).catch(erreur); }, 800);
       });
+      b.textContent = "Jouer";
       if (bandeau()) zone.appendChild(bandeau());
-      zone.appendChild(tete(st, "Question du jour · " + jourLong()));
-      zone.appendChild(el("h2", { class: "q-titre", texte: "Une question. " + (st.duree || 20) + " secondes." }));
-      zone.appendChild(el("p", { class: "q-texte", texte: "Une seule tentative par jour. Le chrono démarre dès que la question apparaît : ne quitte pas la page avant d'avoir répondu." }));
-      zone.appendChild(b);
+      zone.classList.add("epure");
+      zone.appendChild(el("div", { class: "q-epure" }, [
+        el("div", { class: "q-ep-txt" }, [el("span", { class: "q-label" }, [el("i"), document.createTextNode("Question du jour")]),
+          el("b", { texte: "1 question · " + (st.duree || 20) + " s" })]),
+        b]));
     }
 
     /* ---------- Pop-up : la question ---------- */

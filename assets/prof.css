@@ -45,7 +45,7 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
 }
 
 .vue { position: relative; }
-.depot.survol { box-shadow: 0 0 22px rgba(91,140,255,.3); }
+.depot.survol { box-shadow: 0 0 22px rgba(63,214,198,.3); }
 .tableau { border-radius: 10px; overflow: hidden; }
 
 .cases { display: flex; flex-direction: column; gap: .35rem; margin: .4rem 0 .6rem; }

@@ -5,5 +5,7 @@ window.TH_CONFIG = {
   // Les élèves n'ont pas d'e-mail : leur identifiant devient identifiant@domaine en interne.
   domaineEleves: "technologue60.github.io",
   // Adresse du site, imprimée sur les fiches d'identifiants
-  adresseSite: "https://technologue60.github.io/techno-hangar/"
+  adresseSite: "https://technologue60.github.io/techno-hangar/",
+  // Pass de progression visible par les élèves ? false = affiché flouté avec « Prochainement »
+  passActif: false
 };

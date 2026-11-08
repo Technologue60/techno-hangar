@@ -59,6 +59,9 @@
   var body = document.body;
   var racine = body.getAttribute("data-racine") || "./";
   var page = body.getAttribute("data-page") || "";
+  /* Pass de progression : false dans config.js = « Prochainement » (aperçu flouté, sans points affichés) */
+  window.TH_PASS_ACTIF = !!(window.TH_CONFIG && window.TH_CONFIG.passActif);
+  if (!window.TH_PASS_ACTIF) body.classList.add("pass-off");
   var classeCourante = body.getAttribute("data-classe") || "";
   var catalogue = Array.isArray(window.CATALOGUE) ? window.CATALOGUE : [];
   function infosClasse(id) { return CLASSES.filter(function (c) { return c.id === id; })[0]; }
@@ -148,7 +151,7 @@
       nav.appendChild(a);
     });
     if (acces && acces.role === "eleve") {
-      var mp = el("a", { href: racine + "profil/index.html#pass", texte: "Mon pass" });
+      var mp = el("a", { href: racine + "profil/index.html#" + (window.TH_PASS_ACTIF ? "pass" : "activites") }, [document.createTextNode(window.TH_PASS_ACTIF ? "Mon pass" : "Mon profil")]);
       if (page === "profil") mp.className = "actif";
       nav.appendChild(mp);
     }
@@ -209,32 +212,45 @@
     if (window.TH_ACCUEIL_PASS) window.TH_ACCUEIL_PASS(acces);
   }
 
-  /* ---------- Accueil élève : reprendre là où on s'est arrêté ---------- */
+  /* ---------- Accueil élève : objectifs du jour / de la semaine (définis par le prof, script 08),
+     sinon « Reprendre là où tu t'es arrêté » ---------- */
+  function aujourdhui() { return new Date().toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" }); }
+  function dateFr(d) { return new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, ""); }
   async function reprendre(zone, acces, m) {
     var bloc = el("div", { class: "carte reprendre", style: "--c: var(" + m.couleur + ")", "data-c": m.couleur });
     zone.appendChild(bloc);
-    var res = catalogue.filter(function (r) { return r.classe === m.id && r.en_ligne && r.fichier && !/^https?:/.test(r.fichier) && r.type !== "lien" && r.type !== "outil"; });
-    var prog = [];
-    try { prog = await TH.rest("progression?select=ressource,avancement,termine,maj_le&eleve=eq." + TH.session().user.id + "&order=maj_le.desc"); } catch (e) {}
+    var res = catalogue.filter(function (r) { return r.classe === m.id && r.fichier && !/^https?:/.test(r.fichier) && r.type !== "lien" && r.type !== "outil"; });
     var trouve = function (id) { return res.filter(function (r) { return r.classe + "/" + r.fichier === id; })[0]; };
-    var enCours = prog.filter(function (p) { return !p.termine && trouve(p.ressource); }).slice(0, 3);
-    var titre = "Reprendre là où tu t'es arrêté", liste = enCours.map(function (p) { return { r: trouve(p.ressource), p: p }; });
-    if (!liste.length) {
-      var vus = prog.map(function (p) { return p.ressource; });
-      liste = res.filter(function (r) { return vus.indexOf(r.classe + "/" + r.fichier) < 0; }).slice(0, 3).map(function (r) { return { r: r }; });
-      titre = "À découvrir";
+    var jour = aujourdhui();
+    var r2 = await Promise.all([
+      TH.rest("progression?select=ressource,avancement,termine,maj_le&eleve=eq." + TH.session().user.id + "&order=maj_le.desc").catch(function () { return []; }),
+      TH.rest("objectifs?select=type,ressource,message,debut,fin&classe=eq." + m.id + "&debut=lte." + jour + "&fin=gte." + jour + "&order=type.asc,cree_le.desc").catch(function () { return []; })
+    ]);
+    var prog = r2[0] || [], objs = (r2[1] || []).filter(function (o) { return trouve(o.ressource); });
+    var progDe = function (id) { return prog.filter(function (p) { return p.ressource === id; })[0]; };
+    function ligne(r, p, etiquette, message) {
+      var fini = p && p.termine, pct = p ? Math.round(Number(p.avancement) || 0) : 0;
+      return el("a", { class: "rep-ligne" + (fini ? " fini" : ""), href: lienRessource(r) }, [
+        r.icone && ICONES[r.icone] ? el("span", { class: "illu", html: ICONES[r.icone] }) : el("span", { class: "illu vide-illu" }),
+        el("span", { class: "rep-txt" }, [etiquette, el("b", { texte: r.titre }), el("small", { texte: message || r.sequence || "" })]),
+        fini ? el("span", { class: "prog ok", texte: "✓ Fait" })
+          : p ? el("span", { class: "prog" }, [el("span", { class: "barre" }, [el("i", { style: "width:" + Math.max(6, pct) + "%" })]), document.createTextNode(p.avancement != null ? pct + " %" : "Commencé")]) : null,
+        el("span", { class: "btn" + (fini ? "" : " primary"), texte: fini ? "Revoir" : (p ? "Continuer" : "C'est parti") })
+      ]);
     }
-    if (!liste.length) { bloc.remove(); return; }
-    bloc.appendChild(el("div", { class: "rep-titre", texte: titre }));
-    liste.forEach(function (x) {
-      var pct = x.p ? Math.round(Number(x.p.avancement) || 0) : 0;
-      bloc.appendChild(el("a", { class: "rep-ligne", href: lienRessource(x.r) }, [
-        x.r.icone && ICONES[x.r.icone] ? el("span", { class: "illu", html: ICONES[x.r.icone] }) : el("span", { class: "illu vide-illu" }),
-        el("span", { class: "rep-txt" }, [el("b", { texte: x.r.titre }), el("small", { texte: x.r.sequence || "" })]),
-        x.p ? el("span", { class: "prog" }, [el("span", { class: "barre" }, [el("i", { style: "width:" + Math.max(6, pct) + "%" })]), document.createTextNode(x.p.avancement != null ? pct + " %" : "Commencé")]) : null,
-        el("span", { class: "btn" + (x.p ? " primary" : ""), texte: x.p ? "Reprendre" : "Ouvrir" })
-      ]));
-    });
+    if (objs.length) {
+      bloc.classList.add("objectifs");
+      bloc.appendChild(el("div", { class: "rep-titre", texte: objs.length > 1 ? "Tes objectifs" : "Ton objectif" }));
+      objs.forEach(function (o) {
+        var et = el("span", { class: "obj-type " + o.type, texte: o.type === "jour" ? "Objectif du jour" : "Cette semaine · jusqu'au " + dateFr(o.fin) });
+        bloc.appendChild(ligne(trouve(o.ressource), progDe(o.ressource), et, o.message));
+      });
+      return;
+    }
+    var enCours = prog.filter(function (p) { return !p.termine && trouve(p.ressource); }).slice(0, 3);
+    if (!enCours.length) { bloc.remove(); return; }
+    bloc.appendChild(el("div", { class: "rep-titre", texte: "Reprendre là où tu t'es arrêté" }));
+    enCours.forEach(function (p) { bloc.appendChild(ligne(trouve(p.ressource), p, null, null)); });
   }
 
   /* ---------- Page de classe ---------- */
@@ -294,7 +310,7 @@
       var puces = [];
       if (s.statut === "ferme") puces.push(el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" + (s.ouvre_le && new Date(s.ouvre_le) > new Date() ? " · ouvre le " + new Date(s.ouvre_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") }));
       else if (s.statut === "revision") puces.push(el("span", { class: "pa-statut", texte: "Révision · sans points" }));
-      if (s.gagne != null) puces.push(el("span", { class: "pa-statut gagne", texte: "✓ +" + s.gagne + " pts" }));
+      if (s.gagne != null && window.TH_PASS_ACTIF) puces.push(el("span", { class: "pa-statut gagne", texte: "✓ +" + s.gagne + " pts" }));
       else if (s.type !== "activite" && s.statut === "ouvert") puces.push(el("span", { class: "pa-statut", texte: "Entraînement" }));
       return puces.length ? el("div", { class: "res-statut" }, puces) : null;
     }

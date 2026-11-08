@@ -103,9 +103,50 @@
   }
 
   /* =================== ACTIVITÉS & POINTS =================== */
+
+  /* ---------- Objectifs du jour / de la semaine (script 08) ---------- */
+  function jourISO(d) { return d.toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" }); }
+  function datesType(type) {
+    var d = new Date(), deb = jourISO(d);
+    if (type === "jour") return [deb, deb];
+    var f = new Date(d); f.setDate(d.getDate() + ((7 - d.getDay()) % 7)); // jusqu'à dimanche
+    return [deb, jourISO(f)];
+  }
+  function dateCourteFr(x) { return new Date(x + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, ""); }
+  async function chargerObjectifs() {
+    var c = classeChoisie(), liste = $("o-liste"), sel = $("o-res");
+    if (!liste) return;
+    $("o-classe-nom").textContent = nomClasse(c);
+    vider(sel);
+    ressourcesClasse(c).filter(function (r) { return r.type !== "lien" && r.type !== "outil"; }).forEach(function (r) {
+      sel.appendChild(el("option", { value: r.classe + "/" + r.fichier, texte: (r.en_ligne ? "" : "(hors ligne) ") + r.titre + (r.sequence ? " · " + r.sequence : "") }));
+    });
+    vider(liste);
+    try {
+      var rows = await TH.rest("objectifs?select=*&classe=eq." + c + "&fin=gte." + jourISO(new Date()) + "&order=debut.asc");
+      if (!rows.length) { liste.appendChild(el("p", { class: "aide", texte: "Aucun objectif en cours ou à venir pour cette classe." })); return; }
+      var t = el("table", { class: "tableau" });
+      t.appendChild(th(["Type", "Activité", "Message", "Dates", ""]));
+      var auj = jourISO(new Date());
+      rows.forEach(function (o) {
+        t.appendChild(el("tr", {}, [
+          el("td", { texte: (o.type === "jour" ? "Du jour" : "De la semaine") + (o.debut <= auj ? " · en cours" : " · à venir") }),
+          el("td", { texte: titreRes(o.ressource) }),
+          el("td", { texte: o.message || "" }),
+          el("td", { texte: o.debut === o.fin ? dateCourteFr(o.debut) : dateCourteFr(o.debut) + " → " + dateCourteFr(o.fin) }),
+          el("td", {}, [bouton("Supprimer", "danger", async function () { await supprimer("objectifs", "id=eq." + o.id); chargerObjectifs(); })])
+        ]));
+      });
+      liste.appendChild(t);
+    } catch (e) {
+      liste.appendChild(el("div", { class: "vide", texte: absent(e) ? "Le script Supabase « 08-objectifs.sql » n'est pas encore installé : lance-le dans Supabase → SQL Editor." : "Erreur : " + msg(e) }));
+    }
+  }
+
   async function chargerActivites() {
     var c = classeChoisie(), zone = $("a-zone"), et = $("a-etat");
     vider(zone); etat(et, "");
+    chargerObjectifs();
     $("a-classe-nom").textContent = nomClasse(c);
     try {
       var rows = await TH.rest("activites?select=*&classe=eq." + c);
@@ -427,6 +468,7 @@
   /* =================== Branchement =================== */
   window.TH_PROF_PASS = function (acces) {
     if (acces.role !== "prof") return;
+    if (!(window.TH_CONFIG && window.TH_CONFIG.passActif) && $("p-pause")) $("p-pause").hidden = false;
     // listes de classes « Toutes » pour En direct et Alertes
     ["d-classe", "al-classe"].forEach(function (id) {
       var s = $(id); s.appendChild(el("option", { value: "", texte: "Toutes les classes" }));
@@ -440,6 +482,20 @@
       catch (e) { alert(msg(e)); }
     };
     $("a-tout").onclick = toutActiver;
+    var ot = $("o-type");
+    if (ot) {
+      var majDates = function () { var d = datesType(ot.value); $("o-debut").value = d[0]; $("o-fin").value = d[1]; $("o-fin").disabled = ot.value === "jour"; };
+      ot.onchange = majDates; majDates();
+      $("o-debut").onchange = function () { if (ot.value === "jour" || $("o-fin").value < $("o-debut").value) $("o-fin").value = $("o-debut").value; };
+      $("o-ajout").onclick = async function () {
+        var deb = $("o-debut").value, fin = ot.value === "jour" ? deb : $("o-fin").value;
+        if (!$("o-res").value || !deb || !fin) return etat($("o-etat"), "Choisis une activité et des dates.", false);
+        try {
+          await TH.rest("objectifs", { method: "POST", body: { classe: classeChoisie(), type: ot.value, ressource: $("o-res").value, message: $("o-msg").value.trim() || null, debut: deb, fin: fin }, headers: { "Prefer": "return=minimal" } });
+          $("o-msg").value = ""; etat($("o-etat"), "✓ Objectif ajouté", true); chargerObjectifs();
+        } catch (e) { etat($("o-etat"), absent(e) ? "Script 08-objectifs.sql à installer" : msg(e), false); }
+      };
+    }
     $("a-reg-enr").onclick = async function () {
       try { await upsert("pass_reglages", { classe: classeChoisie(), plafond_jour: +$("a-plafond").value || 0, decrochage_jours: +$("a-decro").value || 7 }, "classe"); etat($("a-reg-etat"), "✓", true); }
       catch (e) { etat($("a-reg-etat"), msg(e), false); }

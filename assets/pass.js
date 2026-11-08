@@ -334,6 +334,20 @@
     tour();
   }
 
+
+  /* =================== Pass en pause : aperçu flouté =================== */
+  var CADENAS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  function bientot(type) {
+    var faux = type === "paliers"
+      ? el("div", { class: "bt-flou tb-paliers", "aria-hidden": "true" }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function () { return el("span"); }))
+      : el("div", { class: "bt-flou tb-pass", "aria-hidden": "true" }, [el("span", { class: "tb-rond" }), el("span", { class: "tb-lignes" }, [el("i", { style: "width:40%" }), el("i", { class: "j" })])]);
+    return el("section", { class: "th-bientot" + (type === "paliers" ? " grand" : "") }, [faux,
+      el("div", { class: "bt-voile" }, [el("span", { class: "bt-cadenas", html: CADENAS }),
+        el("b", {}, [document.createTextNode("Pass de progression · Prochainement"),
+          el("small", { texte: type === "paliers" ? "Titres, bannières, badges et avatars à débloquer en faisant tes activités." : "Bientôt : des récompenses à débloquer en faisant tes activités." })])])]);
+  }
+  window.TH_PASS_BIENTOT = bientot;
+
   /* =================== Accueil : les cours d'abord, puis le pass (fin) et la classe =================== */
   window.TH_ACCUEIL_PASS = function (acces) {
     var grille = document.getElementById("grille"), droite = document.getElementById("droite");
@@ -345,9 +359,12 @@
     if (acces.role === "eleve") {
       grille.parentNode.insertBefore(zPass, grille.nextSibling);
       colonne.appendChild(zLigne);
-      var dejaVu = passEnCache();
-      if (dejaVu) carteAccueil(zPass, dejaVu);
-      charger().then(function (p) { carteAccueil(zPass, p); }).catch(function () {});
+      if (!window.TH_PASS_ACTIF) { zPass.hidden = false; zPass.appendChild(bientot()); }
+      else {
+        var dejaVu = passEnCache();
+        if (dejaVu) carteAccueil(zPass, dejaVu);
+        charger().then(function (p) { carteAccueil(zPass, p); }).catch(function () {});
+      }
       enLigne(zLigne);
     }
     colonne.appendChild(zClass);
@@ -405,7 +422,9 @@
     }
     var onglet = (location.hash || "").replace("#", "");
     if (onglet === "quiz" || onglet === "collection-badges") onglet = "badges";
-    if (!ONGLETS.some(function (o) { return o[0] === onglet; })) onglet = "pass";
+    var passOff = !window.TH_PASS_ACTIF && moiMeme;
+    var onglets = passOff ? ONGLETS.filter(function (o) { return o[0] === "activites"; }) : ONGLETS;
+    if (!onglets.some(function (o) { return o[0] === onglet; })) onglet = passOff ? "activites" : "pass";
     var vueSaison = null, ongletColl = "avatar";
     var D = { pass: null, quiz: null, acts: {}, prog: [] };
 
@@ -435,7 +454,7 @@
       var cov = el("section", { class: "pr-cover bn bn-" + ((bn && bn.style) || "atelier") });
       var cad = cadre(av, 112, eleve.prenom, orn && orn.style);
       cad.appendChild(el("span", { class: "pr-niveau", title: "Paliers débloqués", texte: paliers }));
-      if (moiMeme) { cad.classList.add("pa-cliquable"); cad.title = "Changer d'avatar"; cad.onclick = function () { ongletColl = "avatar"; aller("collection"); }; }
+      if (moiMeme && !passOff) { cad.classList.add("pa-cliquable"); cad.title = "Changer d'avatar"; cad.onclick = function () { ongletColl = "avatar"; aller("collection"); }; }
       var trophee = el("b");
       cov.appendChild(el("div", { class: "pr-haut" }, [
         cad,
@@ -478,11 +497,13 @@
         el("a", { class: "btn", href: racine() + "prof/index.html#pass", texte: "← Espace prof" })]));
       zone.appendChild(couverture());
       var bar = el("div", { class: "onglets pa-onglets", role: "tablist" });
-      ONGLETS.forEach(function (o) {
+      onglets.forEach(function (o) {
         var b = el("button", { type: "button", class: "onglet" + (o[0] === onglet ? " actif" : ""), texte: o[1] });
         b.onclick = function () { aller(o[0]); };
         bar.appendChild(b);
       });
+      if (passOff) { zone.appendChild(bientot("paliers")); ["Pass", "Badges", "Collection"].forEach(function (t) {
+        bar.appendChild(el("span", { class: "onglet verrou", title: "Prochainement" }, [document.createTextNode(t), el("span", { class: "th-puce", texte: "Bientôt" })])); }); }
       zone.appendChild(bar);
       var corps = el("div", { class: "pa-corps pa-apparait" });
       zone.appendChild(corps);
@@ -494,7 +515,7 @@
       dessiner();
       var b = document.querySelector(".pa-onglets"); if (b && b.getBoundingClientRect().top < 0) b.scrollIntoView({ behavior: CALME ? "auto" : "smooth" });
     }
-    window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (h !== onglet && ONGLETS.some(function (o) { return o[0] === h; })) aller(h); });
+    window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (h !== onglet && onglets.some(function (o) { return o[0] === h; })) aller(h); });
     async function recharger() { oublierBulle(); D.pass = await charger(cible, true); dessiner(); majBulle(); }
 
     /* ----- Onglet Pass : piste verticale façon Brawl Stars ----- */

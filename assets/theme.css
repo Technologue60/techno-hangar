@@ -1,0 +1,163 @@
+/* =========================================================================
+   Techno-Hangar · thème « Équilibre »
+   Interface graphite sobre, une seule touche bleu-vert ; l'éclat est réservé
+   aux récompenses (couleurs de rareté, holo). Chargé en dernier sur chaque page.
+   ========================================================================= */
+:root {
+  --bg: #07090c;
+  --bg2: #0b0e12;
+  --surface: #0d1116;
+  --surface2: #131920;
+  --text: #eef3f7;
+  --muted: #8a96a3;
+  --faible: #5b6773;
+  --border: #1b222b;
+  --border2: #27313c;
+  --accent: #3fd6c6;
+  --accent2: #3b8bff;
+  --accent-soft: rgba(63,214,198,.10);
+  --grad: linear-gradient(90deg, #3b8bff, #3fd6c6);
+  --holo: linear-gradient(110deg, #f2f5ff 0%, #6fe3ff 16%, #8dffd2 30%, #ff9eea 48%, #a98bff 64%, #6fe3ff 82%, #f2f5ff 100%);
+  --radius: 14px;
+}
+@property --th-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+/* Fond : graphite, lueur bleue très discrète en haut, quadrillage léger */
+body { background: var(--bg); }
+body:before {
+  background:
+    radial-gradient(900px 480px at 85% -10%, rgba(59,139,255,.09), transparent 70%),
+    radial-gradient(700px 400px at 0% 0%, rgba(63,214,198,.05), transparent 70%),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 48px 48px;
+}
+a { color: var(--accent); }
+
+/* ---------- En-tête ---------- */
+.top { background: rgba(7,9,12,.82); }
+.marque { background: linear-gradient(180deg, #121a22, #0b1016); border-color: var(--border2);
+  box-shadow: 0 0 0 1px rgba(63,214,198,.18), 0 6px 18px rgba(59,139,255,.18); color: var(--accent); }
+.nav a.actif { background: var(--surface2); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* ---------- Titres : blanc net, plus de dégradé gris ---------- */
+h1 { background: none; color: var(--text); -webkit-text-fill-color: currentColor; }
+
+/* ---------- Boutons ---------- */
+.btn { background: var(--surface2); border-color: var(--border2); border-radius: 10px; }
+.btn:hover { background: #18202a; border-color: #34404d; }
+.btn.primary { position: relative; overflow: hidden; background: var(--grad); color: #04121a; border-color: transparent; font-weight: 600; }
+.btn.primary:hover { background: var(--grad); filter: brightness(1.08); }
+.btn.primary:after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%); transform: translateX(-120%); }
+
+/* ---------- Cartes : trait de couleur qui se dessine en haut ---------- */
+.carte, .groupe { background: var(--surface); border-color: var(--border); }
+.carte:after, .groupe:after { content: ""; position: absolute; left: 0; top: 0; height: 2px; width: 100%; pointer-events: none;
+  background: var(--c, var(--accent)); opacity: .85; transform-origin: left; border-radius: 2px; }
+.groupe { position: relative; overflow: hidden; }
+.carte.off:after { opacity: .3; }
+.carte:hover { transform: translateY(-3px); }
+
+/* Accueil : carte « mes cours » plus présente */
+.mon-cours { background: linear-gradient(135deg, color-mix(in srgb, var(--c) 9%, transparent), transparent 55%), var(--surface); }
+
+/* Onglets */
+.onglet.actif:after { box-shadow: none; }
+
+/* Barres de progression : dégradé bleu-vert, terminé en vert */
+.prog .barre { background: var(--border); }
+.prog .barre i { background: var(--grad); box-shadow: none; }
+.prog.ok .barre i { background: var(--ok); box-shadow: none; }
+
+/* Illustrations des groupes */
+.illu { border-radius: 10px; }
+
+/* Encarts, champs */
+.encart { background: var(--accent-soft); border-color: rgba(63,214,198,.25); }
+.cx input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cx .logo-g { box-shadow: 0 0 0 1px rgba(63,214,198,.2), 0 10px 30px rgba(59,139,255,.25); color: var(--accent); }
+
+/* ---------- Récompenses : les seules choses qui brillent ---------- */
+.holo, .r-holo .pa-nom, .pr-titre.r-holo { background: var(--holo); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+
+/* ---------- Pass en pause : aperçu flouté « Prochainement » ---------- */
+.th-bientot { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+.th-bientot .bt-flou { filter: blur(6px) saturate(.8); opacity: .55; pointer-events: none; user-select: none; }
+.th-bientot .bt-voile { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: .8rem; flex-wrap: wrap;
+  padding: 1rem; text-align: center; background: linear-gradient(180deg, rgba(7,9,12,.15), rgba(7,9,12,.55)); }
+.th-bientot .bt-voile b { font-family: var(--titre); font-size: 1.05rem; }
+.th-bientot .bt-voile small { display: block; color: var(--muted); font-size: .82rem; font-weight: 400; font-family: var(--f); }
+.th-bientot .bt-cadenas { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--accent); }
+.th-puce { font-family: var(--mono); font-size: .62rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent);
+  border: 1px solid rgba(63,214,198,.35); border-radius: 99px; padding: .02rem .4rem; margin-left: .35rem; vertical-align: 1px; }
+/* faux contenu derrière le flou */
+.tb-pass { display: flex; align-items: center; gap: 1rem; padding: .9rem 1.1rem; }
+.tb-rond { width: 40px; height: 40px; border-radius: 50%; background: var(--holo); flex: none; }
+.tb-lignes { flex: 1; display: flex; flex-direction: column; gap: .45rem; }
+.tb-lignes i { display: block; height: 8px; border-radius: 8px; background: var(--border2); }
+.tb-lignes i.j { height: 8px; background: linear-gradient(90deg, var(--grad), var(--border) 64%); background: linear-gradient(90deg, #3b8bff 0, #3fd6c6 62%, var(--border2) 62%); }
+.tb-paliers { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; padding: 1.1rem; }
+.tb-paliers span { height: 84px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border2); }
+.tb-paliers span:nth-child(3n) { border-color: rgba(176,124,255,.5); }
+.tb-paliers span:nth-child(4n) { border-color: rgba(245,183,74,.5); }
+.tb-paliers span:nth-child(5n) { background: var(--holo); opacity: .5; }
+body.pass-off .pr-trophees, body.pass-off .pr-bas, body.pass-off .pr-niveau { display: none; }
+body.pass-off .pr-cover .pr-titre.vide-t { display: none; }
+
+/* ---------- Animations (désactivées si l'élève les a coupées) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .mon-cours .btn.primary:after, .quiz .btn.primary:after, .cx .btn.primary:after { animation: th-balaye 3.6s ease-in-out infinite 1.2s; }
+  .carte:after, .groupe:after { animation: th-trait .9s cubic-bezier(.2,.8,.2,1) both .15s; }
+  .prog .barre i { animation: th-remplit 1.2s cubic-bezier(.2,.8,.2,1) both .2s; }
+  .holo, .r-holo .pa-nom, .pr-titre.r-holo { animation: th-irise 6s linear infinite; }
+  main > * { animation: th-entre .45s cubic-bezier(.2,.8,.2,1) backwards; }
+}
+@keyframes th-balaye { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
+@keyframes th-trait { from { transform: scaleX(0); } }
+@keyframes th-remplit { from { width: 0; } }
+@keyframes th-irise { to { background-position: 200% 0; } }
+@keyframes th-entre { from { opacity: 0; transform: translateY(8px); } }
+body.pass-off .pf-niveau { display: none; }
+.onglet.verrou { color: var(--faible); cursor: default; display: inline-flex; align-items: center; }
+.th-bientot { margin-top: .9rem; }
+.th-bientot.grand { margin: 1.2rem 0 0; }
+/* Pass en pause : on masque tout ce qui vient des récompenses (titres, bannières, points du pass) */
+body.pass-off .pa-bulle-pts, body.pass-off .pa-n small, body.pass-off .pf-titre, body.pass-off .pf-fond, body.pass-off .pf-coin,
+body.pass-off .pf-saison, body.pass-off .pr-titre { display: none !important; }
+body.pass-off .pr-cover { background: radial-gradient(600px 260px at 85% 0, rgba(59,139,255,.14), transparent 70%), radial-gradient(500px 240px at 0 100%, rgba(63,214,198,.08), transparent 70%), var(--surface) !important;
+  min-height: 0; }
+body.pass-off .pr-cover:before, body.pass-off .pr-cover:after { display: none; }
+
+/* Accueil élève sur téléphone : une seule colonne */
+@media (max-width: 860px) { .accueil-grille:not(.prof) { grid-template-columns: 1fr; } }
+.th-bientot { min-height: 76px; }
+@media (max-width: 600px) { .th-bientot { min-height: 150px; } .th-bientot .bt-voile { flex-direction: column; flex-wrap: nowrap; gap: .5rem; } }
+.th-bientot .bt-voile b { max-width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.th-bientot .bt-voile small { white-space: normal; }
+@media (max-width: 600px) { .th-bientot .bt-voile b { font-size: .95rem; } }
+
+/* ---------- Objectifs du jour / de la semaine (accueil élève) ---------- */
+.reprendre.objectifs { background: linear-gradient(135deg, rgba(63,214,198,.07), transparent 55%), var(--surface); }
+.obj-type { align-self: flex-start; font-family: var(--mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 500;
+  color: var(--accent); border: 1px solid rgba(63,214,198,.35); border-radius: 99px; padding: .05rem .5rem; margin-bottom: .25rem; }
+.obj-type.semaine { color: #8fb8ff; border-color: rgba(59,139,255,.4); }
+.reprendre.objectifs .rep-ligne { padding: .7rem .6rem; }
+.reprendre.objectifs .rep-txt small { white-space: normal; }
+.rep-ligne.fini .rep-txt b { color: var(--muted); }
+
+/* ---------- Question du jour épurée ---------- */
+.quiz.epure { padding: .9rem 1.1rem !important; min-height: 0 !important; }
+.quiz.epure:after { display: none; }
+.q-epure { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.q-ep-txt { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.q-ep-txt b { font-family: var(--titre); font-size: 1.05rem; }
+.quiz.epure .q-go { padding: .55rem 1.3rem; }
+.quiz[hidden] { display: none !important; }
+.obj-type { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 680px) {
+  .reprendre.objectifs .rep-ligne { grid-template-columns: auto minmax(0, 1fr); row-gap: .6rem; }
+  .reprendre.objectifs .rep-ligne .btn { grid-column: 1 / -1; justify-content: center; }
+  .reprendre.objectifs .rep-txt b { white-space: normal; }
+}

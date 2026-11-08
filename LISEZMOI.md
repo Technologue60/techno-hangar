@@ -33,3 +33,12 @@ connexion/  prof/  terminale-sti2d/  premiere-it/  snt/  bts-maintenance/
 - Espace prof → **Pass** : saisons, objectif par classe, paliers, titres et avatars, donner une récompense ou des points.
 - Espace prof → **En direct** (qui est connecté, actif / inactif / onglet quitté) et **Alertes & stats**.
 - Une page d'entraînement ou de jeu signale une réussite avec : `parent.postMessage({ type: "th-entrainement", score: 16 }, "*")` (score sur 20, facultatif). Les activités normales n'ont rien à changer : les points tombent quand la page envoie `termine: true`.
+
+## Thème « Équilibre » et pass en pause (8/11)
+- Le style du site est dans `assets/theme.css` (chargé en dernier sur chaque page) : graphite, touche bleu-vert, l'éclat réservé aux récompenses.
+- Le pass est en pause pour les élèves : `passActif: false` dans `assets/config.js`. Ils voient un aperçu flouté « Prochainement », sans titres, bannières ni messages de points ; les points continuent d'être comptés. Pour l'ouvrir : `passActif: true`.
+
+## Objectifs du jour / de la semaine (8/11)
+- Script `08-objectifs.sql` à lancer une fois dans Supabase (table `objectifs`).
+- Espace prof → Activités & points → « Objectifs du jour et de la semaine » : choisir l'activité, un message facultatif et les dates. Sur l'accueil des élèves de la classe, la carte « Tes objectifs » envoie directement sur l'activité. Sans objectif en cours : « Reprendre là où tu t'es arrêté » (la liste « À découvrir » est supprimée).
+- Question du jour : carte réduite à une ligne (« 1 question · 20 s » + Jouer) ; une fois répondue elle disparaît, il ne reste que le classement.
