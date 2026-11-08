@@ -28,12 +28,19 @@
     { id: "bts-maintenance", nom: "BTS maintenance", court: "BTS MS", code: "BTS", det: "MS · ETLV", couleur: "--c-bts", onglets: [] }
   ];
   window.TH_CLASSES = CLASSES;
+  /* Spécialités de 2I2D (champ « partie » du catalogue) : toujours la même couleur et le même symbole */
+  var SPECIALITES = {
+    itec: { nom: "Spécialité ITEC", court: "ITEC", couleur: "--c-itec", icone: "spe-itec" },
+    sin: { nom: "Spécialité SIN", court: "SIN", couleur: "--c-sin", icone: "spe-sin" }
+  };
   /* Illustrations (traits fins, couleur de la classe). Utilisées par les champs « icone » et « groupe_icone » du catalogue. */
   var I = function (c) { return '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + c + '</svg>'; };
   var FL = function (x1, y1, x2, y2) { var a = Math.atan2(y2 - y1, x2 - x1), l = 5;
     return '<path d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + 'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a - .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a - .45)).toFixed(1) +
       'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a + .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a + .45)).toFixed(1) + '"/>'; };
   var ICONES = {
+    "spe-itec": I('<circle cx="24" cy="24" r="5"/><circle cx="24" cy="24" r="11"/><path d="M24 7v6M24 35v6M7 24h6M35 24h6M12 12l4.2 4.2M31.8 31.8L36 36M12 36l4.2-4.2M31.8 16.2L36 12"/>'),
+    "spe-sin": I('<rect x="14" y="14" width="20" height="20" rx="3"/><rect x="20" y="20" width="8" height="8" rx="1"/><path d="M19 8v6M24 8v6M29 8v6M19 34v6M24 34v6M29 34v6M8 19h6M8 24h6M8 29h6M34 19h6M34 24h6M34 29h6"/>'),
     forces: I('<rect x="16" y="18" width="16" height="12" rx="2"/>' + FL(4, 24, 15, 24) + FL(24, 6, 24, 17) + FL(33, 31, 43, 41) + '<circle cx="24" cy="24" r="1.4" fill="currentColor"/>'),
     pfs: I('<path d="M6 30h36"/><path d="M24 30l-6 10h12z"/>' + FL(10, 12, 10, 29) + FL(38, 12, 38, 29) + '<path d="M17 18a9 9 0 0 1 14 0" stroke-dasharray="2 3"/>'),
     echelle: I('<path d="M6 40h30"/><rect x="8" y="34" width="22" height="6" rx="1.5"/><path d="M14 34L38 8M19 34L42 11"/><path d="M19 28l5 3M23 24l5 3M27 19l5 3M31 15l5 3"/>'),
@@ -385,7 +392,9 @@
         if (!groupes[s].length) grille.appendChild(el("div", { class: "a-venir", texte: "Bientôt disponible" }));
         var vus = {};
         var morceau = null;
+        var spe = groupes[s].filter(function (r) { return SPECIALITES[r.partie]; });
         groupes[s].forEach(function (r) {
+          if (SPECIALITES[r.partie]) return; // les spécialités sont affichées en dessous de la partie commune
           if (!r.groupe) {
             if (r.type === "outil") { morceau = null; bloc.appendChild(carteRessource(r)); return; }
             if (!morceau) { morceau = el("div", { class: "ressources" }); bloc.appendChild(morceau); }
@@ -415,6 +424,25 @@
           d.addEventListener("toggle", function () { var o = ouvertsLire(); if (d.open) o[cle] = 1; else delete o[cle]; ouvertsEcrire(o); });
           bloc.appendChild(d);
         });
+        if (spe.length) {
+          var zs = el("div", { class: "specialites" }, [el("div", { class: "spe-titre", texte: "Spécialités · après la partie commune" })]);
+          Object.keys(SPECIALITES).forEach(function (k) {
+            var items = spe.filter(function (r) { return r.partie === k; });
+            if (!items.length) return;
+            var S = SPECIALITES[k];
+            var gr = el("div", { class: "ressources" });
+            items.forEach(function (r) {
+              var c = carteRessource(Object.assign({}, r, { icone: S.icone, titre: r.titre.replace(/^(Spécialité|Partie)\s+(ITEC|SIN)\s*·\s*/i, "") }));
+              c.classList.add("spe-carte");
+              c.style.setProperty("--c", "var(" + S.couleur + ")");
+              if (c.hasAttribute("data-c")) c.setAttribute("data-c", S.couleur);
+              gr.appendChild(c);
+            });
+            zs.appendChild(el("div", { class: "spe-bloc", style: "--c: var(" + S.couleur + ")" }, [
+              el("span", { class: "spe-puce" }, [el("span", { class: "spe-ico", html: ICONES[S.icone] }), document.createTextNode(S.nom)]), gr]));
+          });
+          bloc.appendChild(zs);
+        }
         if (grille.childNodes.length) bloc.insertBefore(grille, bloc.firstChild);
         zone.appendChild(el("section", { class: "sequence" }, [ el("h2", { texte: s }), bloc ]));
       });

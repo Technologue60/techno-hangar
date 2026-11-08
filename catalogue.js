@@ -12,6 +12,8 @@
                  ou adresse complète (https://...) pour un lien externe (Drive, Google Sites)
      type      : "activite" | "td" | "pdf" | "video" | "lien"
      onglet    : (Terminale STI2D) "revision", "2i2d" ou "itec" ; (1ère IT) "it" ou "etlv" ; inutile pour les autres classes
+     partie    : (2I2D) "itec" ou "sin" pour une activité de spécialité : affichée sous la partie commune,
+                 en rouge (ITEC) ou en vert (SIN), toujours avec le symbole de la spécialité (pas besoin d'icone)
      sequence  : doit reprendre exactement un nom de séquence défini dans assets/site.js
      groupe    : (facultatif) regroupe des ressources dans un menu dépliant ; groupe_icone : illustration du groupe
      icone     : (facultatif) illustration de la carte : forces, pfs, echelle, structure, moto, voiture, statgraph,
@@ -29,9 +31,11 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
     titre: "Étude de cas · Webcam motorisée (partie commune)", fichier: "edc-securisation-webcam.html", type: "activite", icone: "camera", en_ligne: true },
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
-    titre: "Spécialité ITEC · Motorisation & support de caméra", fichier: "edc-securisation-itec.html", type: "activite", icone: "camera", en_ligne: true },
+    partie: "itec",
+    titre: "Spécialité ITEC · Motorisation & support de caméra", fichier: "edc-securisation-itec.html", type: "activite", en_ligne: true },
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
-    titre: "Partie SIN · Vidéosurveillance", fichier: "sin-videosurveillance.html", type: "activite", icone: "camera", en_ligne: true },
+    partie: "sin",
+    titre: "Spécialité SIN · Vidéosurveillance", fichier: "sin-videosurveillance.html", type: "activite", en_ligne: true },
 
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Étude de système",
     titre: "TP · Portail automatisé", fichier: "suivi-tp-portail.html", type: "activite", icone: "portail", en_ligne: false },

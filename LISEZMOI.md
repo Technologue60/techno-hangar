@@ -42,3 +42,6 @@ connexion/  prof/  terminale-sti2d/  premiere-it/  snt/  bts-maintenance/
 - Script `08-objectifs.sql` à lancer une fois dans Supabase (table `objectifs`).
 - Espace prof → Activités & points → « Objectifs du jour et de la semaine » : choisir l'activité, un message facultatif et les dates. Sur l'accueil des élèves de la classe, la carte « Tes objectifs » envoie directement sur l'activité. Sans objectif en cours : « Reprendre là où tu t'es arrêté » (la liste « À découvrir » est supprimée).
 - Question du jour : carte réduite à une ligne (« 1 question · 20 s » + Jouer) ; une fois répondue elle disparaît, il ne reste que le classement.
+
+## 2I2D : spécialités sous la partie commune (8/11)
+- Dans `catalogue.js`, ajouter `partie: "itec"` ou `partie: "sin"` à une activité de spécialité : elle s'affiche sous la partie commune de sa séquence, en rouge (ITEC) ou en vert (SIN), toujours avec le symbole de la spécialité (engrenage pour ITEC, puce électronique pour SIN). Le préfixe « Spécialité ITEC · » du titre est retiré à l'affichage.
