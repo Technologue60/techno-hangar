@@ -85,7 +85,7 @@ window.CATALOGUE = [
   /* ---------------- BTS maintenance ---------------- */
   { classe: "bts-maintenance", sequence: "ETLV · A volumetric pump",
     titre: "A volumetric pump · corrective maintenance", fichier: "pompe-volumetrique-eleve.html", icone: "pompe",
-    type: "activite", en_ligne: false },
+    type: "activite", en_ligne: true },
   { classe: "bts-maintenance", sequence: "ETLV · A volumetric pump",
     titre: "Feuille élève · Gamme de démontage", fichier: "Gamme-demontage-feuille-eleve.pdf", icone: "doc",
     type: "pdf", en_ligne: false }
