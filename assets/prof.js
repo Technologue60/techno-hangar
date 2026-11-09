@@ -313,12 +313,29 @@ window.TH_PROF = function (acces) {
       var prog = eleves.length ? await TH.rest("progression?select=eleve,ressource,avancement,score,termine,debut_le,maj_le&eleve=in.(" + eleves.map(function (e) { return e.id; }).join(",") + ")") : [];
       var colonnes = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier)
           && (!COLLEGUE || (acces.ressources || []).indexOf(r.classe + "/" + r.fichier) >= 0); })
-        .map(function (r) { return { id: r.classe + "/" + r.fichier, titre: r.titre }; });
+        .map(function (r) { return { id: r.classe + "/" + r.fichier, titre: r.titre, onglet: r.onglet || "", partie: r.partie || "" }; });
       prog.forEach(function (p) { if (!colonnes.some(function (c) { return c.id === p.ressource; })) colonnes.push({ id: p.ressource, titre: p.ressource.split("/").pop() }); });
       var index = {}; prog.forEach(function (p) { index[p.eleve + "|" + p.ressource] = p; });
       dernierSuivi = { classe: classe, eleves: eleves, colonnes: colonnes, index: index };
       if (!eleves.length) { t.appendChild(el("tr", {}, [el("td", { texte: "Aucun élève dans cette classe." })])); return; }
-      t.appendChild(el("tr", {}, [el("th", { texte: "Élève" })].concat(colonnes.map(function (c) { return el("th", { class: "res-col", title: c.id, texte: c.titre }); }))));
+      // Code couleur des activités : couleur de la classe, rouge ITEC, vert SIN (champ « partie » du catalogue)
+      var infoC = CLASSES.filter(function (x) { return x.id === classe; })[0] || {};
+      var SPE = { itec: ["Spé ITEC", "--c-itec"], sin: ["Spé SIN", "--c-sin"] };
+      colonnes.forEach(function (c) {
+        var og = (infoC.onglets || []).filter(function (o) { return o.id === c.onglet; })[0];
+        c.coul = SPE[c.partie] ? SPE[c.partie][1] : (infoC.couleur || "--accent");
+        c.groupe = SPE[c.partie] ? SPE[c.partie][0] : (og ? og.nom + (c.onglet === "2i2d" ? " commun" : "") : (c.onglet ? c.onglet : "Activités"));
+        c.court = c.titre.replace(/^(Spécialité|Partie)\s+(ITEC|SIN)\s*·\s*/i, "");
+      });
+      var ligneG = el("tr", { class: "groupes" }, [el("th", { class: "vide-g" })]);
+      colonnes.forEach(function (c, i) {
+        if (i && colonnes[i - 1].groupe === c.groupe) { ligneG.lastChild.colSpan += 1; return; }
+        var th = el("th", { class: "grp", texte: c.groupe }); th.colSpan = 1; th.style.setProperty("--c", "var(" + c.coul + ")"); ligneG.appendChild(th);
+      });
+      t.appendChild(ligneG);
+      t.appendChild(el("tr", {}, [el("th", { texte: "Élève" })].concat(colonnes.map(function (c, i) {
+        var th = el("th", { class: "res-col" + (i && colonnes[i - 1].groupe !== c.groupe ? " debut-g" : ""), title: c.titre, texte: c.court });
+        th.style.setProperty("--c", "var(" + c.coul + ")"); return th; }))));
       eleves.forEach(function (e) {
         var tr = el("tr", {}, [el("td", { texte: e.nom + " " + e.prenom })]);
         colonnes.forEach(function (c) {
@@ -330,6 +347,8 @@ window.TH_PROF = function (acces) {
             else if (p.avancement != null) td = el("td", { class: "c cours", title: quand, texte: Math.round(p.avancement) + " %" });
             else td = el("td", { class: "c cours", title: quand, texte: "●" });
           }
+          td.style.setProperty("--c", "var(" + c.coul + ")");
+          if (colonnes.indexOf(c) && colonnes[colonnes.indexOf(c) - 1].groupe !== c.groupe) td.classList.add("debut-g");
           tr.appendChild(td);
         });
         t.appendChild(tr);

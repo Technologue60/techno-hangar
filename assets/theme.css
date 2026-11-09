@@ -176,3 +176,29 @@ body.pass-off .pr-cover:before, body.pass-off .pr-cover:after { display: none; }
 .carte.spe-carte .illu { background: color-mix(in srgb, var(--c) 12%, transparent); }
 .carte.spe-carte .btn.primary { background: var(--c); color: #0b0b0e; }
 @media (max-width: 600px) { .specialites { margin-left: .3rem; padding-left: .8rem; } .spe-bloc:before { left: calc(-.8rem - 2px); width: .6rem; } }
+
+/* ---------- Espace prof · Suivi : code couleur des activités ---------- */
+.suivi tr.groupes th { background: transparent; border-bottom: 0; padding: .35rem .5rem .2rem; }
+.suivi th.grp { color: var(--c); font-size: .72rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: .04em; white-space: normal; line-height: 1.15; text-align: center;
+  background: color-mix(in srgb, var(--c) 12%, transparent) !important; border-bottom: 2px solid var(--c) !important; border-radius: 8px 8px 0 0; }
+.suivi th.res-col { color: color-mix(in srgb, var(--c) 65%, var(--text)); background: color-mix(in srgb, var(--c) 7%, var(--bg)); }
+.suivi td.c { background: color-mix(in srgb, var(--c) 4%, transparent); }
+.suivi .debut-g { border-left: 2px solid color-mix(in srgb, var(--c) 45%, transparent); }
+.suivi td.c.cours { color: var(--c); }
+.suivi th.res-col { overflow: hidden; text-overflow: ellipsis; max-height: 13rem; vertical-align: bottom; }
+.suivi tr.groupes th.grp { position: relative; z-index: 1; }
+
+/* ---------- Rareté Holo et badge hexagonal métallique ---------- */
+.r-holo { --r: #ff9eea; }
+/* Badge hexagonal métallique (remplace l'ancien hexagone plat) */
+.bdg { clip-path: none; background: none; position: relative; display: inline-grid; place-items: center;
+  width: var(--t); height: calc(var(--t) * 1.1); flex: none; }
+.bdg svg { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+.bdg-in { position: relative; clip-path: none; background: none; width: auto; height: auto; line-height: 1;
+  font-size: calc(var(--t) * .36); font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+.bdg.r-legendaire, .bdg.r-holo { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--r) 45%, transparent)); }
+
+/* Cases à cocher des listes d'activités (espace prof) : texte sur plusieurs lignes */
+.pp-cases .case { display: flex; gap: .45rem; align-items: flex-start; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.pp-pic { display: inline-flex; align-items: center; gap: .4rem; }
+.pp-pic[hidden] { display: none; }

@@ -6,6 +6,8 @@ window.TH_CONFIG = {
   domaineEleves: "technologue60.github.io",
   // Adresse du site, imprimée sur les fiches d'identifiants
   adresseSite: "https://technologue60.github.io/techno-hangar/",
-  // Pass de progression visible par les élèves ? false = affiché flouté avec « Prochainement »
-  passActif: false
+  // Pass de progression visible par TOUTES les classes ? false = affiché flouté avec « Prochainement »
+  passActif: false,
+  // Classes qui ont déjà le pass, les rangs et les badges (même si passActif est false)
+  passClasses: ["terminale-sti2d"]
 };

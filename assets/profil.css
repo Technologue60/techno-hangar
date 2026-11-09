@@ -1,0 +1,156 @@
+/* =========================================================================
+   Techno-Hangar · nouveau profil (classes du pass) : couverture, bandeau de
+   saison, 3 tuiles (rang, activités, badges), panneaux de détail.
+   ========================================================================= */
+
+/* Page */
+.ps-page { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.ps-cover .pr-trophees { display: none; }
+body.ps-fige { overflow: hidden; }
+
+.ps-saison, .ps-tuile { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; transition: border-color .15s, background .15s, transform .15s; }
+.ps-saison:hover, .ps-tuile:hover { border-color: var(--border2); background: var(--surface2); }
+.ps-saison:active, .ps-tuile:active { transform: scale(.99); }
+.ps-saison:focus-visible, .ps-tuile:focus-visible, .ps-bd:focus-visible, .ps-rang:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.ps-saison { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.ps-sh { display: flex; align-items: baseline; gap: 10px; }
+.ps-sh b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 15.5px; }
+.ps-n { margin-left: auto; font: 500 12px "Geist Mono", monospace; color: var(--muted); white-space: nowrap; }
+.ps-ss { font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+.ps-segs, .ps-noms { display: grid; gap: 5px; }
+.ps-segs i { display: block; height: 5px; border-radius: 5px; background: var(--border2); overflow: hidden; }
+.ps-segs i u { display: block; height: 100%; background: var(--grad); }
+.ps-noms span { font: 500 9.5px "Geist Mono", monospace; color: var(--faible); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ps-noms .en { color: var(--accent); } .ps-noms .fini { color: var(--muted); }
+.ps-lien { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 9px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.ps-chev { display: inline-grid; color: var(--faible); } .ps-chev svg { width: 18px; height: 18px; }
+.ps-lien .ps-chev { color: var(--accent); }
+
+.ps-tuile { display: grid; grid-template-columns: 56px 1fr 18px; gap: 14px; align-items: center; padding: 14px 16px; }
+.ps-ic-t { width: 56px; height: 56px; display: grid; place-items: center; }
+.ps-ic-t svg { width: 100%; height: 100%; }
+.ps-tx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ps-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; column-gap: 10px; }
+.ps-tuile b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 16.5px; }
+.ps-chiffre { font: 500 12px "Geist Mono", monospace; color: var(--muted); white-space: nowrap; }
+.ps-tuile small { color: var(--muted); font-size: 12.5px; }
+.ps-jauge { display: block; height: 7px; border-radius: 99px; background: var(--border2); overflow: hidden; }
+.ps-jauge i { display: block; height: 100%; border-radius: inherit; background: var(--grad); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.ps-jauge.r i { background: var(--r); }
+.ps-rar { display: inline-flex; align-items: center; font: 600 11px "Geist Mono", monospace; padding: 2px 8px; border-radius: 99px; white-space: nowrap;
+  color: var(--r); background: color-mix(in srgb, var(--r) 14%, transparent); border: 1px solid color-mix(in srgb, var(--r) 38%, transparent); }
+.ps-rar.r-holo { color: #ffd6f4; }
+.ps-dern { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.ps-liens { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+
+/* Emblèmes de rang */
+.ps-emb { display: block; width: 100%; height: 100%; }
+.ps-emb svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
+.ps-emb.gris svg { filter: grayscale(.85) brightness(.55); }
+
+/* Panneau */
+.ps-voile { position: fixed; inset: 0; background: rgba(2,4,7,.66); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 80; }
+.ps-voile.ouvert { opacity: 1; pointer-events: auto; }
+.ps-pan { position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 104%); width: min(600px, 100%); max-height: 88vh; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border2); border-bottom: 0; border-radius: 20px 20px 0 0; z-index: 81;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1); box-shadow: 0 -20px 60px rgba(0,0,0,.5); }
+.ps-pan.ouvert { transform: translate(-50%, 0); }
+@media (min-width: 760px) {
+  .ps-pan { bottom: auto; top: 50%; transform: translate(-50%, -46%) scale(.97); opacity: 0; pointer-events: none; border-radius: 20px; border-bottom: 1px solid var(--border2); transition: transform .22s, opacity .22s; }
+  .ps-pan.ouvert { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+}
+.ps-tete { display: flex; align-items: center; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+.ps-tete h2 { font-size: 19px; flex: 1; margin: 0; }
+.ps-ic { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); display: grid; place-items: center; cursor: pointer; flex: none; }
+.ps-ic svg { width: 16px; height: 16px; }
+.ps-ic[hidden] { display: none; }
+.ps-corps { overflow: auto; padding: 16px 18px 26px; display: flex; flex-direction: column; gap: 10px; }
+.ps-corps > .pa-choix, .ps-corps > .vp-tete { margin-top: 0; }
+.ps-info { font-size: 12.5px; color: var(--muted); background: var(--surface2); border-radius: 12px; padding: 10px 12px; margin: 0; }
+.ps-info b { color: var(--text); }
+.ps-sous { font: 600 11.5px "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 6px 0 0; }
+
+/* Rangs */
+.ps-rang { position: relative; display: grid; grid-template-columns: 60px 1fr 22px; gap: 14px; align-items: center; width: 100%; text-align: left; font: inherit; color: inherit;
+  padding: 10px 12px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; }
+.ps-rang .ps-emb { width: 60px; height: 60px; }
+.ps-rang.ici { border-color: color-mix(in srgb, var(--c) 55%, var(--border)); box-shadow: 0 0 26px -10px var(--c); }
+.ps-rang-t { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.ps-rang b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 16.5px; }
+.ps-rang.futur b { color: var(--muted); }
+.ps-pill { font: 600 11px "Geist Mono", monospace; padding: 2px 8px; border-radius: 99px; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+.ps-ici { font: 700 10px "Geist Mono", monospace; background: var(--grad); color: #04121a; padding: 2px 8px; border-radius: 99px; }
+.ps-i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border2); display: grid; place-items: center; font: 600 12px "Geist Mono", monospace; color: var(--muted); }
+.ps-bulle { position: absolute; right: 10px; top: calc(100% - 6px); z-index: 3; background: #000; border: 1px solid var(--border2); border-radius: 10px; padding: 9px 12px;
+  display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; min-width: 190px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .15s, transform .15s; }
+.ps-bulle b { font: 600 10.5px "Geist Mono", monospace !important; color: var(--c); text-transform: uppercase; letter-spacing: .06em; }
+.ps-rang.montre { z-index: 4; } .ps-rang.montre .ps-bulle { opacity: 1; transform: none; }
+@media (hover: hover) { .ps-rang:hover { z-index: 4; } .ps-rang:hover .ps-bulle { opacity: 1; transform: none; } }
+
+.ps-ultime { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; text-align: left; width: 100%; padding: 14px; border-radius: 16px; cursor: pointer; font: inherit; color: inherit;
+  border: 1.5px solid transparent; background: linear-gradient(var(--surface2), var(--surface2)) padding-box, var(--holo) border-box; background-size: 100% 100%, 200% 100%;
+  box-shadow: 0 0 30px -12px rgba(220,170,255,.6); }
+.ps-ultime:not(.ok) .bdg svg { filter: saturate(.35) brightness(.7); }
+.ps-ultime b { display: block; font-family: "Chakra Petch", var(--font, sans-serif); font-size: 17px; margin-top: 5px;
+  background: var(--holo); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ps-ultime small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+/* Plis (menus déroulants) */
+.ps-pli { border: 1px solid var(--border); border-radius: 14px; background: var(--surface2); }
+.ps-pli summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; }
+.ps-pli summary::-webkit-details-marker { display: none; }
+.ps-pli summary b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 15px; }
+.ps-pli summary span { margin-left: auto; font: 500 11.5px "Geist Mono", monospace; color: var(--muted); white-space: nowrap; }
+.ps-pli summary:after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--faible); border-bottom: 2px solid var(--faible); transform: rotate(45deg); margin: -4px 2px 0 0; transition: transform .2s; }
+.ps-pli[open] summary:after { transform: rotate(225deg); margin-top: 4px; }
+.ps-pli-in { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ps-defi { border-color: rgba(245,183,74,.35); }
+.ps-defi summary span { color: var(--r-legendaire, #f5b74a); }
+
+.ps-act { display: grid; grid-template-columns: 26px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: inherit; text-decoration: none; }
+a.ps-act:hover { border-color: var(--border2); }
+.ps-act.itec { box-shadow: inset 3px 0 0 var(--c-itec, #ff5d5d); } .ps-act.sin { box-shadow: inset 3px 0 0 var(--c-sin, #3ddc84); }
+.ps-st { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.ps-act.ok .ps-st { background: rgba(47,211,154,.15); color: #2fd39a; }
+.ps-act.cours .ps-st { background: rgba(59,139,255,.15); color: #7fb2ff; }
+.ps-act.afaire .ps-st { border: 1px dashed var(--border2); color: var(--faible); }
+.ps-act-t b { font-size: 14px; display: block; }
+.ps-act-t small { color: var(--muted); font-size: 12px; }
+.ps-pts { font: 600 12px "Geist Mono", monospace; color: var(--accent); white-space: nowrap; }
+.ps-pts.faible { color: var(--faible); font-weight: 400; }
+.ps-cond { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--muted); width: 100%; text-align: left; }
+.ps-cond b { color: var(--text); font: 600 12px "Geist Mono", monospace; white-space: nowrap; }
+.ps-cond.ok { color: #2fd39a; }
+.ps-palier { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; text-align: left; width: 100%; padding: 8px 10px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border); cursor: pointer; font: inherit; color: inherit; }
+.ps-palier:not(.ok) .bdg svg { filter: grayscale(.6) brightness(.75); }
+.ps-palier b { font-size: 13.5px; display: block; } .ps-palier small { display: block; color: var(--muted); font-size: 12px; }
+.ps-go { align-self: center; margin-top: 4px; }
+
+/* Badges */
+.ps-gr { display: flex; flex-direction: column; gap: 8px; }
+.ps-gr-t { font: 600 11px "Geist Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.ps-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+.ps-bd { aspect-ratio: 1 / 1.08; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .15s, border-color .15s; }
+.ps-bd:hover { border-color: var(--border2); transform: translateY(-2px); }
+.ps-bd.verr .bdg { filter: grayscale(1) brightness(.4); }
+.ps-gr-defi { padding: 10px; border-radius: 14px; border: 1px dashed rgba(245,183,74,.35); background: rgba(245,183,74,.04); display: flex; flex-direction: column; gap: 8px; }
+.ps-gr-defi > span { font: 600 11.5px "Geist Mono", monospace; color: var(--r-legendaire, #f5b74a); letter-spacing: .06em; text-transform: uppercase; }
+.ps-fiche { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 4px 0; }
+.ps-fiche h3 { font-size: 22px; margin: 0; }
+.ps-fiche p { color: var(--muted); font-size: 14px; max-width: 42ch; margin: 0; }
+.ps-gros.verr .bdg { filter: grayscale(1) brightness(.45); }
+.ps-tag-defi { font: 500 11.5px "Geist Mono", monospace; color: var(--r-legendaire, #f5b74a); }
+.ps-barre { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+.ps-fiche .ps-cond { max-width: 360px; }
+.ps-date { font: 500 12px "Geist Mono", monospace; color: var(--faible); }
+
+/* Pass dans le panneau : un peu plus serré */
+.ps-corps .vp-tete { padding-top: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ps-ultime, .ps-ultime b { animation: th-irise 6s linear infinite; }
+}

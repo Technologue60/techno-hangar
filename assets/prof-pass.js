@@ -5,7 +5,7 @@
   var CAT = window.CATALOGUE || [];
   var JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
   var JC = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
-  var RARETES = { commun: "Commun", rare: "Rare", epique: "Épique", legendaire: "Légendaire" };
+  var RARETES = { commun: "Commun", rare: "Rare", epique: "Épique", legendaire: "Légendaire", holo: "Holo" };
   var ETATS = { actif: "Actif", inactif: "Inactif", ailleurs: "Onglet quitté", hors_ligne: "Hors ligne" };
   var SYMBOLES = ["⚙️","🔧","🔩","💡","🔋","⚡","🤖","🚀","🛰️","🛠️","📐","📡","💻","🧲","🔬","🧪","🧠","🦾","🥷","👾","🐉","🦖","🦊","🐺","🦉","🐙","👑","💎","🔥","🌟","🎮","🎧","🏆","🛸","🧙","🧑‍🚀","🦸","🏴‍☠️","🐲","🌋"];
   function classes() { return window.TH_CLASSES || []; }
@@ -143,6 +143,8 @@
     }
   }
 
+  var reglagesRangs = false;
+  function classePass(c) { return ((window.TH_CONFIG && window.TH_CONFIG.passClasses) || []).indexOf(c) >= 0; }
   async function chargerActivites() {
     var c = classeChoisie(), zone = $("a-zone"), et = $("a-etat");
     vider(zone); etat(et, "");
@@ -150,8 +152,12 @@
     $("a-classe-nom").textContent = nomClasse(c);
     try {
       var rows = await TH.rest("activites?select=*&classe=eq." + c);
-      var reg = (await TH.rest("pass_reglages?select=*&classe=eq." + c))[0] || { plafond_jour: 50, decrochage_jours: 7 };
+      var regLigne = (await TH.rest("pass_reglages?select=*&classe=eq." + c))[0];
+      var reg = regLigne || { plafond_jour: 50, decrochage_jours: 7 };
       $("a-plafond").value = reg.plafond_jour; $("a-decro").value = reg.decrochage_jours;
+      var rs = reg.rang_seuils || [1000, 3000, 5000];
+      if ($("a-r1")) { $("a-r1").value = rs[0]; $("a-r2").value = rs[1]; $("a-r3").value = rs[2]; }
+      reglagesRangs = !regLigne || "rang_seuils" in regLigne;
       var idx = {}; rows.forEach(function (r) { idx[r.ressource] = r; });
       var res = ressourcesClasse(c);
       rows.forEach(function (r) { if (!res.some(function (x) { return x.classe + "/" + x.fichier === r.ressource; })) res.push({ classe: c, fichier: r.ressource.split("/").slice(1).join("/"), titre: r.ressource.split("/").pop() + " (hors catalogue)" }); });
@@ -160,10 +166,20 @@
       res.forEach(function (r) {
         var id = r.classe + "/" + r.fichier, a = idx[id];
         var actif = input({ type: "checkbox", title: "L'activité rapporte des points et suit les réglages de la ligne" }); actif.checked = !!a;
-        var d = a || { type: "activite", points: 100, bonus_max: 20, temps_min: 5, etat: "ouvert", horaires: [], hors_periode: "revision" };
-        var type = select([["activite", "Activité (1 fois)"], ["entrainement", "Entraînement (rejouable)"], ["jeu", "Jeu (rejouable)"]], d.type);
+        var d = a || { type: "activite", points: classePass(c) ? 60 : 100, bonus_max: classePass(c) ? 90 : 20, temps_min: 5, etat: "ouvert", horaires: [], hors_periode: "revision" };
+        var type = select([["activite", "Activité (1 fois)"], ["entrainement", "Entraînement (rejouable)"], ["jeu", "Jeu (rejouable)"], ["defi", "Grand défi (fin de séquence)"]], d.type);
+        var req = el("div", { class: "pp-cases" });
+        ressourcesClasse(c).filter(function (x) { return (x.type === "activite" || x.type === "td") && x.classe + "/" + x.fichier !== id; }).forEach(function (x) {
+          var k = input({ type: "checkbox", value: x.classe + "/" + x.fichier }); if ((d.requis || []).indexOf(k.value) >= 0) k.checked = true;
+          req.appendChild(el("label", { class: "case" }, [k, document.createTextNode((x.sequence ? x.sequence + " · " : "") + x.titre)]));
+        });
+        var blocReq = el("div", {}, [el("p", { class: "aide", texte: "Grand défi : il s'ouvre quand l'élève a terminé toutes les activités cochées (le score ne compte pas). Points = participation ; bonus max = points de performance à 20/20 (rien sous 10/20)." }), req]);
+        var majReq = function () {
+          blocReq.hidden = type.value !== "defi";
+          if (type.value === "defi" && !a && classePass(c)) { pts.value = 100; bon.value = 300; }
+        };
         var pts = input({ type: "number", min: "0", max: "10000", value: d.points, class: "pp-n" });
-        var bon = input({ type: "number", min: "0", max: "10000", value: d.bonus_max, class: "pp-n", title: "Bonus selon le score (/20)" });
+        var bon = input({ type: "number", min: "0", max: "10000", value: d.bonus_max, class: "pp-n", title: "Points de performance à 20/20 (rien sous 10/20)" });
         var tmin = input({ type: "number", min: "0", max: "600", value: d.temps_min, class: "pp-n", title: "Minutes. Activité : en dessous, pas de points et alerte. Entraînement : délai entre deux gains." });
         var inter = select([["ouvert", "🔓 Ouverte"], ["ferme", "🔒 Fermée"]], d.etat);
         var ouv = input({ type: "datetime-local", value: local(d.ouvre_le) }), fer = input({ type: "datetime-local", value: local(d.ferme_le) });
@@ -179,7 +195,8 @@
             await upsert("activites", { ressource: id, classe: c, type: type.value, points: +pts.value || 0, bonus_max: +bon.value || 0,
               temps_min: +tmin.value || 0, etat: inter.value, ouvre_le: ouv.value ? new Date(ouv.value).toISOString() : null,
               ferme_le: fer.value ? new Date(fer.value).toISOString() : null, horaires: horairesLire(hor.value),
-              hors_periode: hors.value, maj_le: new Date().toISOString() }, "ressource");
+              hors_periode: hors.value, maj_le: new Date().toISOString(),
+              requis: type.value === "defi" ? [].slice.call(req.querySelectorAll("input:checked")).map(function (o) { return o.value; }) : null }, "ressource");
             etat(info, "✓", true);
           } catch (e) { etat(info, msg(e), false); }
         });
@@ -196,7 +213,9 @@
         var sous = el("tr", { class: "pp-sous", hidden: "" }, [el("td", { colspan: "9" }, [el("div", { class: "form-exc" }, [
           el("label", {}, [document.createTextNode("Ouvre le "), ouv]), el("label", {}, [document.createTextNode("Ferme le "), fer]),
           el("label", {}, [document.createTextNode("Horaires "), hor]), el("label", {}, [document.createTextNode("En dehors : "), hors]),
-          el("span", { class: "aide", texte: "Horaires facultatifs, heure de Paris (ex. « Me 14:00-18:00; Ve 17:00-19:00 » pour un jeu après les cours)." })])])]);
+          el("span", { class: "aide", texte: "Horaires facultatifs, heure de Paris (ex. « Me 14:00-18:00; Ve 17:00-19:00 » pour un jeu après les cours)." })]), blocReq])]);
+        type.addEventListener("change", function () { majReq(); if (type.value === "defi") sous.hidden = false; });
+        majReq();
         [ouv, fer, hor].forEach(function (x) { x.addEventListener("change", function () { bCal.textContent = resumeCal() + " ▾"; }); });
         t.appendChild(el("tr", {}, [el("td", { class: "pp-titre", texte: r.titre }), el("td", {}, [actif]), el("td", {}, [type]), el("td", {}, [pts]), el("td", {}, [bon]),
           el("td", {}, [tmin]), el("td", {}, [inter]), el("td", {}, [bCal]),
@@ -328,12 +347,22 @@
       var majStyles = function () { vider(sty); (STYLES[type.value] || []).forEach(function (o) { var x = el("option", { value: o[0], texte: o[1] }); if (o[0] === r.style) x.selected = true; sty.appendChild(x); }); };
       majStyles();
       var REG = [["", "— aucune —"], ["activites", "Activités terminées ≥"], ["sans_faute", "Activités à 20/20 ≥"], ["points", "Points au total ≥"], ["quiz_justes", "Bonnes réponses question du jour ≥"],
-        ["serie", "Meilleure série (jours) ≥"], ["entrainements", "Entraînements réussis ≥"], ["paliers", "Paliers du pass ≥"], ["saisons", "Saisons à 100 % ≥"]];
+        ["serie", "Meilleure série (jours) ≥"], ["entrainements", "Entraînements réussis ≥"], ["paliers", "Paliers du pass ≥"], ["saisons", "Saisons à 100 % ≥"],
+        ["perf", "Points de performance (rang) ≥"], ["score_min", "Activités cochées avec au moins … /20"], ["legende", "Succès ultime (rang max + tout à 20/20)"]];
+      var estMin = r.condition && r.condition.type === "score_min";
       var regType = select(REG, (r.condition && r.condition.type) || "");
-      var regSeuil = input({ type: "number", min: "0", value: r.condition && r.condition.seuil != null ? r.condition.seuil : "", class: "pp-n", placeholder: "seuil" });
+      var regSeuil = input({ type: "number", min: "0", value: estMin ? (r.condition.min || 0) : r.condition && r.condition.seuil != null ? r.condition.seuil : "", class: "pp-n", placeholder: "seuil" });
+      var grp = input({ value: r.groupe || "", placeholder: "ex. Statique", class: "pp-nom" });
+      var sai = input({ type: "number", min: "1", max: "12", value: r.saison || "", class: "pp-n", placeholder: "n°" });
       var nom = input({ value: r.nom || "", class: "pp-nom", placeholder: "Nom" });
       var rar = select(Object.keys(RARETES).map(function (k) { return [k, RARETES[k]]; }), r.rarete || "commun");
       var sym = input({ value: r.symbole || "", class: "pp-sym", list: "pp-symboles", placeholder: "🤖" });
+      var PIC = window.TH_PICTOS || {};
+      var pic = select(Object.keys(PIC).map(function (k) { return ["ic:" + k, PIC[k][0]]; }), /^ic:/.test(r.symbole || "") ? r.symbole : "ic:etoile");
+      var apercu = el("span", { class: "pp-apercu" });
+      var majApercu = function () { vider(apercu); if (window.TH_PASS) apercu.appendChild(window.TH_PASS.badge({ rarete: rar.value, symbole: pic.value }, 34)); };
+      pic.addEventListener("change", majApercu); rar.addEventListener("change", majApercu);
+      var cellSym = el("td", {}, [sym, el("span", { class: "pp-pic" }, [apercu, pic])]);
       var col = input({ type: "color", value: r.couleur || "#5b8cff" });
       var img = input({ value: r.image || "", placeholder: "assets/avatars/x.png", class: "pp-img" });
       var cellImg = el("td", {}, [img, sty]);
@@ -342,27 +371,34 @@
       var cases = el("div", { class: "pp-cases" });
       CAT.filter(function (x) { return x.fichier && !/^https?:/.test(x.fichier) && (x.type === "activite" || x.type === "td"); }).forEach(function (x) {
         var id = x.classe + "/" + x.fichier, c = input({ type: "checkbox", value: id });
-        if ((r.ressources || []).indexOf(id) >= 0) c.checked = true;
+        if ((estMin ? r.condition.ressources || [] : r.ressources || []).indexOf(id) >= 0) c.checked = true;
         cases.appendChild(el("label", { class: "case" }, [c, document.createTextNode(nomClasse(x.classe) + " · " + x.titre)]));
       });
       var choisies = function () { return [].slice.call(cases.querySelectorAll("input:checked")).map(function (o) { return o.value; }); };
       var bCond = bouton("", "", function () { sous.hidden = !sous.hidden; });
       var majCond = function () {
         var n = choisies().length;
-        bCond.textContent = (regType.value ? (REG.filter(function (x) { return x[0] === regType.value; })[0][1] + " " + (regSeuil.value || 0))
+        bCond.textContent = (regType.value === "score_min" ? "≥ " + (regSeuil.value || 0) + "/20 sur " + n + " activité" + (n > 1 ? "s" : "")
+          : regType.value === "legende" ? "Succès ultime"
+          : regType.value ? (REG.filter(function (x) { return x[0] === regType.value; })[0][1] + " " + (regSeuil.value || 0))
           : n ? "Terminer " + n + " activité" + (n > 1 ? "s" : "") : "Pass ou prof") + " ▾";
       };
       cases.addEventListener("change", majCond); regType.addEventListener("change", majCond); regSeuil.addEventListener("input", majCond); majCond();
       var sous = el("tr", { class: "pp-sous", hidden: "" }, [el("td", { colspan: "10" }, [
         el("div", { class: "form-exc" }, [el("label", {}, [document.createTextNode("Condition automatique "), regType]), el("label", {}, [document.createTextNode("Seuil "), regSeuil]),
-          el("span", { class: "aide", texte: "Obtenu automatiquement dès que l'élève atteint le seuil (0 = offert à tous)." })]),
+          el("span", { class: "aide", texte: "Obtenu automatiquement dès que l'élève atteint le seuil (0 = offert à tous). « Activités cochées avec au moins … /20 » : coche les activités ci-dessous et mets la note minimale (0 = juste terminées ; pour un grand défi, 16 = 80 %)." })]),
+        el("div", { class: "form-exc" }, [el("label", {}, [document.createTextNode("Badge : séquence "), grp]), el("label", {}, [document.createTextNode("saison n° "), sai]),
+          el("span", { class: "aide", texte: "Range le badge dans le profil (saisons comptées dans l'ordre des dates, vide = « Toute l'année »)." })]),
         el("p", { class: "aide", texte: "Coche des activités : la récompense est obtenue automatiquement quand l'élève les a toutes terminées (ex. « Pro de la statique » pour tous les TD du PFS). Sans case cochée, elle s'obtient par un palier du pass ou quand tu la donnes." }), cases])]);
       var info = el("span", { class: "aide" });
       var corps = function () {
-        return { type: type.value, nom: nom.value.trim(), rarete: rar.value, symbole: sym.value.trim(), couleur: col.value, image: img.value.trim() || null,
-          classe: cl.value || null, mystere: mys.checked, ressources: choisies(),
+        return { type: type.value, nom: nom.value.trim(), rarete: rar.value, symbole: type.value === "badge" ? pic.value : sym.value.trim(), couleur: col.value, image: img.value.trim() || null,
+          classe: cl.value || null, mystere: mys.checked, ressources: regType.value === "score_min" ? [] : choisies(),
           style: (type.value === "ornement" || type.value === "banniere") ? sty.value : null,
-          condition: regType.value ? { type: regType.value, seuil: +regSeuil.value || 0 } : null };
+          groupe: grp.value.trim() || null, saison: +sai.value || null,
+          condition: regType.value === "score_min" ? { type: "score_min", ressources: choisies(), min: +regSeuil.value || 0 }
+            : regType.value === "legende" ? { type: "legende", seuil: 1 }
+            : regType.value ? { type: regType.value, seuil: +regSeuil.value || 0 } : null };
       };
       var actions = [bouton(neuf ? "Ajouter" : "Enregistrer", "primary", async function () {
         var b = corps(); if (!b.nom) return etat(info, "Nom ?", false);
@@ -376,11 +412,12 @@
       actions.push(info);
       var majType = function () {
         var t = type.value, motif = t === "ornement" || t === "banniere";
-        sym.disabled = t === "titre" || motif; col.disabled = t === "titre" || motif; img.hidden = motif || t === "titre" || t === "badge"; sty.hidden = !motif;
+        sym.disabled = t === "titre" || motif; sym.hidden = t === "badge"; pic.parentNode.hidden = t !== "badge"; if (t === "badge") majApercu();
+        col.disabled = t === "titre" || motif; img.hidden = motif || t === "titre" || t === "badge"; sty.hidden = !motif;
         majStyles();
       };
       type.onchange = majType; majType();
-      return [el("tr", {}, [el("td", {}, [type]), el("td", {}, [nom]), el("td", {}, [rar]), el("td", {}, [sym]), el("td", {}, [col]), cellImg,
+      return [el("tr", {}, [el("td", {}, [type]), el("td", {}, [nom]), el("td", {}, [rar]), cellSym, el("td", {}, [col]), cellImg,
         el("td", {}, [cl]), el("td", {}, [mys]), el("td", {}, [bCond]), el("td", {}, [el("div", { class: "actions" }, actions)])]), sous];
     }
     recompenses.forEach(function (r) { ligne(r).forEach(function (x) { t.appendChild(x); }); });
@@ -468,7 +505,11 @@
   /* =================== Branchement =================== */
   window.TH_PROF_PASS = function (acces) {
     if (acces.role !== "prof") return;
-    if (!(window.TH_CONFIG && window.TH_CONFIG.passActif) && $("p-pause")) $("p-pause").hidden = false;
+    if (!(window.TH_CONFIG && window.TH_CONFIG.passActif) && $("p-pause")) {
+      $("p-pause").hidden = false;
+      var pc = (window.TH_CONFIG && window.TH_CONFIG.passClasses) || [];
+      if (pc.length) $("p-pause").innerHTML = "<b>Pass ouvert pour : " + pc.map(nomClasse).join(", ") + ".</b> Les autres classes voient un aperçu flouté « Prochainement ». Pour en ajouter une : <code>passClasses</code> dans <code>assets/config.js</code>.";
+    }
     // listes de classes « Toutes » pour En direct et Alertes
     ["d-classe", "al-classe"].forEach(function (id) {
       var s = $(id); s.appendChild(el("option", { value: "", texte: "Toutes les classes" }));
@@ -497,7 +538,9 @@
       };
     }
     $("a-reg-enr").onclick = async function () {
-      try { await upsert("pass_reglages", { classe: classeChoisie(), plafond_jour: +$("a-plafond").value || 0, decrochage_jours: +$("a-decro").value || 7 }, "classe"); etat($("a-reg-etat"), "✓", true); }
+      var corpsReg = { classe: classeChoisie(), plafond_jour: +$("a-plafond").value || 0, decrochage_jours: +$("a-decro").value || 7 };
+      if (reglagesRangs && $("a-r1")) corpsReg.rang_seuils = [+$("a-r1").value || 0, +$("a-r2").value || 0, +$("a-r3").value || 0];
+      try { await upsert("pass_reglages", corpsReg, "classe"); etat($("a-reg-etat"), "✓", true); }
       catch (e) { etat($("a-reg-etat"), msg(e), false); }
     };
     $("a-d-ajout").onclick = async function () {

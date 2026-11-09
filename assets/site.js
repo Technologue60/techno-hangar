@@ -14,7 +14,11 @@
         { id: "2i2d", nom: "2I2D", defaut: true,
           sequences: [ "Thème 1 · Gérer la ville du futur", "Thème 2 · Comment sécuriser un bâtiment ?", "Thème 3 · Robotique", "Étude de système" ] },
         { id: "itec", nom: "ITEC",
-          sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] } ] },
+          sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] } ],
+      /* Saison (1, 2, 3… dans l'ordre des dates des saisons) de chaque séquence, pour le profil et les badges */
+      saisons: { "0 · Révision de 1re": 1, "1 · Force, couple & torseur": 1, "Thème 1 · Gérer la ville du futur": 1,
+                 "2 · Statique": 2, "Thème 2 · Comment sécuriser un bâtiment ?": 2,
+                 "3 · RDM": 3, "Thème 3 · Robotique": 3, "Étude de système": 4 } },
     { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique · ETLV", couleur: "--c-it",
       onglets: [
         { id: "it", nom: "Innovation technologique", defaut: true,
@@ -158,7 +162,8 @@
       nav.appendChild(a);
     });
     if (acces && acces.role === "eleve") {
-      var mp = el("a", { href: racine + "profil/index.html#" + (window.TH_PASS_ACTIF ? "pass" : "activites") }, [document.createTextNode(window.TH_PASS_ACTIF ? "Mon pass" : "Mon profil")]);
+      var nouveauProfil = window.TH_PASS_ACTIF && ((window.TH_CONFIG && window.TH_CONFIG.passClasses) || []).indexOf(acces.classe) >= 0;
+      var mp = el("a", { href: racine + "profil/index.html" + (nouveauProfil ? "" : "#" + (window.TH_PASS_ACTIF ? "pass" : "activites")) }, [document.createTextNode(window.TH_PASS_ACTIF && !nouveauProfil ? "Mon pass" : "Mon profil")]);
       if (page === "profil") mp.className = "actif";
       nav.appendChild(mp);
     }
@@ -219,8 +224,8 @@
     if (window.TH_ACCUEIL_PASS) window.TH_ACCUEIL_PASS(acces);
   }
 
-  /* ---------- Accueil élève : objectifs du jour / de la semaine (définis par le prof, script 08),
-     sinon « Reprendre là où tu t'es arrêté » ---------- */
+  /* ---------- Accueil élève : uniquement les objectifs du jour / de la semaine définis par le prof (script 08),
+     avec l'avancement de l'élève (Continuer / ✓ Fait) ---------- */
   function aujourdhui() { return new Date().toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" }); }
   function dateFr(d) { return new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }).replace(/\./g, ""); }
   async function reprendre(zone, acces, m) {
@@ -231,7 +236,7 @@
     var jour = aujourdhui();
     var r2 = await Promise.all([
       TH.rest("progression?select=ressource,avancement,termine,maj_le&eleve=eq." + TH.session().user.id + "&order=maj_le.desc").catch(function () { return []; }),
-      TH.rest("objectifs?select=type,ressource,message,debut,fin&classe=eq." + m.id + "&debut=lte." + jour + "&fin=gte." + jour + "&order=type.asc,cree_le.desc").catch(function () { return []; })
+      TH.rest("objectifs?select=type,ressource,message,debut,fin&classe=eq." + m.id + "&debut=lte." + jour + "&fin=gte." + jour + "&order=type.asc,cree_le.desc").catch(function (e) { console.warn("Objectifs non chargés (script 08-objectifs.sql installé ?)", e); return []; })
     ]);
     var prog = r2[0] || [], objs = (r2[1] || []).filter(function (o) { return trouve(o.ressource); });
     var progDe = function (id) { return prog.filter(function (p) { return p.ressource === id; })[0]; };
@@ -254,10 +259,8 @@
       });
       return;
     }
-    var enCours = prog.filter(function (p) { return !p.termine && trouve(p.ressource); }).slice(0, 3);
-    if (!enCours.length) { bloc.remove(); return; }
-    bloc.appendChild(el("div", { class: "rep-titre", texte: "Reprendre là où tu t'es arrêté" }));
-    enCours.forEach(function (p) { bloc.appendChild(ligne(trouve(p.ressource), p, null, null)); });
+    // Pas d'objectif défini par le professeur aujourd'hui : rien à afficher
+    bloc.remove();
   }
 
   /* ---------- Page de classe ---------- */
@@ -467,6 +470,10 @@
     effets();
     if (page === "connexion") { document.documentElement.classList.add("th-ok"); return; }
     var acces = await TH.garde(racine);
+    var pc = (window.TH_CONFIG && window.TH_CONFIG.passClasses) || [];
+    if (acces && !window.TH_PASS_ACTIF && ((acces.role === "eleve" && pc.indexOf(acces.classe) >= 0) || (acces.role === "prof" && pc.length))) {
+      window.TH_PASS_ACTIF = true; body.classList.remove("pass-off");
+    }
     construireEntete(acces);
     if (!acces) return;
     window.TH_ACCES = acces;

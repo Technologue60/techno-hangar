@@ -2,7 +2,7 @@
    Tout est calculé par le serveur (scripts Supabase 03 et 04) : la page ne fait qu'afficher.
    Si les scripts ne sont pas installés, les blocs restent masqués. */
 (function () {
-  var RARETES = { commun: "Commun", rare: "Rare", epique: "Épique", legendaire: "Légendaire" };
+  var RARETES = { commun: "Commun", rare: "Rare", epique: "Épique", legendaire: "Légendaire", holo: "Holo" };
   var SOURCES = { activite: "Activité", entrainement: "Entraînement", jeu: "Jeu", prof: "Bonus du prof" };
   var CALME = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function el() { return window.TH_el.apply(null, arguments); }
@@ -380,7 +380,9 @@
     serie: ["Séries", function (n) { return "Série de " + n + " jours à la question du jour"; }],
     entrainements: ["Entraînement", function (n) { return n + " entraînement" + (n > 1 ? "s" : "") + " réussi" + (n > 1 ? "s" : ""); }],
     paliers: ["Pass", function (n) { return "Débloquer " + n + " palier" + (n > 1 ? "s" : "") + " du pass"; }],
-    saisons: ["Saisons", function (n) { return "Compléter " + n + " saison" + (n > 1 ? "s" : "") + " à 100 %"; }]
+    saisons: ["Saisons", function (n) { return "Compléter " + n + " saison" + (n > 1 ? "s" : "") + " à 100 %"; }],
+    perf: ["Rang", function (n) { return "Atteindre " + nb(n) + " points de performance"; }],
+    legende: ["Succès ultime", function () { return "Rang maximum et toutes les activités de l'année à 20/20"; }]
   };
   function regleTexte(r) {
     if (!r || !r.type) return null;
@@ -396,9 +398,48 @@
     return c;
   }
   // Badge hexagonal
+  var BCOUL = { commun: ["#c7ced6", "#7c8792", "#2d343c"], rare: ["#9ff5d2", "#22b884", "#0a3f2e"], epique: ["#e2ccff", "#9a5cf2", "#33155e"], legendaire: ["#ffe7a6", "#e9a02c", "#5c3205"] };
+  /* Pictogrammes des badges (symbole « ic:nom » dans l'éditeur) : dessinés, pas d'emoji */
+  var T = 'fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"';
+  var PICTOS = {
+    pfs: ["Triangle du PFS", '<path d="M36 60 50 36 64 60Z" ' + T + '/><circle cx="50" cy="36" r="2.6" fill="#fff"/><circle cx="36" cy="60" r="2.6" fill="#fff"/><circle cx="64" cy="60" r="2.6" fill="#fff"/>'],
+    vect: ["Vecteur", '<path d="M37 62 61 38M61 38H52M61 38v9" ' + T + '/>'],
+    eclair: ["Éclair", '<path d="M53 33 41 52h9l-3 15 12-20h-9z" fill="#fff"/>'],
+    cible: ["Cible", '<circle cx="50" cy="50" r="12" ' + T + '/><circle cx="50" cy="50" r="4" fill="#fff"/>'],
+    feu: ["Flamme", '<path d="M50 33s10 9 10 18a10 10 0 0 1-20 0c0-4.5 2.5-7 2.5-7s0 5.5 3.5 5.5c0-8 4-11 4-16.5z" fill="#fff"/>'],
+    livre: ["Livre", '<path d="M50 40c-4-3-9-4-14-3v22c5-1 10 0 14 3 4-3 9-4 14-3V37c-5-1-10 0-14 3zM50 40v22" ' + T + '/>'],
+    pivot: ["Liaison", '<path d="M33 50h34" ' + T + '/><rect x="43" y="41" width="14" height="18" rx="2" ' + T + '/>'],
+    poutre: ["Poutre", '<path d="M34 46q16 11 32 0" ' + T + '/><path d="M34 49l-4.5 8h9zM66 49l-4.5 8h9z" fill="#fff"/>'],
+    drapeau: ["Drapeau", '<path d="M40 64V36M40 37h20l-5 7 5 7H40" ' + T + '/>'],
+    couronne: ["Couronne", '<path d="M35 60 33 42l9 7 8-11 8 11 9-7-2 18z" fill="#fff"/><circle cx="50" cy="34" r="2.6" fill="#fff"/>'],
+    engr: ["Engrenage", '<path d="M50 35l3 4 5-1 1 5 4 3-3 4 3 4-4 3-1 5-5-1-3 4-3-4-5 1-1-5-4-3 3-4-3-4 4-3 1-5 5 1z" fill="#fff"/><circle cx="50" cy="50" r="4.5" fill="rgba(0,0,0,.55)"/>'],
+    etoile: ["Étoile", '<path d="M50 34l4.5 9.5 10.5 1.2-7.8 7.2 2.1 10.4L50 57l-9.3 5.3 2.1-10.4-7.8-7.2 10.5-1.2z" fill="#fff"/>'],
+    check: ["Validé", '<path d="M37 51l9 9 17-19" ' + T + '/>'],
+    bulle: ["Question", '<path d="M36 40a4 4 0 0 1 4-4h20a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H48l-8 6v-6a4 4 0 0 1-4-4z" ' + T + '/><path d="M47 44a3.5 3.5 0 1 1 4 3.5V50" ' + T + '/>'],
+    montagne: ["Sommet", '<path d="M32 62 45 40l6 9 4-5 11 18z" ' + T + '/><path d="M45 40v-7l6 3-6 3" ' + T + '/>'],
+    calendrier: ["Calendrier", '<rect x="36" y="38" width="28" height="24" rx="3" ' + T + '/><path d="M36 46h28M43 34v7M57 34v7" ' + T + '/>'],
+    chrono: ["Chrono", '<circle cx="50" cy="52" r="12" ' + T + '/><path d="M50 52v-6M47 35h6M50 35v5" ' + T + '/>'],
+    cle: ["Clé", '<circle cx="43" cy="45" r="7" ' + T + '/><path d="M48 50l14 14M58 60l4-4" ' + T + '/>'],
+    ampoule: ["Ampoule", '<path d="M44 56c0-4-6-6-6-13a12 12 0 0 1 24 0c0 7-6 9-6 13z" ' + T + '/><path d="M45 61h10M46 65h8" ' + T + '/>'],
+    camera: ["Caméra", '<rect x="35" y="42" width="22" height="16" rx="3" ' + T + '/><path d="M57 47l8-4v14l-8-4" ' + T + '/>'],
+    puce: ["Puce", '<rect x="40" y="40" width="20" height="20" rx="2" ' + T + '/><path d="M45 34v6M55 34v6M45 60v6M55 60v6M34 45h6M34 55h6M60 45h6M60 55h6" ' + T + '/>']
+  };
+  window.TH_PICTOS = PICTOS;
+  var nBdg = 0;
   function badge(b, taille, verrou) {
-    var n = el("span", { class: "bdg r-" + ((b && b.rarete) || "commun") + (verrou ? " verrou" : ""), style: "--t:" + (taille || 44) + "px", title: b ? b.nom : "" },
-      [el("span", { class: "bdg-in", texte: verrou ? "🔒" : ((b && b.symbole) || "★") })]);
+    var r = (b && b.rarete) || "commun", c = BCOUL[r], id = "bdg" + (++nBdg);
+    var fond = r === "holo"
+      ? '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fe3ff"/><stop offset=".35" stop-color="#8dffd2"/><stop offset=".65" stop-color="#ff9eea"/><stop offset="1" stop-color="#a98bff"/></linearGradient>'
+      : '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + (c || BCOUL.commun)[0] + '"/><stop offset=".5" stop-color="' + (c || BCOUL.commun)[1] + '"/><stop offset="1" stop-color="' + (c || BCOUL.commun)[2] + '"/></linearGradient>';
+    var sym = (b && b.symbole) || "", picto = verrou ? null : PICTOS[sym.replace(/^ic:/, "")] && /^ic:/.test(sym) ? PICTOS[sym.slice(3)][1] : !sym ? PICTOS.etoile[1] : null;
+    if (verrou) picto = '<rect x="41" y="49" width="18" height="14" rx="2.5" fill="#fff"/><path d="M45 49v-4a5 5 0 0 1 10 0v4" ' + T + '/>';
+    var n = el("span", { class: "bdg r-" + r + (verrou ? " verrou" : ""), style: "--t:" + (taille || 44) + "px", title: b && b.nom ? b.nom : "" });
+    n.innerHTML = '<svg viewBox="0 0 100 110" aria-hidden="true"><defs>' + fond + '</defs>' +
+      '<path d="M50 6 L90 28 L90 74 L50 104 L10 74 L10 28 Z" fill="url(#' + id + ')" stroke="' + (c ? c[2] : "#3a2a6e") + '" stroke-width="2"/>' +
+      '<path d="M50 18 L79 34 L79 68 L50 90 L21 68 L21 34 Z" fill="rgba(0,0,0,.32)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>' +
+      '<path d="M50 6 L90 28 L90 38 L50 18 L10 38 L10 28 Z" fill="rgba(255,255,255,.28)"/>' +
+      (picto ? '<g transform="translate(0 4)">' + picto + '</g>' : '') + '</svg>';
+    if (!picto) n.appendChild(el("span", { class: "bdg-in", texte: sym }));
     return n;
   }
   function apercuBanniere(style, h) { return el("span", { class: "bn bn-" + (style || "atelier") + " bn-mini", style: "height:" + (h || 56) + "px" }); }
@@ -426,7 +467,8 @@
     var onglets = passOff ? ONGLETS.filter(function (o) { return o[0] === "activites"; }) : ONGLETS;
     if (!onglets.some(function (o) { return o[0] === onglet; })) onglet = passOff ? "activites" : "pass";
     var vueSaison = null, ongletColl = "avatar";
-    var D = { pass: null, quiz: null, acts: {}, prog: [] };
+    var D = { pass: null, quiz: null, acts: {}, prog: [], profil: null };
+    var NOUVEAU = !passOff && ((window.TH_CONFIG && window.TH_CONFIG.passClasses) || []).indexOf(eleve.classe) >= 0;
 
     function erreur(e) {
       zone.innerHTML = "";
@@ -438,9 +480,11 @@
         charger(id, force),
         TH.rpc("profil_quiz", id ? { p_eleve: id } : {}).catch(function () { return null; }),
         TH.rpc("activites_eleve", id ? { p_eleve: id } : {}).catch(function () { return {}; }),
-        TH.rest("progression?select=ressource,avancement,score,termine,maj_le&eleve=eq." + (id || (TH.session() || { user: {} }).user.id)).catch(function () { return []; })
+        TH.rest("progression?select=ressource,avancement,score,termine,maj_le&eleve=eq." + (id || (TH.session() || { user: {} }).user.id)).catch(function () { return []; }),
+        NOUVEAU ? TH.rpc("mon_profil", id ? { p_eleve: id } : {}).catch(function () { return null; }) : null
       ]);
-      D = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [] };
+      D = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [], profil: r[4] };
+      if (NOUVEAU && !D.profil) NOUVEAU = false;   // script 09 pas encore installé : ancien profil
     }
     var rec = function (id) { return trouver(D.pass, id); };
     var possede = function (id) { return (D.pass.obtenues || []).indexOf(id) >= 0; };
@@ -491,6 +535,7 @@
     }
 
     function dessiner() {
+      if (NOUVEAU) { dessinerNouveau(); return; }
       zone.innerHTML = "";
       if (!moiMeme) zone.appendChild(el("div", { class: "pa-vue-prof" }, [
         document.createTextNode("Vue prof · profil de " + eleve.prenom + " " + eleve.nom + " (lecture seule)"),
@@ -510,13 +555,18 @@
       ({ pass: vuePass, badges: vueBadges, collection: vueCollection, activites: vueActivites, points: vuePoints })[onglet](corps, D.pass);
     }
     function aller(o) {
+      if (NOUVEAU) { ouvrir(o); return; }
       onglet = o;
       try { history.replaceState(null, "", location.search + "#" + o); } catch (e) { location.hash = o; }
       dessiner();
       var b = document.querySelector(".pa-onglets"); if (b && b.getBoundingClientRect().top < 0) b.scrollIntoView({ behavior: CALME ? "auto" : "smooth" });
     }
     window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (h !== onglet && onglets.some(function (o) { return o[0] === h; })) aller(h); });
-    async function recharger() { oublierBulle(); D.pass = await charger(cible, true); dessiner(); majBulle(); }
+    async function recharger() {
+      oublierBulle(); D.pass = await charger(cible, true);
+      if (NOUVEAU) D.profil = await TH.rpc("mon_profil", cible ? { p_eleve: cible } : {}).catch(function () { return D.profil; });
+      dessiner(); majBulle();
+    }
 
     /* ----- Onglet Pass : piste verticale façon Brawl Stars ----- */
     function vuePass(corps, p) {
@@ -716,8 +766,365 @@
       corps.appendChild(t);
     }
 
+
+    /* =================== Nouveau profil (classes du pass : rang, saison, badges) =================== */
+    var NOMS_RANGS = ["Apprenti", "Technicien", "Ingénieur", "Expert"];
+    var METAUX = [
+      { c: "#a99cff", a: "#c9c4d6", b: "#6b6478", d: "#2c2834", s: "#e9e6f0", sym: "bloc" },
+      { c: "#ff6fa8", a: "#ffb38a", b: "#d2553a", d: "#5e1d16", s: "#ffe0cc", sym: "cle" },
+      { c: "#5fd3ff", a: "#dfe8ff", b: "#5b6fd6", d: "#1c2160", s: "#e8f2ff", sym: "engr", ailes: true },
+      { c: "#f5b74a", a: "#ffe3a0", b: "#e58a1f", d: "#6a2a07", s: "#fff3d6", sym: "etoile", ailes: true, couronne: true }
+    ];
+    var SYMB = {
+      bloc: '<rect x="40" y="38" width="9" height="9" rx="1.5"/><rect x="51" y="38" width="9" height="9" rx="1.5"/><rect x="40" y="49" width="9" height="9" rx="1.5"/><rect x="51" y="49" width="9" height="5" rx="1.5"/>',
+      cle: '<path d="M43 40a7 7 0 1 0 6 11l9 9 4-4-9-9a7 7 0 0 0-10-7zm2 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>',
+      engr: '<path d="M50 36l3 4 5-1 1 5 4 3-3 4 3 4-4 3-1 5-5-1-3 4-3-4-5 1-1-5-4-3 3-4-3-4 4-3 1-5 5 1z"/><circle cx="50" cy="48" r="4.5" fill="#0b0f14"/>',
+      etoile: '<path d="M50 34l4.5 9.5 10.5 1.2-7.8 7.2 2.1 10.4L50 57l-9.3 5.3 2.1-10.4-7.8-7.2 10.5-1.2z"/>'
+    };
+    var nEmb = 0;
+    function embleme(i, gris) {
+      var m = METAUX[i] || METAUX[0], id = "em" + (++nEmb);
+      var ailes = m.ailes ? '<path d="M18 44 C6 38 2 26 4 16 C10 24 16 26 22 28 Z" fill="url(#' + id + 'w)" stroke="' + m.d + '" stroke-width="1.2"/><path d="M82 44 C94 38 98 26 96 16 C90 24 84 26 78 28 Z" fill="url(#' + id + 'w)" stroke="' + m.d + '" stroke-width="1.2"/><path d="M16 54 C6 50 3 42 4 34 C9 40 14 42 21 43 Z" fill="url(#' + id + 'w)" stroke="' + m.d + '" stroke-width="1.2" opacity=".9"/><path d="M84 54 C94 50 97 42 96 34 C91 40 86 42 79 43 Z" fill="url(#' + id + 'w)" stroke="' + m.d + '" stroke-width="1.2" opacity=".9"/>' : "";
+      var cour = m.couronne ? '<path d="M36 12 L42 4 L50 11 L58 4 L64 12 Z" fill="url(#' + id + 'm)" stroke="' + m.d + '" stroke-width="1.2"/>' : "";
+      var s = el("span", { class: "ps-emb" + (gris ? " gris" : "") });
+      s.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><defs>' +
+        '<linearGradient id="' + id + 'm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m.a + '"/><stop offset=".45" stop-color="' + m.b + '"/><stop offset="1" stop-color="' + m.d + '"/></linearGradient>' +
+        '<linearGradient id="' + id + 'i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + m.d + '"/><stop offset="1" stop-color="' + m.b + '"/></linearGradient>' +
+        '<linearGradient id="' + id + 'w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + m.a + '"/><stop offset="1" stop-color="' + m.d + '"/></linearGradient>' +
+        '<linearGradient id="' + id + 'h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
+        ailes + cour +
+        '<path d="M50 12 L82 30 L82 66 L50 86 L18 66 L18 30 Z" fill="url(#' + id + 'm)" stroke="' + m.d + '" stroke-width="1.5"/>' +
+        '<path d="M50 21 L74 35 L74 61 L50 76 L26 61 L26 35 Z" fill="url(#' + id + 'i)" stroke="' + m.a + '" stroke-opacity=".6" stroke-width="1.2"/>' +
+        '<path d="M50 12 L82 30 L82 40 L50 24 L18 40 L18 30 Z" fill="url(#' + id + 'h)"/>' +
+        '<g fill="' + m.s + '" opacity=".95">' + SYMB[m.sym] + '</g></svg>';
+      return s;
+    }
+    var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+    function chev() { var s = el("span", { class: "ps-chev" }); s.innerHTML = CHEV; return s; }
+    function cfgClasse() { return (window.TH_CLASSES || []).filter(function (c) { return c.id === eleve.classe; })[0] || {}; }
+    function seqSaison() { return cfgClasse().saisons || {}; }
+    function ordreSequences() { var o = []; (cfgClasse().onglets || []).forEach(function (g) { (g.sequences || []).forEach(function (s) { o.push(s); }); }); return o; }
+    function court(seq) {
+      var t = String(seq || "").replace(/^[^·]*·\s*/, "").replace(/^Comment\s+/i, "").replace(/\s*\?\s*$/, "");
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    function saisonsTriees() { return (D.profil.saisons || []).slice().sort(function (a, b) { return a.debut < b.debut ? -1 : 1; }); }
+    function numeroCourant() { var l = saisonsTriees(); for (var i = 0; i < l.length; i++) if (l[i].id === D.profil.courante) return i + 1; return 1; }
+    function sequencesDe(n) { var m = seqSaison(); return ordreSequences().filter(function (s) { return m[s] === n; }); }
+    function idRes(r) { return r.classe + "/" + r.fichier; }
+    function ressourcesDe(seq) {
+      return (window.CATALOGUE || []).filter(function (r) {
+        return r.classe === eleve.classe && r.sequence === seq && r.fichier && r.en_ligne && !/^https?:/.test(r.fichier) && (r.type === "activite" || r.type === "td")
+          && !estDefi(idRes(r));
+      });
+    }
+    function estDefi(id) { return (D.profil.defis || []).some(function (d) { return d.ressource === id; }); }
+    function defiDe(seq) {
+      return (D.profil.defis || []).filter(function (d) {
+        var r = (window.CATALOGUE || []).filter(function (x) { return idRes(x) === d.ressource; })[0];
+        return r && r.sequence === seq;
+      })[0];
+    }
+    function progDe(id) { return D.prog.filter(function (x) { return x.ressource === id; })[0]; }
+    function rangDe(perf) { var s = [0].concat(D.profil.seuils || []), i = 0; s.forEach(function (v, k) { if (perf >= v) i = k; }); return Math.min(i, 3); }
+    function seuilsRangs() { return [0].concat(D.profil.seuils || [1000, 3000, 5000]); }
+    function pctTexte(b) { return b.pct + " % " + (D.profil.nb_eleves > 1 ? "de la classe" : ""); }
+    function dateFr(d) { return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long" }); }
+    function texteBadge(b) {
+      var r = b.regle;
+      if (r && r.type === "score_min") {
+        var l = r.ressources || [], m = Number(r.min) || 0;
+        if (l.length === 1 && estDefi(l[0])) return m ? "Obtenir " + Math.round(m / 20 * 100) + " % ou plus au grand défi de fin de séquence." : "Participer au grand défi de fin de séquence, quel que soit le score.";
+        return (m ? "Obtenir au moins " + String(m).replace(".", ",") + "/20 à " : "Terminer ") + (l.length === 1 ? "« " + titreRessource(l[0]) + " »" : l.length + " activités") + ".";
+      }
+      if (r && r.type === "legende") return "Succès ultime : atteindre le rang " + NOMS_RANGS[3] + " et réussir toutes les activités de l'année à 20/20. Vérifié à la fin de la dernière saison.";
+      if (r && r.type === "perf") return "Atteindre " + nb(r.seuil) + " points de performance.";
+      if (r) return (regleTexte(r) || "Automatique") + ".";
+      if (b.ressources && b.ressources.length) return "Terminer " + (b.ressources.length === 1 ? "« " + titreRessource(b.ressources[0]) + " »" : b.ressources.length + " activités") + ".";
+      return "Dans le pass ou donné par ton professeur.";
+    }
+    function badgeDefi(b) { return b.regle && b.regle.type === "score_min" && (b.regle.ressources || []).some(estDefi); }
+    function ligneActivite(r) {
+      var id = idRes(r), g = progDe(id), gain = (D.profil.gains || {})[id], a = (D.profil.activites || {})[id];
+      var st = g && g.termine ? "ok" : g ? "cours" : "afaire";
+      var info = st === "ok" ? "Terminé" + (g.score != null ? " · " + String(g.score).replace(".", ",") + "/20" : "") + (gain && gain.perf ? " · perf +" + gain.perf : "")
+        : st === "cours" ? "En cours" + (g.avancement != null ? " · " + Math.round(+g.avancement) + " %" : "") : "À faire";
+      var pts = gain ? "+" + nb(gain.points) + " pts" : a ? "jusqu'à " + nb(a.points + a.bonus_max) : "";
+      var ligne = el(moiMeme ? "a" : "div", { class: "ps-act " + st + (r.partie ? " " + r.partie : "") }, [
+        el("span", { class: "ps-st", texte: st === "ok" ? "✓" : st === "cours" ? "…" : "" }),
+        el("span", { class: "ps-act-t" }, [el("b", { texte: r.titre }), el("small", { texte: info })]),
+        el("span", { class: "ps-pts" + (gain ? "" : " faible"), texte: pts })]);
+      if (moiMeme) ligne.setAttribute("href", racine() + "voir.html?r=" + encodeURIComponent(id));
+      return ligne;
+    }
+    function pli(titre, droite, contenu, cls, ouvert) {
+      var d = el("details", { class: "ps-pli" + (cls ? " " + cls : "") });
+      if (ouvert) d.open = true;
+      d.appendChild(el("summary", {}, [el("b", { texte: titre }), el("span", { texte: droite })]));
+      d.appendChild(el("div", { class: "ps-pli-in" }, contenu));
+      return d;
+    }
+
+    /* ----- Panneau (en bas sur téléphone, au centre sur ordinateur) ----- */
+    var PAN = null, panVue = null, panArg = null, focusAvant = null;
+    function panneau() {
+      if (PAN) return PAN;
+      var voile = el("div", { class: "ps-voile" });
+      var ret = el("button", { class: "ps-ic ps-retour", type: "button", "aria-label": "Retour" }); ret.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m15 6-6 6 6 6"/></svg>';
+      var fer = el("button", { class: "ps-ic", type: "button", "aria-label": "Fermer" }); fer.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+      var titre = el("h2", { id: "ps-titre" });
+      var corps = el("div", { class: "ps-corps" });
+      var sec = el("section", { class: "ps-pan", role: "dialog", "aria-modal": "true", "aria-labelledby": "ps-titre" }, [el("div", { class: "ps-tete" }, [ret, titre, fer]), corps]);
+      document.body.appendChild(voile); document.body.appendChild(sec);
+      PAN = { voile: voile, sec: sec, titre: titre, corps: corps, ret: ret };
+      fer.onclick = fermer; voile.onclick = fermer;
+      ret.onclick = function () { ouvrir(ret._vers || "badges"); };
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && panVue) fermer(); });
+      return PAN;
+    }
+    var TITRES = { pass: "Pass de saison", collection: "Personnaliser", activites: "Toutes mes activités", points: "Historique des points", rang: "Rang annuel", saison: "Activités de la saison", badges: "Badges" };
+    function ouvrir(vue, arg) {
+      var p = panneau();
+      if (!panVue) focusAvant = document.activeElement;
+      var memeVue = panVue === vue && panArg === arg;
+      panVue = vue; panArg = arg;
+      remplirPanneau(memeVue);
+      p.voile.classList.add("ouvert"); p.sec.classList.add("ouvert"); document.body.classList.add("ps-fige");
+      try { history.replaceState(null, "", location.search + "#" + vue); } catch (e) {}
+    }
+    function remplirPanneau(garderDefilement) {
+      var p = PAN, haut = garderDefilement ? p.corps.scrollTop : 0;
+      p.corps.innerHTML = ""; p.titre.textContent = TITRES[panVue] || "";
+      p.ret.hidden = panVue !== "badge"; p.ret._vers = "badges";
+      ({ pass: function (c) { vuePass(c, D.pass); }, collection: function (c) { vueCollection(c, D.pass); }, activites: function (c) { vueActivites(c); },
+         points: function (c) { vuePoints(c, D.pass); }, rang: vueRang, saison: vueSaison2, badges: vueBadges2, badge: vueFiche })[panVue](p.corps, panArg);
+      p.corps.scrollTop = haut;
+    }
+    function fermer() {
+      if (!PAN) return;
+      PAN.voile.classList.remove("ouvert"); PAN.sec.classList.remove("ouvert"); document.body.classList.remove("ps-fige");
+      panVue = null; panArg = null;
+      try { history.replaceState(null, "", location.search); } catch (e) {}
+      if (focusAvant && focusAvant.focus) focusAvant.focus({ preventScroll: true });
+    }
+
+    /* ----- Page ----- */
+    function dessinerNouveau() {
+      zone.innerHTML = "";
+      zone.classList.add("ps-page");
+      if (!moiMeme) zone.appendChild(el("div", { class: "pa-vue-prof" }, [
+        document.createTextNode("Vue prof · profil de " + eleve.prenom + " " + eleve.nom + " (lecture seule)"),
+        el("a", { class: "btn", href: racine() + "prof/index.html#pass", texte: "← Espace prof" })]));
+      var cov = couverture(); cov.classList.add("ps-cover"); zone.appendChild(cov);
+      var P = D.profil, l = saisonsTriees(), n = numeroCourant(), s = l[n - 1] || {};
+      // Bandeau de saison → pass
+      var seqs = sequencesDe(n);
+      var seg = el("span", { class: "ps-segs", style: "grid-template-columns:repeat(" + Math.max(1, l.length) + ",1fr)" });
+      var noms = el("span", { class: "ps-noms", style: "grid-template-columns:repeat(" + Math.max(1, l.length) + ",1fr)" });
+      l.forEach(function (x, k) {
+        var pct = x.statut === "terminee" ? 100 : x.statut === "en_cours" ? Math.min(100, x.objectif ? x.points / x.objectif * 100 : 0) : 0;
+        seg.appendChild(el("i", { class: k + 1 === n ? "en" : "" }, [el("u", { style: "width:" + pct + "%" })]));
+        var sq = sequencesDe(k + 1)[0];
+        noms.appendChild(el("span", { class: k + 1 === n ? "en" : x.statut === "terminee" ? "fini" : "", texte: (x.statut === "terminee" ? "✓ " : "") + (sq ? court(sq) : "S" + (k + 1)) }));
+      });
+      var ban = el("button", { class: "ps-saison", type: "button" }, [
+        el("span", { class: "ps-sh" }, [el("b", { texte: "Saison " + n + (s.nom && s.nom.indexOf("·") > 0 ? " · " + s.nom.split("·").slice(1).join("·").trim() : "") }), el("span", { class: "ps-n", texte: n + " / " + l.length })]),
+        el("span", { class: "ps-ss", texte: (seqs.length ? seqs.map(court).join(" + ") + " · " : "") + (s.fin ? "fin le " + dateFr(s.fin) : "") }),
+        seg, noms,
+        el("span", { class: "ps-lien" }, [document.createTextNode("Pass de saison · palier " + (s.debloques || 0) + " / " + (s.paliers || 0)), chev()])]);
+      ban.onclick = function () { vueSaison = s.id; ouvrir("pass"); };
+      zone.appendChild(ban);
+
+      // Tuile rang
+      var perf = Number(P.perf) || 0, ri = rangDe(perf), se = seuilsRangs(), suiv = se[ri + 1];
+      var tR = el("button", { class: "ps-tuile", type: "button" }, [
+        el("span", { class: "ps-ic-t" }, [embleme(ri)]),
+        el("span", { class: "ps-tx" }, [
+          el("span", { class: "ps-h" }, [el("b", { texte: "Rang " + (ri + 1) + " · " + NOMS_RANGS[ri] }), el("span", { class: "ps-chiffre", texte: suiv ? nb(perf) + " / " + nb(suiv) : nb(perf) + " pts" })]),
+          el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (suiv ? Math.min(100, (perf - se[ri]) / (suiv - se[ri]) * 100) : 100) + "%" })]),
+          el("small", { texte: suiv ? "Performance · encore " + nb(suiv - perf) + " pts pour " + NOMS_RANGS[ri + 1] : "Rang maximum atteint" })]),
+        chev()]);
+      tR.onclick = function () { ouvrir("rang"); };
+      zone.appendChild(tR);
+
+      // Tuile activités de la saison
+      var tot = 0, fait = 0, resume = [];
+      seqs.forEach(function (q) {
+        var rs = ressourcesDe(q), f = rs.filter(function (r) { var g = progDe(idRes(r)); return g && g.termine; }).length;
+        tot += rs.length; fait += f; if (rs.length) resume.push(court(q) + " " + f + " / " + rs.length);
+      });
+      var anneau = el("span", { class: "ps-ic-t" }); var rr = 2 * Math.PI * 23;
+      anneau.innerHTML = '<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="none" stroke="var(--border-2,#27313c)" stroke-width="5"/><circle cx="28" cy="28" r="23" fill="none" stroke="var(--accent,#3fd6c6)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (tot ? rr * fait / tot : 0) + ' 999" transform="rotate(-90 28 28)"/><text x="28" y="33" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">' + (tot ? Math.round(fait / tot * 100) : 0) + '%</text></svg>';
+      var tA = el("button", { class: "ps-tuile", type: "button" }, [anneau,
+        el("span", { class: "ps-tx" }, [
+          el("span", { class: "ps-h" }, [el("b", { texte: "Activités de la saison" }), el("span", { class: "ps-chiffre", texte: fait + " / " + tot })]),
+          el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (tot ? fait / tot * 100 : 0) + "%" })]),
+          el("small", { texte: (resume.join(" · ") || "Aucune activité en ligne pour cette saison") + (s.points != null ? " · pass " + nb(s.points) + " pts" : "") })]),
+        chev()]);
+      tA.onclick = function () { ouvrir("saison"); };
+      zone.appendChild(tA);
+
+      // Tuile badges
+      var bs = P.badges || [], ob = bs.filter(function (b) { return b.obtenu; });
+      var dern = ob.filter(function (b) { return b.obtenu_le; }).sort(function (a, b) { return a.obtenu_le < b.obtenu_le ? 1 : -1; })[0];
+      var tB = el("button", { class: "ps-tuile", type: "button" }, [
+        el("span", { class: "ps-ic-t" }, [dern ? badge(dern, 50) : badge({ rarete: "commun", symbole: "ic:etoile" }, 50, true)]),
+        el("span", { class: "ps-tx" }, [
+          el("span", { class: "ps-h" }, [el("b", { texte: "Badges" }), el("span", { class: "ps-chiffre", texte: ob.length + " / " + bs.length })]),
+          dern ? el("small", { class: "ps-dern" }, [document.createTextNode("Dernier : " + dern.nom + " "), el("span", { class: "ps-rar r-" + dern.rarete, texte: (RARETES[dern.rarete] || "") + " · " + dern.pct + " %" })])
+            : el("small", { texte: "Pas encore de badge : termine une activité !" })]),
+        chev()]);
+      tB.onclick = function () { ouvrir("badges"); };
+      zone.appendChild(tB);
+
+      // Liens secondaires
+      var liens = el("div", { class: "ps-liens" });
+      [["activites", "Toutes mes activités"], ["points", "Historique des points"]].forEach(function (x) {
+        var b = el("button", { class: "btn", type: "button", texte: x[1] }); b.onclick = function () { if (x[0] === "collection") ongletColl = "avatar"; ouvrir(x[0]); }; liens.appendChild(b);
+      });
+      zone.appendChild(liens);
+      cascade(zone);
+      if (panVue) remplirPanneau(true);
+    }
+
+    /* ----- Panneau Rang ----- */
+    function vueRang(c) {
+      var perf = Number(D.profil.perf) || 0, se = seuilsRangs(), ri = rangDe(perf);
+      var recs = (D.pass.recompenses || []).filter(function (r) { return r.regle && r.regle.type === "perf"; });
+      c.appendChild(el("p", { class: "ps-info", texte: "Ton rang se gagne avec tes points de performance (ta réussite au-dessus de 10/20, aux activités et aux grands défis). Ils s'additionnent toute l'année." }));
+      NOMS_RANGS.forEach(function (nom, i) {
+        var atteint = perf >= se[i], ici = i === ri;
+        var gains = recs.filter(function (r) { var v = Number(r.regle.seuil) || 0; return v >= se[i] && (i === 3 || v < se[i + 1]); });
+        var bulle = el("span", { class: "ps-bulle", role: "tooltip" }, [el("b", { texte: atteint ? "Débloqué" : "À débloquer" })].concat(
+          gains.length ? gains.map(function (r) { return el("span", { texte: ({ avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" })[r.type] + " « " + r.nom + " »" }); })
+            : [el("span", { texte: i === 0 ? "Ton profil de départ" : "Récompenses à venir" })]));
+        var b = el("button", { type: "button", class: "ps-rang" + (atteint ? "" : " futur") + (ici ? " ici" : ""), style: "--c:" + METAUX[i].c }, [
+          embleme(i, !atteint),
+          el("span", { class: "ps-rang-t" }, [el("b", { texte: nom }), el("span", { class: "ps-pill", texte: nb(se[i]) + " pts perf" }), ici ? el("span", { class: "ps-ici", texte: moiMeme ? "TU ES ICI" : "ICI" }) : null]),
+          el("span", { class: "ps-i", texte: "i", "aria-hidden": "true" }), bulle]);
+        b.onclick = function () { var d = b.classList.contains("montre"); [].forEach.call(c.querySelectorAll(".ps-rang.montre"), function (x) { x.classList.remove("montre"); }); if (!d) b.classList.add("montre"); };
+        c.appendChild(b);
+      });
+      var ult = (D.profil.badges || []).filter(function (b) { return b.regle && b.regle.type === "legende"; })[0];
+      if (ult) { c.appendChild(el("h3", { class: "ps-sous", texte: "Au-delà du rang " + NOMS_RANGS[3] })); c.appendChild(blocUltime(ult)); }
+    }
+    function blocUltime(b) {
+      var x = el("button", { class: "ps-ultime" + (b.obtenu ? " ok" : ""), type: "button" }, [
+        el("span", { class: "ps-ult-b" }, [badge(b, 62, false)]),
+        el("span", {}, [el("span", { class: "ps-rar r-holo", texte: "Holo · succès ultime" }), el("b", { texte: b.nom }), el("small", { texte: texteBadge(b) })])]);
+      x.onclick = function () { ouvrir("badge", b.id); };
+      return x;
+    }
+
+    /* ----- Panneau Activités de la saison ----- */
+    function vueSaison2(c) {
+      var l = saisonsTriees(), n = numeroCourant(), s = l[n - 1] || {};
+      PAN.titre.textContent = "Saison " + n + (s.nom && s.nom.indexOf("·") > 0 ? " · " + s.nom.split("·").slice(1).join("·").trim() : "");
+      c.appendChild(el("p", { class: "ps-info" }, [el("b", { texte: "Pass : " + nb(s.points) + " / " + nb(s.objectif) + " pts" }), document.createTextNode(" cette saison · "),
+        el("b", { texte: "Performance : +" + nb(D.profil.perf_saison) + " pts" }), document.createTextNode(" pour ton rang.")]));
+      var seqs = sequencesDe(n);
+      if (!seqs.length) c.appendChild(el("p", { class: "aide", texte: "Aucune séquence n'est encore rattachée à cette saison." }));
+      seqs.forEach(function (q) {
+        var rs = ressourcesDe(q), f = rs.filter(function (r) { var g = progDe(idRes(r)); return g && g.termine; }).length;
+        if (rs.length) c.appendChild(pli(court(q), f + " / " + rs.length, rs.map(ligneActivite)));
+        var d = defiDe(q);
+        if (d) c.appendChild(blocDefi(d, q));
+      });
+    }
+    function blocDefi(d, q) {
+      var req = d.requis || [], ok = req.filter(function (x) { var g = progDe(x); return g && g.termine; }).length;
+      var ouvert = d.statut === "ouvert";
+      var paliers = (D.profil.badges || []).filter(function (b) { return b.regle && b.regle.type === "score_min" && (b.regle.ressources || []).indexOf(d.ressource) >= 0; })
+        .sort(function (a, b) { return (Number(a.regle.min) || 0) - (Number(b.regle.min) || 0); });
+      var contenu = [
+        el("div", { class: "ps-cond" }, [el("span", { class: "ps-h" }, [el("span", { texte: "Termine toutes les activités de la séquence (le score ne compte pas)" }), el("b", { texte: ok + " / " + req.length })]),
+          el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (req.length ? ok / req.length * 100 : 100) + "%" })])]),
+        el("p", { class: "ps-info", texte: "Test de positionnement en jeu, rejouable. Participation : " + d.points + " pts de pass. Score au-dessus de 10/20 : jusqu'à " + d.bonus_max + " pts de performance. Seule l'amélioration de ton meilleur score rapporte." + (d.score != null ? " Ton meilleur score : " + String(d.score).replace(".", ",") + "/20." : "") })];
+      paliers.forEach(function (b) {
+        var x = el("button", { class: "ps-palier r-" + b.rarete + (b.obtenu ? " ok" : ""), type: "button" }, [badge(b, 40, !b.obtenu && b.nom === "???"),
+          el("span", {}, [el("b", { texte: b.nom }), el("small", { texte: texteBadge(b) })]), el("span", { class: "ps-rar r-" + b.rarete, texte: b.pct + " %" })]);
+        x.onclick = function () { ouvrir("badge", b.id); };
+        contenu.push(x);
+      });
+      if (ouvert && moiMeme) contenu.push(el("a", { class: "btn primary ps-go", href: racine() + "voir.html?r=" + encodeURIComponent(d.ressource), texte: d.termine ? "Rejouer le défi" : "Relever le défi" }));
+      return pli("⚔ Grand défi · " + court(q), ouvert ? (d.termine ? "✓ relevé" : "ouvert") : "🔒 verrouillé", contenu, "ps-defi");
+    }
+
+    /* ----- Panneau Badges ----- */
+    function caseBadge(b) {
+      var x = el("button", { class: "ps-bd" + (b.obtenu ? "" : " verr"), type: "button", "aria-label": b.nom }, [badge(b, 50, !b.obtenu && b.nom === "???")]);
+      x.onclick = function () { ouvrir("badge", b.id); };
+      return x;
+    }
+    function vueBadges2(c) {
+      var bs = D.profil.badges || [], l = saisonsTriees(), n = numeroCourant();
+      var ult = bs.filter(function (b) { return b.regle && b.regle.type === "legende"; });
+      ult.forEach(function (b) { c.appendChild(blocUltime(b)); });
+      var reste = bs.filter(function (b) { return ult.indexOf(b) < 0; });
+      function groupe(liste) {
+        var g = {}, ordre = [];
+        liste.forEach(function (b) { var k = b.groupe || ""; if (!g[k]) { g[k] = []; ordre.push(k); } g[k].push(b); });
+        return ordre.map(function (k) {
+          var base = g[k].filter(function (b) { return !badgeDefi(b); }), df = g[k].filter(badgeDefi);
+          return el("div", { class: "ps-gr" }, [k ? el("span", { class: "ps-gr-t", texte: k }) : null,
+            base.length ? el("div", { class: "ps-grille" }, base.map(caseBadge)) : null,
+            df.length ? el("div", { class: "ps-gr-defi" }, [el("span", { texte: "⚔ Grand défi de fin de séquence" }), el("div", { class: "ps-grille" }, df.map(caseBadge))]) : null]);
+        });
+      }
+      var compte = function (x) { return x.filter(function (b) { return b.obtenu; }).length + " / " + x.length; };
+      l.forEach(function (s, k) {
+        var x = reste.filter(function (b) { return Number(b.saison) === k + 1; });
+        if (!x.length) return;
+        var etat = k + 1 < n ? "terminée · " : k + 1 > n ? "à venir · " : "";
+        var nom = "Saison " + (k + 1) + (s.nom && s.nom.indexOf("·") > 0 ? " · " + s.nom.split("·").slice(1).join("·").trim() : "");
+        c.appendChild(pli(nom, etat + compte(x), groupe(x), "", k + 1 === n));
+      });
+      var an = reste.filter(function (b) { return !b.saison || b.saison > l.length; });
+      if (an.length) c.appendChild(pli("Toute l'année", compte(an), groupe(an), "", !reste.some(function (b) { return Number(b.saison) === n; })));
+      if (!bs.length) c.appendChild(el("p", { class: "aide", texte: "Aucun badge pour l'instant." }));
+    }
+    function vueFiche(c, id) {
+      var b = (D.profil.badges || []).filter(function (x) { return x.id === id; })[0];
+      if (!b) { ouvrir("badges"); return; }
+      var l = saisonsTriees();
+      PAN.titre.textContent = b.regle && b.regle.type === "legende" ? "Succès ultime" : b.saison && l[b.saison - 1] ? "Badge · Saison " + b.saison + (b.groupe ? " · " + b.groupe : "") : "Badge" + (b.groupe ? " · " + b.groupe : "");
+      var f = el("div", { class: "ps-fiche r-" + b.rarete }, [
+        el("span", { class: "ps-gros" + (b.obtenu ? "" : " verr") }, [badge(b, 116, !b.obtenu && b.nom === "???")]),
+        el("span", { class: "ps-rar r-" + b.rarete, texte: RARETES[b.rarete] || b.rarete }),
+        badgeDefi(b) ? el("span", { class: "ps-tag-defi", texte: "⚔ Grand défi · rejouable, meilleur score gardé" }) : null,
+        el("h3", { texte: b.nom }),
+        el("p", { texte: (b.obtenu ? "" : "🔒 ") + texteBadge(b) }),
+        el("div", { class: "ps-barre" }, [el("span", { class: "ps-h" }, [el("span", { texte: "Obtenu par" }), el("span", { texte: b.pct + " % de la classe" })]),
+          el("span", { class: "ps-jauge r" }, [el("i", { style: "width:" + Math.max(b.pct, 1) + "%" })])])]);
+      if (b.regle && b.regle.type === "legende") {
+        var acts = Object.keys(D.profil.activites || {}).filter(function (k) { var a = D.profil.activites[k]; return a.type === "activite" || a.type === "defi"; });
+        var parf = acts.filter(function (k) { var g = progDe(k); return g && g.termine && Number(g.score) >= 20; }).length;
+        var se = seuilsRangs(), perf = Number(D.profil.perf) || 0;
+        [["Rang " + NOMS_RANGS[3] + " atteint", perf, se[3], "pts perf"], ["Activités réussies à 20/20", parf, acts.length, "activités"]].forEach(function (x) {
+          f.appendChild(el("div", { class: "ps-cond" + (x[1] >= x[2] ? " ok" : "") }, [el("span", { class: "ps-h" }, [el("span", { texte: (x[1] >= x[2] ? "✓ " : "○ ") + x[0] }), el("b", { texte: nb(Math.min(x[1], x[2])) + " / " + nb(x[2]) + " " + x[3] })]),
+            el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (x[2] ? Math.min(100, x[1] / x[2] * 100) : 0) + "%" })])]));
+        });
+      }
+      f.appendChild(el("span", { class: "ps-date", texte: b.obtenu ? (b.obtenu_le ? "Débloqué le " + dateFr(b.obtenu_le) : "Débloqué") : "Pas encore débloqué" }));
+      if (b.obtenu && moiMeme) {
+        var vit = (D.pass.vitrine || []).slice(), dans = vit.indexOf(b.id) >= 0;
+        var bt = el("button", { class: "btn" + (dans ? "" : " primary"), type: "button", texte: dans ? "Retirer de ma vitrine" : "📌 Mettre dans ma vitrine" });
+        bt.onclick = async function () {
+          var i = vit.indexOf(b.id); if (i >= 0) vit.splice(i, 1); else { if (vit.length >= 5) vit.shift(); vit.push(b.id); }
+          bt.disabled = true;
+          try { await TH.rpc("vitrine_definir", { p_badges: vit }); await recharger(); } catch (e) { bt.disabled = false; }
+        };
+        f.appendChild(bt);
+      }
+      c.appendChild(f);
+    }
+
     zone.appendChild(el("p", { class: "aide", texte: "Chargement…" }));
-    try { await toutCharger(); dessiner(); } catch (e) { erreur(e); }
+    try {
+      await toutCharger(); dessiner();
+      var h0 = (location.hash || "").replace("#", "");
+      if (NOUVEAU && ({ pass: 1, collection: 1, activites: 1, points: 1, rang: 1, saison: 1, badges: 1 })[h0]) ouvrir(h0);
+    } catch (e) { erreur(e); }
   };
 
   window.TH_PASS = { avatar: avatar, cadre: cadre, badge: badge, charger: charger, absent: absent, compteur: compteur, remplir: remplir, confettis: confettis };
