@@ -81,6 +81,7 @@ window.CATALOGUE = [
     titre: "Chapitre · Le Web", fichier: "snt-le-web.html", type: "activite", icone: "web", en_ligne: true },
   { classe: "snt", sequence: "Thème 2 · Le Web",
     titre: "Activités · QCM Le Web", fichier: "snt-le-web-activites.html", type: "activite", icone: "quiz", en_ligne: false },
+   { classe: "snt", sequence: "Thème 2 · Le Web", titre: "Activités · QCM Le Web", fichier: "snt-le-web-activites.html", type: "activite", icone: "web", en_ligne: true },
 
   /* ---------------- BTS maintenance ---------------- */
   { classe: "bts-maintenance", sequence: "ETLV · A volumetric pump",
