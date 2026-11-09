@@ -45,3 +45,15 @@ connexion/  prof/  terminale-sti2d/  premiere-it/  snt/  bts-maintenance/
 
 ## 2I2D : spécialités sous la partie commune (8/11)
 - Dans `catalogue.js`, ajouter `partie: "itec"` ou `partie: "sin"` à une activité de spécialité : elle s'affiche sous la partie commune de sa séquence, en rouge (ITEC) ou en vert (SIN), toujours avec le symbole de la spécialité (engrenage pour ITEC, puce électronique pour SIN). Le préfixe « Spécialité ITEC · » du titre est retiré à l'affichage.
+
+## Rangs, badges par saison et grand défi · Terminale (9/11)
+- Script `09-rangs-badges.sql` à lancer une fois dans Supabase, APRÈS 07 et 08. Il passe aussi les activités de Terminale au barème décidé : 60 pts une fois terminée + jusqu'à 90 pts de performance.
+- `passClasses: ["terminale-sti2d"]` dans `assets/config.js` : le pass, les rangs et les badges sont ouverts pour ces classes ; les autres gardent l'aperçu « Prochainement ».
+- **Pass = effort** : tous les points. **Rang annuel = performance** : seulement les points gagnés au-dessus de 10/20 (activités et grands défis). Refaire une activité ne paie que l'amélioration du meilleur score.
+- Seuils des rangs (Technicien, Ingénieur, Expert) : Espace prof → Activités & points → Réglages de la classe (1 000 / 3 000 / 5 000 par défaut).
+- Une récompense (avatar, titre…) avec la condition « Points de performance (rang) ≥ » se débloque avec le rang : elle apparaît dans l'info-bulle du rang.
+- **Grand défi** : dans Espace prof → Activités & points, type « Grand défi », puis cocher les activités à terminer avant (le score ne compte pas). Barème par défaut : 100 pts de participation + jusqu'à 300 pts de performance. La page du défi doit aussi être dans `catalogue.js` (même séquence que ses activités).
+- **Badges** : Espace prof → Pass → Récompenses → condition. « Activités cochées avec au moins … /20 » sert aux badges de défi (0 = participation, 16 = 80 %, 20 = 100 %) ; « Succès ultime » = rang Expert + toutes les activités à 20/20, vérifié après la dernière saison. Remplir « séquence » et « saison n° » pour ranger le badge dans le profil. Nouvelle rareté **Holo**.
+- Saison de chaque séquence : `saisons` dans la Terminale, en haut de `assets/site.js` (1, 2, 3… dans l'ordre des dates des saisons).
+- Script `10-badges-demo.sql` (après 09) : pictogrammes dessinés à la place des emojis pour tous les badges, et badges de la démo pour la Terminale (Rappels, Statique, grand défi Statique — page attendue `defi-statique.html` —, 2I2D, RDM, Cinématique, Projet, Légende du Hangar). Ceux de RDM, Cinématique, Projet et Rappels n'ont pas encore de condition : cocher leurs activités dans l'éditeur. Dans l'éditeur, un badge se dessine avec un pictogramme au choix.
+- Profil élève : couverture, bandeau de saison (ouvre le pass), 3 tuiles cliquables (Rang, Activités de la saison, Badges) ; le détail s'ouvre dans un panneau.
