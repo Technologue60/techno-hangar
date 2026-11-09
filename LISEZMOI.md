@@ -57,3 +57,9 @@ connexion/  prof/  terminale-sti2d/  premiere-it/  snt/  bts-maintenance/
 - Saison de chaque séquence : `saisons` dans la Terminale, en haut de `assets/site.js` (1, 2, 3… dans l'ordre des dates des saisons).
 - Script `10-badges-demo.sql` (après 09) : pictogrammes dessinés à la place des emojis pour tous les badges, et badges de la démo pour la Terminale (Rappels, Statique, grand défi Statique — page attendue `defi-statique.html` —, 2I2D, RDM, Cinématique, Projet, Légende du Hangar). Ceux de RDM, Cinématique, Projet et Rappels n'ont pas encore de condition : cocher leurs activités dans l'éditeur. Dans l'éditeur, un badge se dessine avec un pictogramme au choix.
 - Profil élève : couverture, bandeau de saison (ouvre le pass), 3 tuiles cliquables (Rang, Activités de la saison, Badges) ; le détail s'ouvre dans un panneau.
+
+## Pass de l'année · SNT (9/11)
+- Script `11-pass-annuel.sql` (après 09 et 10) : une saison peut appartenir à une seule classe (colonne « Pour » dans Espace prof → Pass → Saisons). Une classe qui a ses propres saisons n'utilise qu'elles. Le script crée « Pass de l'année · SNT » (1er sept → 4 juil, objectif 1 500 pts, 10 paliers de 10 % à 100 %, sans récompense pour l'instant).
+- `passClasses: ["terminale-sti2d", "snt"]` dans `assets/config.js`.
+- Profil SNT (réglé par `profil: { annuel: true, rang: false, badges: "bientot" }` dans la SNT de `assets/site.js`) : bandeau « Pass de l'année » avec un segment par thème, tuile « Activités de l'année » (un pli par thème), tuile Badges verrouillée : « Les récompenses seront bientôt disponibles ». Pas de rang. Les paliers sans récompense affichent « Récompense bientôt disponible ».
+- Pour les points, activer les activités SNT dans Espace prof → Activités & points.

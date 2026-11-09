@@ -263,16 +263,20 @@
     $("p-classe-nom").textContent = nomClasse(c);
     try {
       saisons = await TH.rest("saisons?select=*&order=debut");
+      // Saisons de la classe : les siennes si elle en a, sinon les saisons communes
+      var propres = saisons.filter(function (s) { return s.classe === c; });
+      saisons = propres.length ? propres : saisons.filter(function (s) { return !s.classe; });
       recompenses = await TH.rest("recompenses?select=*&order=type,ordre,id");
     } catch (e) { manque($("p-saisons").parentNode, e); return; }
     // Saisons
     var t = $("p-saisons"); vider(t);
-    t.appendChild(th(["Nom", "Début", "Fin", "Objectif " + nomClasse(c) + " (pts)", ""]));
+    t.appendChild(th(["Nom", "Début", "Fin", "Pour", "Objectif " + nomClasse(c) + " (pts)", ""]));
     var objs = await TH.rest("pass_objectifs?select=*&classe=eq." + c);
     var acts = await TH.rest("activites?select=points,bonus_max,type,ouvre_le&classe=eq." + c);
     saisons.forEach(function (s) {
       var nom = input({ value: s.nom, class: "pp-nom large" }), d = input({ type: "date", value: s.debut }), f = input({ type: "date", value: s.fin });
       var o = objs.filter(function (x) { return x.saison === s.id; })[0];
+      var pour = select([["", "Toutes les classes"], [c, nomClasse(c) + " seulement"]], s.classe || "");
       var obj = input({ type: "number", min: "1", value: o ? o.objectif : 1000, class: "pp-n" });
       var info = el("span", { class: "aide" });
       var calc = bouton("Calculer", "", function () {
@@ -280,16 +284,16 @@
           .reduce(function (n, a) { return n + a.points + a.bonus_max; }, 0);
         obj.value = Math.max(1, tot); etat(info, "Somme des activités à points de la classe ouvrant dans cette saison (ou sans date). Pense à enregistrer.");
       });
-      t.appendChild(el("tr", {}, [el("td", {}, [nom]), el("td", {}, [d]), el("td", {}, [f]), el("td", {}, [el("div", { class: "actions" }, [obj, calc])]),
+      t.appendChild(el("tr", {}, [el("td", {}, [nom]), el("td", {}, [d]), el("td", {}, [f]), el("td", {}, [pour]), el("td", {}, [el("div", { class: "actions" }, [obj, calc])]),
         el("td", {}, [el("div", { class: "actions" }, [
           bouton("Enregistrer", "primary", async function () {
             try {
-              await TH.rest("saisons?id=eq." + s.id, { method: "PATCH", body: { nom: nom.value, debut: d.value, fin: f.value }, headers: { "Prefer": "return=minimal" } });
+              await TH.rest("saisons?id=eq." + s.id, { method: "PATCH", body: { nom: nom.value, debut: d.value, fin: f.value, classe: pour.value || null }, headers: { "Prefer": "return=minimal" } });
               await upsert("pass_objectifs", { classe: c, saison: s.id, objectif: Math.max(1, +obj.value || 1000) }, "classe,saison");
-              etat(info, "✓", true);
+              etat(info, "✓", true); if ((pour.value || null) !== (s.classe || null)) chargerPass();
             } catch (e) { etat(info, msg(e), false); }
           }),
-          bouton("Supprimer", "danger", async function () { if (!confirm("Supprimer cette saison et ses paliers (toutes classes) ?")) return; await supprimer("saisons", "id=eq." + s.id); chargerPass(); }),
+          bouton("Supprimer", "danger", async function () { if (!confirm(s.classe ? "Supprimer cette saison et ses paliers ?" : "Supprimer cette saison et ses paliers (toutes classes) ?")) return; await supprimer("saisons", "id=eq." + s.id); chargerPass(); }),
           info])])]));
     });
     // Sélecteur de saison pour les paliers

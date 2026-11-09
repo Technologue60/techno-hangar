@@ -27,6 +27,8 @@
         { id: "etlv", nom: "ETLV",
           sequences: [ "Séance 1", "Séance 2", "Séance 3", "Séance 4 · Hydropower", "Séance 5" ] } ] },
     { id: "snt", nom: "SNT seconde", court: "SNT", code: "2DE", det: "Sciences numériques", couleur: "--c-snt", onglets: [],
+      /* Profil : un seul pass sur l'année (par thème), pas de rang, badges « bientôt disponibles » */
+      profil: { annuel: true, rang: false, badges: "bientot" },
       sequences: [ "Séquence 1 · Renseignement & découverte de la SNT", "Thème 0 · Python", "Thème 1 · Les réseaux sociaux",
                    "Thème 2 · Le Web", "Thème 3 · Internet", "Thème 4 · La géolocalisation" ] },
     { id: "bts-maintenance", nom: "BTS maintenance", court: "BTS MS", code: "BTS", det: "MS · ETLV", couleur: "--c-bts", onglets: [] }

@@ -594,7 +594,7 @@
       var piste = el("div", { class: "vp-piste" });
       var prec = 0, marque = false;
       (sv.paliers || []).forEach(function (pl, k) {
-        var r = rec(pl.recompense) || { nom: "—", type: "titre", rarete: "commun" };
+        var r = rec(pl.recompense) || { nom: "Récompense bientôt disponible", type: "bientot", rarete: "commun" };
         var etat = pl.debloque ? "obtenu" : pl.en_attente ? "attente" : "avenir";
         // segment de piste entre le palier précédent et celui-ci
         var seg = el("i");
@@ -602,15 +602,15 @@
         var ligne = el("div", { class: "vp-ligne " + etat + " r-" + r.rarete + (nouveaux.indexOf(pl.rang) >= 0 ? " nouveau" : "") + (sv.points > pl.seuil ? " au-dela" : "") });
         ligne.appendChild(el("div", { class: "vp-seuil" }, [el("b", { texte: nb(pl.seuil) }), el("small", { texte: "pts" })]));
         ligne.appendChild(el("div", { class: "vp-rail" }, [el("span", { class: "vp-seg" }, [seg]), el("span", { class: "vp-noeud", texte: etat === "obtenu" ? "✓" : pl.rang })]));
-        var visuel = r.type === "avatar" ? avatar(r, 52) : r.type === "badge" ? badge(r, 52) : r.type === "ornement" ? cadre(null, 40, "?", r.style)
+        var visuel = r.type === "bientot" ? badge({ rarete: "commun" }, 46, true) : r.type === "avatar" ? avatar(r, 52) : r.type === "badge" ? badge(r, 52) : r.type === "ornement" ? cadre(null, 40, "?", r.style)
           : r.type === "banniere" ? apercuBanniere(r.style, 44) : el("span", { class: "pa-titre-ico", texte: r.nom === "???" ? "?" : "“ ”" });
         var types = { avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" };
         var bas = etat === "obtenu" ? "✓ Obtenu" : etat === "attente" ? "🔒 Dès le " + dateCourte(sv.debut) : sv.statut === "a_venir" ? nb(pl.seuil) + " pts" : "Encore " + nb(Math.max(0, pl.seuil - sv.points)) + " pts";
         ligne.appendChild(el("a", { class: "vp-carte", href: "#collection", title: "Voir la collection" }, [
           el("span", { class: "vp-vis" }, [visuel]),
-          el("span", { class: "vp-txt" }, [el("b", { texte: r.nom }), el("small", { texte: (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), el("span", { class: "vp-bas", texte: bas })])
+          el("span", { class: "vp-txt" }, [el("b", { texte: r.nom }), el("small", { texte: r.type === "bientot" ? "Bientôt" : (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), el("span", { class: "vp-bas", texte: bas })])
         ]));
-        ligne.querySelector(".vp-carte").onclick = function (e) { e.preventDefault(); ongletColl = r.type; aller("collection"); };
+        ligne.querySelector(".vp-carte").onclick = function (e) { e.preventDefault(); if (r.type === "bientot") return; ongletColl = r.type; aller("collection"); };
         piste.appendChild(ligne);
         (function (i, v) { if (CALME) { i.style.height = v + "%"; return; } setTimeout(function () { i.style.height = v + "%"; }, 200 + k * 90); })(seg, pctSeg);
         // marqueur « tu es ici » juste avant le premier palier non atteint
@@ -803,14 +803,16 @@
     function chev() { var s = el("span", { class: "ps-chev" }); s.innerHTML = CHEV; return s; }
     function cfgClasse() { return (window.TH_CLASSES || []).filter(function (c) { return c.id === eleve.classe; })[0] || {}; }
     function seqSaison() { return cfgClasse().saisons || {}; }
-    function ordreSequences() { var o = []; (cfgClasse().onglets || []).forEach(function (g) { (g.sequences || []).forEach(function (s) { o.push(s); }); }); return o; }
+    function ordreSequences() { var o = (cfgClasse().sequences || []).slice(); (cfgClasse().onglets || []).forEach(function (g) { (g.sequences || []).forEach(function (s) { o.push(s); }); }); return o; }
+    function mode() { return cfgClasse().profil || {}; }
+    var ANNUEL = !!mode().annuel, SANS_RANG = mode().rang === false, BADGES_BIENTOT = mode().badges === "bientot";
     function court(seq) {
       var t = String(seq || "").replace(/^[^·]*·\s*/, "").replace(/^Comment\s+/i, "").replace(/\s*\?\s*$/, "");
       return t.charAt(0).toUpperCase() + t.slice(1);
     }
     function saisonsTriees() { return (D.profil.saisons || []).slice().sort(function (a, b) { return a.debut < b.debut ? -1 : 1; }); }
     function numeroCourant() { var l = saisonsTriees(); for (var i = 0; i < l.length; i++) if (l[i].id === D.profil.courante) return i + 1; return 1; }
-    function sequencesDe(n) { var m = seqSaison(); return ordreSequences().filter(function (s) { return m[s] === n; }); }
+    function sequencesDe(n) { if (ANNUEL) return ordreSequences(); var m = seqSaison(); return ordreSequences().filter(function (s) { return m[s] === n; }); }
     function idRes(r) { return r.classe + "/" + r.fichier; }
     function ressourcesDe(seq) {
       return (window.CATALOGUE || []).filter(function (r) {
@@ -894,7 +896,7 @@
     }
     function remplirPanneau(garderDefilement) {
       var p = PAN, haut = garderDefilement ? p.corps.scrollTop : 0;
-      p.corps.innerHTML = ""; p.titre.textContent = TITRES[panVue] || "";
+      p.corps.innerHTML = ""; p.titre.textContent = panVue === "pass" && ANNUEL ? "Pass de l'année" : TITRES[panVue] || "";
       p.ret.hidden = panVue !== "badge"; p.ret._vers = "badges";
       ({ pass: function (c) { vuePass(c, D.pass); }, collection: function (c) { vueCollection(c, D.pass); }, activites: function (c) { vueActivites(c); },
          points: function (c) { vuePoints(c, D.pass); }, rang: vueRang, saison: vueSaison2, badges: vueBadges2, badge: vueFiche })[panVue](p.corps, panArg);
@@ -915,10 +917,25 @@
       if (!moiMeme) zone.appendChild(el("div", { class: "pa-vue-prof" }, [
         document.createTextNode("Vue prof · profil de " + eleve.prenom + " " + eleve.nom + " (lecture seule)"),
         el("a", { class: "btn", href: racine() + "prof/index.html#pass", texte: "← Espace prof" })]));
-      var cov = couverture(); cov.classList.add("ps-cover"); zone.appendChild(cov);
+      var cov = couverture(); cov.classList.add("ps-cover"); if (BADGES_BIENTOT) cov.classList.add("ps-sans-badges"); zone.appendChild(cov);
       var P = D.profil, l = saisonsTriees(), n = numeroCourant(), s = l[n - 1] || {};
       // Bandeau de saison → pass
       var seqs = sequencesDe(n);
+      if (ANNUEL) {
+        var segA = el("span", { class: "ps-segs", style: "grid-template-columns:repeat(" + Math.max(1, seqs.length) + ",1fr)" });
+        var nomsA = el("span", { class: "ps-noms", style: "grid-template-columns:repeat(" + Math.max(1, seqs.length) + ",1fr)" });
+        seqs.forEach(function (q) {
+          var rs = ressourcesDe(q), f = rs.filter(function (r) { var g = progDe(idRes(r)); return g && g.termine; }).length;
+          var fini = rs.length && f === rs.length;
+          segA.appendChild(el("i", { class: fini ? "" : "" }, [el("u", { style: "width:" + (rs.length ? f / rs.length * 100 : 0) + "%" })]));
+          nomsA.appendChild(el("span", { class: fini ? "fini" : rs.length ? "en" : "", texte: (fini ? "✓ " : "") + court(q) }));
+        });
+        var banA = el("button", { class: "ps-saison", type: "button" }, [
+          el("span", { class: "ps-sh" }, [el("b", { texte: "Pass de l'année" }), el("span", { class: "ps-n", texte: "palier " + (s.debloques || 0) + " / " + (s.paliers || 0) }), chev()]),
+          el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (s.objectif ? Math.min(100, s.points / s.objectif * 100) : 0) + "%" })])]);
+        banA.onclick = function () { vueSaison = s.id; ouvrir("pass"); };
+        zone.appendChild(banA);
+      }
       var seg = el("span", { class: "ps-segs", style: "grid-template-columns:repeat(" + Math.max(1, l.length) + ",1fr)" });
       var noms = el("span", { class: "ps-noms", style: "grid-template-columns:repeat(" + Math.max(1, l.length) + ",1fr)" });
       l.forEach(function (x, k) {
@@ -933,7 +950,7 @@
         seg, noms,
         el("span", { class: "ps-lien" }, [document.createTextNode("Pass de saison · palier " + (s.debloques || 0) + " / " + (s.paliers || 0)), chev()])]);
       ban.onclick = function () { vueSaison = s.id; ouvrir("pass"); };
-      zone.appendChild(ban);
+      if (!ANNUEL) zone.appendChild(ban);
 
       // Tuile rang
       var perf = Number(P.perf) || 0, ri = rangDe(perf), se = seuilsRangs(), suiv = se[ri + 1];
@@ -945,7 +962,7 @@
           el("small", { texte: suiv ? "Performance · encore " + nb(suiv - perf) + " pts pour " + NOMS_RANGS[ri + 1] : "Rang maximum atteint" })]),
         chev()]);
       tR.onclick = function () { ouvrir("rang"); };
-      zone.appendChild(tR);
+      if (!SANS_RANG) zone.appendChild(tR);
 
       // Tuile activités de la saison
       var tot = 0, fait = 0, resume = [];
@@ -957,9 +974,9 @@
       anneau.innerHTML = '<svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="none" stroke="var(--border-2,#27313c)" stroke-width="5"/><circle cx="28" cy="28" r="23" fill="none" stroke="var(--accent,#3fd6c6)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (tot ? rr * fait / tot : 0) + ' 999" transform="rotate(-90 28 28)"/><text x="28" y="33" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">' + (tot ? Math.round(fait / tot * 100) : 0) + '%</text></svg>';
       var tA = el("button", { class: "ps-tuile", type: "button" }, [anneau,
         el("span", { class: "ps-tx" }, [
-          el("span", { class: "ps-h" }, [el("b", { texte: "Activités de la saison" }), el("span", { class: "ps-chiffre", texte: fait + " / " + tot })]),
+          el("span", { class: "ps-h" }, [el("b", { texte: ANNUEL ? "Activités de l'année" : "Activités de la saison" }), el("span", { class: "ps-chiffre", texte: fait + " / " + tot })]),
           el("span", { class: "ps-jauge" }, [el("i", { style: "width:" + (tot ? fait / tot * 100 : 0) + "%" })]),
-          el("small", { texte: (resume.join(" · ") || "Aucune activité en ligne pour cette saison") + (s.points != null ? " · pass " + nb(s.points) + " pts" : "") })]),
+          ANNUEL ? null : el("small", { texte: (resume.join(" · ") || "Aucune activité en ligne pour cette saison") + (s.points != null ? " · pass " + nb(s.points) + " pts" : "") })]),
         chev()]);
       tA.onclick = function () { ouvrir("saison"); };
       zone.appendChild(tA);
@@ -975,6 +992,12 @@
             : el("small", { texte: "Pas encore de badge : termine une activité !" })]),
         chev()]);
       tB.onclick = function () { ouvrir("badges"); };
+      if (BADGES_BIENTOT) {
+        tB = el("button", { class: "ps-tuile", type: "button" }, [
+          el("span", { class: "ps-ic-t" }, [badge({ rarete: "commun" }, 50, true)]),
+          el("span", { class: "ps-tx" }, [el("span", { class: "ps-h" }, [el("b", { texte: "Badges" }), el("span", { class: "ps-chiffre", texte: "Bientôt" })])]), chev()]);
+        tB.onclick = function () { ouvrir("badges"); };
+      }
       zone.appendChild(tB);
 
       // Liens secondaires
@@ -982,7 +1005,7 @@
       [["activites", "Toutes mes activités"], ["points", "Historique des points"]].forEach(function (x) {
         var b = el("button", { class: "btn", type: "button", texte: x[1] }); b.onclick = function () { if (x[0] === "collection") ongletColl = "avatar"; ouvrir(x[0]); }; liens.appendChild(b);
       });
-      zone.appendChild(liens);
+      if (!ANNUEL) zone.appendChild(liens);
       cascade(zone);
       if (panVue) remplirPanneau(true);
     }
@@ -1019,14 +1042,15 @@
     /* ----- Panneau Activités de la saison ----- */
     function vueSaison2(c) {
       var l = saisonsTriees(), n = numeroCourant(), s = l[n - 1] || {};
-      PAN.titre.textContent = "Saison " + n + (s.nom && s.nom.indexOf("·") > 0 ? " · " + s.nom.split("·").slice(1).join("·").trim() : "");
-      c.appendChild(el("p", { class: "ps-info" }, [el("b", { texte: "Pass : " + nb(s.points) + " / " + nb(s.objectif) + " pts" }), document.createTextNode(" cette saison · "),
+      PAN.titre.textContent = ANNUEL ? "Activités de l'année" : "Saison " + n + (s.nom && s.nom.indexOf("·") > 0 ? " · " + s.nom.split("·").slice(1).join("·").trim() : "");
+      if (!ANNUEL) c.appendChild(el("p", { class: "ps-info" }, [el("b", { texte: "Pass : " + nb(s.points) + " / " + nb(s.objectif) + " pts" }), document.createTextNode(" cette saison · "),
         el("b", { texte: "Performance : +" + nb(D.profil.perf_saison) + " pts" }), document.createTextNode(" pour ton rang.")]));
       var seqs = sequencesDe(n);
       if (!seqs.length) c.appendChild(el("p", { class: "aide", texte: "Aucune séquence n'est encore rattachée à cette saison." }));
       seqs.forEach(function (q) {
         var rs = ressourcesDe(q), f = rs.filter(function (r) { var g = progDe(idRes(r)); return g && g.termine; }).length;
         if (rs.length) c.appendChild(pli(court(q), f + " / " + rs.length, rs.map(ligneActivite)));
+        else if (ANNUEL) c.appendChild(el("div", { class: "ps-pli ps-vide" }, [el("span", { texte: court(q) }), el("small", { texte: "bientôt" })]));
         var d = defiDe(q);
         if (d) c.appendChild(blocDefi(d, q));
       });
@@ -1057,6 +1081,20 @@
       return x;
     }
     function vueBadges2(c) {
+      if (BADGES_BIENTOT) {
+        var msgB = el("p", { class: "ps-info ps-bientot", texte: "🔒 Bientôt disponibles" });
+        c.appendChild(msgB);
+        ordreSequences().forEach(function (q) {
+          var g = el("div", { class: "ps-grille" });
+          for (var k = 0; k < 3; k++) {
+            var x = el("button", { class: "ps-bd verr", type: "button", "aria-label": "Badge bientôt disponible" }, [badge({ rarete: ["commun", "rare", "epique"][k] }, 50, true)]);
+            x.onclick = function () { msgB.classList.remove("flash"); void msgB.offsetWidth; msgB.classList.add("flash"); msgB.scrollIntoView({ block: "nearest", behavior: CALME ? "auto" : "smooth" }); };
+            g.appendChild(x);
+          }
+          c.appendChild(el("div", { class: "ps-gr" }, [el("span", { class: "ps-gr-t", texte: court(q) }), g]));
+        });
+        return;
+      }
       var bs = D.profil.badges || [], l = saisonsTriees(), n = numeroCourant();
       var ult = bs.filter(function (b) { return b.regle && b.regle.type === "legende"; });
       ult.forEach(function (b) { c.appendChild(blocUltime(b)); });

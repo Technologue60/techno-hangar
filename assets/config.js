@@ -9,5 +9,5 @@ window.TH_CONFIG = {
   // Pass de progression visible par TOUTES les classes ? false = affiché flouté avec « Prochainement »
   passActif: false,
   // Classes qui ont déjà le pass, les rangs et les badges (même si passActif est false)
-  passClasses: ["terminale-sti2d"]
+  passClasses: ["terminale-sti2d", "snt"]
 };

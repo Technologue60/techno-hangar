@@ -154,3 +154,15 @@ a.ps-act:hover { border-color: var(--border2); }
 @media (prefers-reduced-motion: no-preference) {
   .ps-ultime, .ps-ultime b { animation: th-irise 6s linear infinite; }
 }
+
+/* Badges « bientôt disponibles » (classes sans badges pour l'instant) */
+.ps-bientot { border: 1px solid var(--border2); color: var(--text); }
+.ps-bientot.flash { animation: ps-flash .7s ease; }
+@keyframes ps-flash { 30% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); } }
+.ps-sans-badges .pr-bas > div:first-child { display: none; }
+.ps-sans-badges .pr-bas { justify-content: flex-start; }
+.ps-sans-badges .pr-titre.vide-t { display: none; }
+.ps-saison .ps-sh .ps-chev { margin-left: 4px; }
+.ps-pli.ps-vide { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; color: var(--muted); }
+.ps-pli.ps-vide small { font: 500 11.5px "Geist Mono", monospace; color: var(--faible); }
+.ps-bientot { text-align: center; }
