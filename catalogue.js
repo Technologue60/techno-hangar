@@ -70,6 +70,13 @@ window.CATALOGUE = [
     titre: "TD4 · Voiture (analytique)", fichier: "td-voiture-analytique.html", type: "td", icone: "voiture", en_ligne: false },
 
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Épreuve pratique · La trottinette électrique", fichier: "itec07-trottinette-eleve.html", type: "activite", icone: "pfs", en_ligne: true,
+    titre_consigne: "Épreuve pratique : la trottinette électrique",
+    consigne: "4 parties à traiter dans l'ordre. À la fin de chaque partie, appelle ton professeur : il valide avec toi, puis la partie suivante s'ouvre.",
+    documents: [ { titre: "Maquette numérique (SolidWorks)", url: "https://drive.google.com/drive/folders/1gfY73UCadin47RYE_TswB7iGqct3iZb4?usp=sharing" },
+                 { titre: "Sujet de l'épreuve (PDF)", url: "https://drive.google.com/file/d/12shhiqCNzLcgNM6RT1SJyP1zHwjHf9lv/view?usp=sharing" } ] },
+
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
     titre: "Logiciel StatGraph", fichier: "statgraph-web.html", type: "outil", icone: "statgraph", en_ligne: true },
 
   /* ---------------- 1ère IT ---------------- */
