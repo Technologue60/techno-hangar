@@ -14,11 +14,13 @@
         { id: "2i2d", nom: "2I2D", defaut: true,
           sequences: [ "Thème 1 · Gérer la ville du futur", "Thème 2 · Comment sécuriser un bâtiment ?", "Thème 3 · Robotique", "Étude de système" ] },
         { id: "itec", nom: "ITEC",
-          sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] } ],
+          sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] },
+        { id: "tp", nom: "TP Étude système",
+          sequences: [ "Épreuves pratiques" ] } ],
       /* Saison (1, 2, 3… dans l'ordre des dates des saisons) de chaque séquence, pour le profil et les badges */
       saisons: { "0 · Révision de 1re": 1, "1 · Force, couple & torseur": 1, "Thème 1 · Gérer la ville du futur": 1,
                  "2 · Statique": 2, "Thème 2 · Comment sécuriser un bâtiment ?": 2,
-                 "3 · RDM": 3, "Thème 3 · Robotique": 3, "Étude de système": 4 } },
+                 "3 · RDM": 3, "Thème 3 · Robotique": 3, "Étude de système": 4, "Épreuves pratiques": 2 } },
     { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique · ETLV", couleur: "--c-it",
       onglets: [
         { id: "it", nom: "Innovation technologique", defaut: true,
