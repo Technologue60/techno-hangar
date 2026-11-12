@@ -69,7 +69,7 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "TD4 · Voiture (analytique)", fichier: "td-voiture-analytique.html", type: "td", icone: "voiture", en_ligne: false },
 
-  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+  { classe: "terminale-sti2d", onglet: "tp", sequence: "Épreuves pratiques",
     titre: "Épreuve pratique · La trottinette électrique", fichier: "itec07-trottinette-eleve.html", type: "activite", icone: "pfs", en_ligne: true,
     titre_consigne: "Épreuve pratique : la trottinette électrique",
     consigne: "4 parties à traiter dans l'ordre. À la fin de chaque partie, appelle ton professeur : il valide avec toi, puis la partie suivante s'ouvre.",
