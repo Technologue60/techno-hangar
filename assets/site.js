@@ -22,6 +22,8 @@
                  "2 · Statique": 2, "Thème 2 · Comment sécuriser un bâtiment ?": 2,
                  "3 · RDM": 3, "Thème 3 · Robotique": 3, "Étude de système": 4, "Épreuves pratiques": 2 } },
     { id: "premiere-it", nom: "1ère IT", court: "1ère IT", code: "1RE", det: "Innovation technologique · ETLV", couleur: "--c-it",
+      /* Profil : un seul pass sur l'année, rang ; badges = pass + performance (pas de succès par activité) */
+      profil: { annuel: true, badges: "pass-perf" },
       onglets: [
         { id: "it", nom: "Innovation technologique", defaut: true,
           sequences: [ "Séquence 1 · Représentation du réel", "Séquence 2 · Support téléphone",

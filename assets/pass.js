@@ -806,6 +806,14 @@
     function ordreSequences() { var o = (cfgClasse().sequences || []).slice(); (cfgClasse().onglets || []).forEach(function (g) { (g.sequences || []).forEach(function (s) { o.push(s); }); }); return o; }
     function mode() { return cfgClasse().profil || {}; }
     var ANNUEL = !!mode().annuel, SANS_RANG = mode().rang === false, BADGES_BIENTOT = mode().badges === "bientot";
+    /* « pass-perf » : seulement les badges du pass et les badges de performance (pas de succès par activité) */
+    function badgesVisibles() {
+      var bs = (D.profil && D.profil.badges) || [];
+      if (mode().badges !== "pass-perf") return bs;
+      var ids = {};
+      ((D.pass && D.pass.saisons) || []).forEach(function (x) { (x.paliers || []).forEach(function (p) { if (p.recompense) ids[p.recompense] = 1; }); });
+      return bs.filter(function (b) { return ids[b.id] || (b.regle && (b.regle.type === "perf" || b.regle.type === "legende")); });
+    }
     function court(seq) {
       var t = String(seq || "").replace(/^[^·]*·\s*/, "").replace(/^Comment\s+/i, "").replace(/\s*\?\s*$/, "");
       return t.charAt(0).toUpperCase() + t.slice(1);
@@ -917,7 +925,7 @@
       if (!moiMeme) zone.appendChild(el("div", { class: "pa-vue-prof" }, [
         document.createTextNode("Vue prof · profil de " + eleve.prenom + " " + eleve.nom + " (lecture seule)"),
         el("a", { class: "btn", href: racine() + "prof/index.html#pass", texte: "← Espace prof" })]));
-      var cov = couverture(); cov.classList.add("ps-cover"); if (BADGES_BIENTOT) cov.classList.add("ps-sans-badges"); zone.appendChild(cov);
+      var cov = couverture(); cov.classList.add("ps-cover"); if (BADGES_BIENTOT || mode().badges === "pass-perf") cov.classList.add("ps-sans-badges"); zone.appendChild(cov);
       var P = D.profil, l = saisonsTriees(), n = numeroCourant(), s = l[n - 1] || {};
       // Bandeau de saison → pass
       var seqs = sequencesDe(n);
@@ -982,14 +990,14 @@
       zone.appendChild(tA);
 
       // Tuile badges
-      var bs = P.badges || [], ob = bs.filter(function (b) { return b.obtenu; });
+      var bs = badgesVisibles(), ob = bs.filter(function (b) { return b.obtenu; });
       var dern = ob.filter(function (b) { return b.obtenu_le; }).sort(function (a, b) { return a.obtenu_le < b.obtenu_le ? 1 : -1; })[0];
       var tB = el("button", { class: "ps-tuile", type: "button" }, [
         el("span", { class: "ps-ic-t" }, [dern ? badge(dern, 50) : badge({ rarete: "commun", symbole: "ic:etoile" }, 50, true)]),
         el("span", { class: "ps-tx" }, [
           el("span", { class: "ps-h" }, [el("b", { texte: "Badges" }), el("span", { class: "ps-chiffre", texte: ob.length + " / " + bs.length })]),
           dern ? el("small", { class: "ps-dern" }, [document.createTextNode("Dernier : " + dern.nom + " "), el("span", { class: "ps-rar r-" + dern.rarete, texte: (RARETES[dern.rarete] || "") + " · " + dern.pct + " %" })])
-            : el("small", { texte: "Pas encore de badge : termine une activité !" })]),
+            : el("small", { texte: mode().badges === "pass-perf" ? "Pas encore de badge" : "Pas encore de badge : termine une activité !" })]),
         chev()]);
       tB.onclick = function () { ouvrir("badges"); };
       if (BADGES_BIENTOT) {
@@ -1028,7 +1036,7 @@
         b.onclick = function () { var d = b.classList.contains("montre"); [].forEach.call(c.querySelectorAll(".ps-rang.montre"), function (x) { x.classList.remove("montre"); }); if (!d) b.classList.add("montre"); };
         c.appendChild(b);
       });
-      var ult = (D.profil.badges || []).filter(function (b) { return b.regle && b.regle.type === "legende"; })[0];
+      var ult = badgesVisibles().filter(function (b) { return b.regle && b.regle.type === "legende"; })[0];
       if (ult) { c.appendChild(el("h3", { class: "ps-sous", texte: "Au-delà du rang " + NOMS_RANGS[3] })); c.appendChild(blocUltime(ult)); }
     }
     function blocUltime(b) {
@@ -1058,7 +1066,7 @@
     function blocDefi(d, q) {
       var req = d.requis || [], ok = req.filter(function (x) { var g = progDe(x); return g && g.termine; }).length;
       var ouvert = d.statut === "ouvert";
-      var paliers = (D.profil.badges || []).filter(function (b) { return b.regle && b.regle.type === "score_min" && (b.regle.ressources || []).indexOf(d.ressource) >= 0; })
+      var paliers = badgesVisibles().filter(function (b) { return b.regle && b.regle.type === "score_min" && (b.regle.ressources || []).indexOf(d.ressource) >= 0; })
         .sort(function (a, b) { return (Number(a.regle.min) || 0) - (Number(b.regle.min) || 0); });
       var contenu = [
         el("div", { class: "ps-cond" }, [el("span", { class: "ps-h" }, [el("span", { texte: "Termine toutes les activités de la séquence (le score ne compte pas)" }), el("b", { texte: ok + " / " + req.length })]),
@@ -1095,7 +1103,7 @@
         });
         return;
       }
-      var bs = D.profil.badges || [], l = saisonsTriees(), n = numeroCourant();
+      var bs = badgesVisibles(), l = saisonsTriees(), n = numeroCourant();
       var ult = bs.filter(function (b) { return b.regle && b.regle.type === "legende"; });
       ult.forEach(function (b) { c.appendChild(blocUltime(b)); });
       var reste = bs.filter(function (b) { return ult.indexOf(b) < 0; });
@@ -1122,7 +1130,7 @@
       if (!bs.length) c.appendChild(el("p", { class: "aide", texte: "Aucun badge pour l'instant." }));
     }
     function vueFiche(c, id) {
-      var b = (D.profil.badges || []).filter(function (x) { return x.id === id; })[0];
+      var b = badgesVisibles().filter(function (x) { return x.id === id; })[0];
       if (!b) { ouvrir("badges"); return; }
       var l = saisonsTriees();
       PAN.titre.textContent = b.regle && b.regle.type === "legende" ? "Succès ultime" : b.saison && l[b.saison - 1] ? "Badge · Saison " + b.saison + (b.groupe ? " · " + b.groupe : "") : "Badge" + (b.groupe ? " · " + b.groupe : "");
