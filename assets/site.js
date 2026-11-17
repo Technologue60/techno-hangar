@@ -49,6 +49,7 @@
     return '<path d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + 'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a - .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a - .45)).toFixed(1) +
       'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a + .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a + .45)).toFixed(1) + '"/>'; };
   var ICONES = {
+    defi: I('<path d="M16 8h16v10a8 8 0 0 1-16 0z"/><path d="M16 11h-5a5 5 0 0 0 5 7M32 11h5a5 5 0 0 1-5 7"/><path d="M24 26v6M17 40h14M19 40l1.5-8h7l1.5 8"/>'),
     "spe-itec": I('<circle cx="24" cy="24" r="5"/><circle cx="24" cy="24" r="11"/><path d="M24 7v6M24 35v6M7 24h6M35 24h6M12 12l4.2 4.2M31.8 31.8L36 36M12 36l4.2-4.2M31.8 16.2L36 12"/>'),
     "spe-sin": I('<rect x="14" y="14" width="20" height="20" rx="3"/><rect x="20" y="20" width="8" height="8" rx="1"/><path d="M19 8v6M24 8v6M29 8v6M19 34v6M24 34v6M29 34v6M8 19h6M8 24h6M8 29h6M34 19h6M34 24h6M34 29h6"/>'),
     forces: I('<rect x="16" y="18" width="16" height="12" rx="2"/>' + FL(4, 24, 15, 24) + FL(24, 6, 24, 17) + FL(33, 31, 43, 41) + '<circle cx="24" cy="24" r="1.4" fill="currentColor"/>'),
@@ -260,7 +261,8 @@
     var progDe = function (id) { return prog.filter(function (p) { return p.ressource === id; })[0]; };
     function ligne(r, p, etiquette, message) {
       var fini = p && p.termine, pct = p ? Math.round(Number(p.avancement) || 0) : 0;
-      return el("a", { class: "rep-ligne" + (fini ? " fini" : ""), href: lienRessource(r) }, [
+      if (r.defi) etiquette = el("span", {}, [el("span", { class: "defi-badge", texte: "Défi de fin de séquence" }), etiquette]);
+      return el("a", { class: "rep-ligne" + (fini ? " fini" : "") + (r.defi ? " defi" : ""), href: lienRessource(r) }, [
         r.icone && ICONES[r.icone] ? el("span", { class: "illu", html: ICONES[r.icone] }) : el("span", { class: "illu vide-illu" }),
         el("span", { class: "rep-txt" }, [etiquette, el("b", { texte: r.titre }), el("small", { texte: message || r.sequence || "" })]),
         fini ? el("span", { class: "prog ok", texte: "✓ Fait" })
@@ -337,7 +339,7 @@
       if (s.statut === "ferme") puces.push(el("span", { class: "pa-statut ferme", texte: "🔒 Fermée" + (s.ouvre_le && new Date(s.ouvre_le) > new Date() ? " · ouvre le " + new Date(s.ouvre_le).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "") }));
       else if (s.statut === "revision") puces.push(el("span", { class: "pa-statut", texte: "Révision · sans points" }));
       if (s.gagne != null && window.TH_PASS_ACTIF) puces.push(el("span", { class: "pa-statut gagne", texte: "✓ +" + s.gagne + " pts" }));
-      else if (s.type !== "activite" && s.statut === "ouvert") puces.push(el("span", { class: "pa-statut", texte: "Entraînement" }));
+      else if (s.type !== "activite" && s.type !== "defi" && s.statut === "ouvert") puces.push(el("span", { class: "pa-statut", texte: "Entraînement" }));
       return puces.length ? el("div", { class: "res-statut" }, puces) : null;
     }
     function etatRessource(r) {
@@ -377,7 +379,7 @@
         }
         var etat = dispo ? etatRessource(r) : null;
         var bas = el("div", { class: "bas" }, [
-          etat || el("span", { class: "badge", texte: TYPES[r.type] || r.type }),
+          etat || el("span", { class: "badge", texte: r.defi ? "Grand défi" : (TYPES[r.type] || r.type) }),
           dispo ? el("span", { class: "btn" + (etat && !etat.classList.contains("ok") ? " primary" : ""),
                    texte: etat ? (etat.classList.contains("ok") ? "Revoir" : "Reprendre") : "Ouvrir" })
                 : el("span", { class: "bientot", texte: "Bientôt" })
@@ -385,6 +387,7 @@
         var haut = el("div", { class: "res-haut" }, [
           r.icone && ICONES[r.icone] ? el("span", { class: "illu", html: ICONES[r.icone] }) : null,
           el("h3", { texte: r.titre })]);
+        if (r.defi) haut = el("div", {}, [el("span", { class: "defi-badge", texte: "Défi de fin de séquence" }), haut]);
         var stat = dispo ? statutRessource(r) : null;
         if (stat) haut = el("div", {}, [haut, stat]);
         var docs = null;
@@ -394,10 +397,11 @@
             docs.appendChild(el("a", { class: "doc-lien", href: d.url, target: "_blank", rel: "noopener", texte: "📎 " + d.titre }));
           });
         }
-        if (!dispo) return el("div", { class: "carte res off" + (docs ? " avec-docs" : "") }, [haut, docs, bas]);
-        if (!docs) return el("a", { class: "carte res", href: lienRessource(r), "data-c": infos.couleur }, [haut, bas]);
+        var cDefi = r.defi ? " defi" : "";
+        if (!dispo) return el("div", { class: "carte res off" + cDefi + (docs ? " avec-docs" : "") }, [haut, docs, bas]);
+        if (!docs) return el("a", { class: "carte res" + cDefi, href: lienRessource(r), "data-c": infos.couleur }, [haut, bas]);
         // Carte avec documents : liens séparés (pas de lien dans un lien)
-        var carte = el("div", { class: "carte res cliquable", "data-c": infos.couleur, role: "link", tabindex: "0" }, [haut, docs, bas]);
+        var carte = el("div", { class: "carte res cliquable" + cDefi, "data-c": infos.couleur, role: "link", tabindex: "0" }, [haut, docs, bas]);
         var aller = function () { location.href = lienRessource(r); };
         carte.addEventListener("click", function (e) { if (!e.target.closest(".doc-lien")) aller(); });
         carte.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.target.closest(".doc-lien")) aller(); });

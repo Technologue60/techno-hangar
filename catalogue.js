@@ -78,6 +78,10 @@ window.CATALOGUE = [
 
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
     titre: "Logiciel StatGraph", fichier: "statgraph-web.html", type: "outil", icone: "statgraph", en_ligne: true },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
+    titre: "Grand défi · Statique graphique", fichier: "defi-statique-eleve.html", type: "activite", icone: "defi", defi: true, en_ligne: true,
+    titre_consigne: "Grand défi de fin de séquence",
+    consigne: "Une seule réponse par question, pas de retour en arrière. Ne quitte pas la page pendant le défi." },
 
   /* ---------------- 1ère IT ---------------- */
   { classe: "premiere-it", onglet: "it", sequence: "Projet 1 · Le casque connecté",

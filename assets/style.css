@@ -241,3 +241,33 @@ body[data-page="accueil"] .accueil { padding-bottom: .4rem; }
 .rep-txt small { color: var(--muted); font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rep-ligne .btn { padding: .3rem .7rem; font-size: .8rem; }
 @media (max-width: 680px) { .rep-ligne { grid-template-columns: auto minmax(0, 1fr) auto; } .rep-ligne .prog { display: none; } }
+
+/* Vue prof : nom d'élève cliquable */
+a.lien-eleve { color: inherit; text-decoration: none; border-bottom: 1px dashed currentColor; }
+a.lien-eleve:hover { color: var(--accent); }
+
+/* ---------- Grand défi de fin de séquence : carte qui brille ---------- */
+@property --defi-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.carte.defi { --c: #ff9d3d; grid-column: 1 / -1; border: 1px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box,
+              conic-gradient(from var(--defi-a), #ffb347, #ff6a3d, #ffd36b, #b07cff, #ffb347) border-box;
+  box-shadow: 0 0 18px rgba(255, 170, 60, .28), 0 0 50px rgba(255, 120, 60, .12);
+  animation: defi-tour 6s linear infinite, defi-pulse 2.8s ease-in-out infinite; }
+.carte.defi:after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 220, 150, .13) 50%, transparent 65%) -150% 0 / 60% 100% no-repeat;
+  animation: defi-reflet 4.5s ease-in-out infinite; }
+.carte.defi:hover { box-shadow: 0 0 26px rgba(255, 170, 60, .45), 0 0 70px rgba(255, 120, 60, .2); border-color: transparent; }
+.carte.defi .illu { color: #ffc56b; filter: drop-shadow(0 0 8px rgba(255, 180, 70, .6)); }
+.carte.defi h3 { font-size: 1.15rem; }
+.defi-badge { display: inline-flex; align-items: center; gap: .35rem; margin-bottom: .5rem; padding: .18rem .6rem; border-radius: 999px;
+  font-family: var(--mono); font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #1a1205;
+  background: linear-gradient(90deg, #ffd36b, #ff9d3d); box-shadow: 0 0 12px rgba(255, 170, 60, .5); }
+.defi-badge:before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: #1a1205; opacity: .7; }
+.rep-ligne.defi { border: 1px solid rgba(255, 170, 60, .55); background: linear-gradient(90deg, rgba(255, 170, 60, .12), transparent 70%);
+  box-shadow: 0 0 16px rgba(255, 170, 60, .2); animation: defi-pulse 2.8s ease-in-out infinite; }
+.rep-ligne.defi .illu { color: #ffc56b; }
+.rep-ligne.defi .defi-badge { margin: 0 .4rem .2rem 0; font-size: .6rem; }
+@keyframes defi-tour { to { --defi-a: 360deg; } }
+@keyframes defi-pulse { 50% { box-shadow: 0 0 28px rgba(255, 170, 60, .45), 0 0 70px rgba(255, 120, 60, .18); } }
+@keyframes defi-reflet { 0%, 55% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
+@media (prefers-reduced-motion: reduce) { .carte.defi, .carte.defi:after, .rep-ligne.defi { animation: none; } }
