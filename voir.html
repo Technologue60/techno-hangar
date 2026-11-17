@@ -7,7 +7,7 @@
 <title>Ressource · Techno-Hangar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=9">
+<link rel="stylesheet" href="assets/style.css?v=10">
 <link rel="stylesheet" href="assets/pass.css?v=5">
 <link rel="stylesheet" href="assets/theme.css?v=6">
 <style>
@@ -228,12 +228,13 @@ window.TH_VOIR = async function (acces) {
   window.addEventListener("message", function (ev) {
     if (ev.source !== cadre.contentWindow || !ev.data || ev.data.type !== "th-progression") return;
     ["avancement", "score", "termine"].forEach(function (k) { if (ev.data[k] !== undefined) infosPage[k] = ev.data[k]; });
+    if (Number(infosPage.avancement) >= 100) infosPage.termine = true;   // tout fait = terminé (pas besoin du PDF)
     enregistrer();
   });
 };
 </script>
 <script src="assets/presence.js?v=2"></script>
-<script src="assets/pass.js?v=12"></script>
-<script src="assets/site.js?v=16"></script>
+<script src="assets/pass.js?v=13"></script>
+<script src="assets/site.js?v=17"></script>
 </body>
 </html>

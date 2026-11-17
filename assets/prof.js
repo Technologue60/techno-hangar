@@ -126,7 +126,7 @@ window.TH_PROF = function (acces) {
           catch (e) { alert("Erreur : " + message(e)); }
         };
         t.appendChild(el("tr", {}, [
-          el("td", { texte: p.nom }), el("td", { texte: p.prenom }), el("td", { texte: p.identifiant }), cMdpTd,
+          el("td", {}, [TH_lienEleve(p.nom, p.id)]), el("td", {}, [TH_lienEleve(p.prenom, p.id)]), el("td", { texte: p.identifiant }), cMdpTd,
           el("td", {}, [el("div", { class: "actions" }, [bMdp, bSup, info])])
         ]));
       });
@@ -398,7 +398,7 @@ window.TH_PROF = function (acces) {
         var th = el("th", { class: "res-col" + (i && colonnes[i - 1].groupe !== c.groupe ? " debut-g" : ""), title: c.titre, texte: c.court });
         th.style.setProperty("--c", "var(" + c.coul + ")"); return th; }))));
       eleves.forEach(function (e) {
-        var tr = el("tr", {}, [el("td", { texte: e.nom + " " + e.prenom })]);
+        var tr = el("tr", {}, [el("td", {}, [TH_lienEleve(e.nom + " " + e.prenom, e.id)])]);
         colonnes.forEach(function (c) {
           var p = index[e.id + "|" + c.id], td;
           if (!p) td = el("td", { class: "c rien", texte: "—" });

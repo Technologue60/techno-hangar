@@ -199,3 +199,6 @@ html:not(.th-ok) main { visibility: hidden; }
 .res-haut { display: flex; align-items: center; gap: .75rem; }
 .carte.off .illu { filter: grayscale(1); opacity: .6; }
 @media (prefers-reduced-motion: reduce) { .g-corps { animation: none; } .chevron { transition: none; } }
+/* Vue prof : nom d'élève cliquable */
+a.lien-eleve { color: inherit; text-decoration: none; border-bottom: 1px dashed currentColor; }
+a.lien-eleve:hover { color: var(--accent); }

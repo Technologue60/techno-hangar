@@ -95,6 +95,12 @@
     return n;
   }
   window.TH_el = el;
+  /* Vue prof : un nom d'élève mène à son profil */
+  window.TH_lienEleve = function (texte, id) {
+    var a = window.TH_ACCES;
+    if (!id || !a || a.role !== "prof") return document.createTextNode(texte);
+    return el("a", { class: "lien-eleve", href: racine + "profil/index.html?eleve=" + id, title: "Voir le profil", texte: texte });
+  };
 
   function lienRessource(r) {
     if (/^https?:\/\//.test(r.fichier)) return r.fichier;

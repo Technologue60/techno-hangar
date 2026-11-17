@@ -77,7 +77,7 @@
       t.appendChild(th(["Élève", "Classe", "État", "Depuis", "Page ouverte", "Dernier signal"]));
       liste.forEach(function (x) {
         t.appendChild(el("tr", { class: "pp-l-" + x.etat }, [
-          el("td", { texte: x.nom + " " + x.prenom }), el("td", { texte: nomClasse(x.classe) }),
+          el("td", {}, [TH_lienEleve(x.nom + " " + x.prenom, x.eleve)]), el("td", { texte: nomClasse(x.classe) }),
           el("td", {}, [el("span", { class: "pp-etat " + x.etat }, [el("i"), document.createTextNode(ETATS[x.etat] || x.etat)])]),
           el("td", { texte: x.etat === "hors_ligne" ? "" : depuis(x.depuis) }),
           el("td", { texte: x.page || "" }),
@@ -249,7 +249,7 @@
       if (!l.length) t.appendChild(el("tr", {}, [el("td", { colspan: "4", class: "aide", texte: "Aucune ouverture individuelle." })]));
       l.forEach(function (x) {
         var e = el2.filter(function (y) { return y.id === x.eleve; })[0] || {};
-        t.appendChild(el("tr", {}, [el("td", { texte: (e.nom || "") + " " + (e.prenom || "") }), el("td", { texte: titreRes(x.ressource) }),
+        t.appendChild(el("tr", {}, [el("td", {}, [TH_lienEleve((e.nom || "") + " " + (e.prenom || ""), x.eleve)]), el("td", { texte: titreRes(x.ressource) }),
           el("td", { texte: x.jusqu_au ? new Date(x.jusqu_au).toLocaleString("fr-FR") : "Sans limite" }),
           el("td", {}, [bouton("Retirer", "danger", async function () { await supprimer("deblocages", "eleve=eq." + x.eleve + "&ressource=eq." + encodeURIComponent(x.ressource)); chargerDeblocages(); })])]));
       });
@@ -441,7 +441,7 @@
         var s = (p.saisons || []).filter(function (x) { return x.id === p.courante; })[0] || { points: 0, objectif: 1, paliers: [] };
         var rec = function (id) { return (p.recompenses || []).filter(function (r) { return r.id === id; })[0]; };
         var a = rec(p.avatar), ti = rec(p.titre);
-        t.appendChild(el("tr", {}, [el("td", { texte: e.nom + " " + e.prenom }), el("td", { texte: p.total + " pts" }),
+        t.appendChild(el("tr", {}, [el("td", {}, [TH_lienEleve(e.nom + " " + e.prenom, e.id)]), el("td", { texte: p.total + " pts" }),
           el("td", { texte: Math.round(s.points) + " / " + s.objectif + " (" + Math.round(s.points / s.objectif * 100) + " %)" }),
           el("td", { texte: s.paliers.filter(function (x) { return x.debloque; }).length + " / " + s.paliers.length }),
           el("td", { texte: p.reserve ? p.reserve + " pts" : "" }),
@@ -471,7 +471,7 @@
           act.push(bouton(a.type === "trop_rapide" ? "Refuser les points" : "Vu", "", async function () { await TH.rpc("alerte_traiter", { p_id: a.id, p_accorder: false }); chargerAlertes(); }));
         }
         t.appendChild(el("tr", {}, [el("td", {}, [el("span", { class: "pp-al " + a.type, texte: NOMS_ALERTES[a.type] || a.type })]),
-          el("td", { texte: a.nom + " " + a.prenom }), el("td", { texte: nomClasse(a.classe) }), el("td", { texte: det }),
+          el("td", {}, [TH_lienEleve(a.nom + " " + a.prenom, a.eleve)]), el("td", { texte: nomClasse(a.classe) }), el("td", { texte: det }),
           el("td", { class: "aide", texte: a.quand ? new Date(a.quand).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "" }),
           el("td", {}, [el("div", { class: "actions" }, act)])]));
       });

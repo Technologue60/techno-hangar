@@ -197,7 +197,11 @@
   }
   function attacherFiche(noeud, base) {
     if (!base) return;
-    base.id = base.id || null;   // sans le script 05, pas d'identifiant : fiche simple (avatar, prénom, titre)
+    base.id = base.id || null;
+    if (base.id && window.TH_ACCES && TH_ACCES.role === "prof") {
+      noeud.style.cursor = "pointer";
+      noeud.addEventListener("click", function () { location.href = lienProfil(null, base.id); });
+    }   // sans le script 05, pas d'identifiant : fiche simple (avatar, prénom, titre)
     function montrer(e) {
       clearTimeout(ficheMasque);
       if (!fiche) { fiche = el("div", { class: "pa-fiche", role: "tooltip" }); document.body.appendChild(fiche); }
