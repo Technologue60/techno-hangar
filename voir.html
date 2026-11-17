@@ -46,7 +46,7 @@
   <iframe id="cadre" title="Ressource" allow="fullscreen; clipboard-write" allowfullscreen hidden></iframe>
 </main>
 <script src="assets/config.js?v=5"></script>
-<script src="assets/th.js"></script>
+<script src="assets/th.js?v=3"></script>
 <script src="catalogue.js"></script>
 <script>
 window.TH_VOIR = async function (acces) {
@@ -78,7 +78,7 @@ window.TH_VOIR = async function (acces) {
       docs, fermer ]));
     bloc.hidden = false;
   }
-  if (acces.role === "collegue" && (acces.ressources || []).indexOf(r) < 0) return erreur("Cette ressource ne fait pas partie de celles qui te sont ouvertes.");
+  if (!TH.autorise(acces, r)) return erreur("Cette ressource ne fait pas partie de celles qui te sont ouvertes.");
   var cle = acces.cles && acces.cles[classe];
   if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
 
@@ -140,6 +140,9 @@ window.TH_VOIR = async function (acces) {
     a.className = "btn primary"; a.textContent = "Télécharger le fichier";
     msg.appendChild(a); return;
   }
+
+  /* Collègue : vu comme « prof » par l'activité (bouton 📱 Appels, validation) */
+  if (acces.role === "collegue") window.TH_ACCES = Object.assign({}, acces, { role: "prof", role_reel: "collegue" });
 
   /* 2. Reprise de la progression (pages HTML) */
   var eleve = acces.role === "eleve" ? (TH.session() || {}).user.id : null;
@@ -231,6 +234,6 @@ window.TH_VOIR = async function (acces) {
 </script>
 <script src="assets/presence.js?v=2"></script>
 <script src="assets/pass.js?v=12"></script>
-<script src="assets/site.js?v=15"></script>
+<script src="assets/site.js?v=16"></script>
 </body>
 </html>

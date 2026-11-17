@@ -150,7 +150,7 @@
   function construireEntete(acces) {
     var nav = el("nav", { class: "nav", "aria-label": "Classes" });
     var visibles = !acces ? [] : (acces.role === "prof" ? CLASSES
-      : CLASSES.filter(function (c) { return c.id === acces.classe; }));
+      : CLASSES.filter(function (c) { return acces.role === "collegue" && acces.classes ? acces.classes.indexOf(c.id) >= 0 : c.id === acces.classe; }));
     if (acces && acces.role === "collegue") {
       visibles.forEach(function (c) {
         var a = el("a", { href: racine + c.id + "/index.html", texte: c.court });
@@ -200,12 +200,18 @@
     body.insertBefore(header, body.firstChild);
   }
 
+  /* Page d'arrivée : sa classe (élève), la 1re classe ouverte (collègue), sinon le suivi */
+  function accueilDe(acces) {
+    var c = acces.role === "collegue" && acces.classes ? acces.classes[0] : acces.classe;
+    return c ? c + "/index.html" : "prof/index.html#suivi";
+  }
+
   /* ---------- Accueil ---------- */
   function pageAccueil(acces) {
     var grille = document.getElementById("classes");
     var enveloppe = document.getElementById("grille");
     var estEleve = acces.role === "eleve" && infosClasse(acces.classe);
-    if (acces.role !== "prof" && !estEleve) { location.replace(racine + acces.classe + "/index.html"); return; }
+    if (acces.role !== "prof" && !estEleve) { location.replace(racine + accueilDe(acces)); return; }
     if (estEleve) {
       var m = infosClasse(acces.classe);
       if (acces.prenom) document.getElementById("salut").textContent = "Bonjour " + acces.prenom;
@@ -271,9 +277,8 @@
 
   /* ---------- Page de classe ---------- */
   async function pageClasse(acces) {
-    if (acces.role !== "prof" && acces.classe !== classeCourante) {
-      location.replace(racine + acces.classe + "/index.html"); return;
-    }
+    var permis = acces.role === "collegue" && acces.classes ? acces.classes.indexOf(classeCourante) >= 0 : acces.classe === classeCourante;
+    if (acces.role !== "prof" && !permis) { location.replace(racine + accueilDe(acces)); return; }
     var infos = infosClasse(classeCourante) || { nom: "", onglets: [], couleur: "--accent" };
     document.title = infos.nom + " · Techno-Hangar";
     var main = document.querySelector("main");
@@ -292,8 +297,7 @@
     var onglets = infos.onglets || [];
     var collegue = acces.role === "collegue";
     if (collegue) {
-      var autorisees = acces.ressources || [];
-      liste = liste.filter(function (r) { return autorisees.indexOf(r.classe + "/" + r.fichier) >= 0; });
+      liste = liste.filter(function (r) { return TH.autorise(acces, r.classe + "/" + r.fichier); });
       onglets = onglets.filter(function (o) { return liste.some(function (r) { return r.onglet === o.id; }); })
                        .map(function (o) { return Object.assign({}, o, { sequences: [], defaut: false }); });
     }

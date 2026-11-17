@@ -79,3 +79,12 @@ textarea { width: 100%; max-width: 640px; resize: vertical; }
 .pp-cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .25rem .8rem; }
 .tableau input:disabled { opacity: .35; }
 .pp-img { width: 8.5rem; }
+/* Accès collègues */
+.acc { display: flex; flex-direction: column; gap: .5rem; padding: .4rem 0; }
+.acc-cl { border: 1px solid var(--line, #2c2940); border-radius: 12px; padding: .5rem .8rem; }
+.acc-cl summary { cursor: pointer; }
+.acc-corps { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+.acc-types { display: flex; flex-wrap: wrap; gap: .35rem; }
+.btn.mini { padding: .25rem .6rem; font-size: .8rem; }
+.acc-seq { grid-column: 1 / -1; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; opacity: .65; margin-top: .3rem; }
+.acc-ligne td { background: transparent; }

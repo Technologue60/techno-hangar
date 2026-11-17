@@ -25,10 +25,9 @@ window.TH_PROF = function (acces) {
   /* ---------- Listes de classes ---------- */
   var memo = null; try { memo = localStorage.getItem("th-prof-classe"); } catch (e) {}
   document.querySelectorAll(".choix-classe").forEach(function (s) {
-    CLASSES.filter(function (c) { return !COLLEGUE || c.id === acces.classe; })
-      .forEach(function (c) { s.appendChild(el("option", { value: c.id, texte: c.nom })); });
-    if (COLLEGUE) s.value = acces.classe;
-    if (memo) s.value = memo;
+    var mesClasses = CLASSES.filter(function (c) { return !COLLEGUE || (acces.classes || [acces.classe]).indexOf(c.id) >= 0; });
+    mesClasses.forEach(function (c) { s.appendChild(el("option", { value: c.id, texte: c.nom })); });
+    if (memo && mesClasses.some(function (c) { return c.id === memo; })) s.value = memo;
     s.addEventListener("change", function () {
       try { localStorage.setItem("th-prof-classe", s.value); } catch (e) {}
       document.querySelectorAll(".choix-classe").forEach(function (o) { o.value = s.value; });
@@ -72,7 +71,7 @@ window.TH_PROF = function (acces) {
         derniere = x.classe;
       }
       f.appendChild(el("div", { class: "fiche" }, [
-        el("h3", { texte: x.prenom + " " + x.nom + " · " + (x.collegue ? "Accès collègue · " : "") + nomClasse(x.classe) }),
+        el("h3", { texte: x.prenom + " " + x.nom + " · " + (x.collegue ? "Accès collègue" : nomClasse(x.classe)) }),
         el("p", { texte: "Site : " + TH_CONFIG.adresseSite }),
         el("p", {}, [document.createTextNode("Identifiant : "), el("b", { texte: x.identifiant })]),
         el("p", {}, [document.createTextNode("Mot de passe : "), el("span", { class: "mdp", texte: x.mdp })]),
@@ -140,7 +139,9 @@ window.TH_PROF = function (acces) {
     for (;;) {
       while (tousIdentifiants.indexOf(id) >= 0) { n++; id = base + n; }
       try {
+        var avant = localStorage.getItem("th-session");
         var rep = await TH.appel("/auth/v1/signup", { method: "POST", body: { email: TH.emailDe(id), password: e.mdp } });
+        if (avant && localStorage.getItem("th-session") !== avant) localStorage.setItem("th-session", avant);
         var user = rep.user || rep;
         if (!rep.access_token) throw new Error("La confirmation par e-mail est encore activée dans Supabase (Authentication → Email → Confirm email).");
         await TH.rest("profils", { method: "POST", headers: { "Prefer": "return=minimal" },
@@ -193,32 +194,90 @@ window.TH_PROF = function (acces) {
 
 
   /* =================== COLLÈGUES =================== */
-  function majChoixRessources() {
-    var classe = $("k-classe").value, zone = $("k-ressources"); vider(zone);
-    var res = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier); });
-    if (!res.length) { zone.appendChild(el("p", { class: "aide", texte: "Aucune ressource pour cette classe dans le catalogue." })); return; }
-    res.forEach(function (r) {
-      var id = r.classe + "/" + r.fichier;
-      zone.appendChild(el("label", { class: "case" }, [el("input", { type: "checkbox", value: id }), document.createTextNode(" " + r.titre + (r.en_ligne ? "" : " (bientôt)"))]));
-    });
+  // Accès modifiable à tout moment : par classe entière (« classe/* », futures ressources comprises), par type, ou ressource par ressource
+  var TYPES_NOM = { activite: "Activités", td: "TD", pdf: "PDF", video: "Vidéos", outil: "Outils", lien: "Liens" };
+  function resClasse(c) { return CAT.filter(function (r) { return r.classe === c && r.fichier && !/^https?:/.test(r.fichier); }); }
+  function titreRessource(id) {
+    if (/\/\*$/.test(id)) return nomClasse(id.split("/")[0]) + " (tout)";
+    var r = CAT.filter(function (x) { return x.classe + "/" + x.fichier === id; })[0]; return r ? r.titre : id;
   }
-  function titreRessource(id) { var r = CAT.filter(function (x) { return x.classe + "/" + x.fichier === id; })[0]; return r ? r.titre : id; }
+  function resumeAcces(l) {
+    l = l || []; if (!l.length) return "Aucun accès";
+    var par = {};
+    l.forEach(function (id) { var c = id.split("/")[0]; par[c] = par[c] || { tout: false, n: 0 }; if (/\/\*$/.test(id)) par[c].tout = true; else par[c].n++; });
+    return Object.keys(par).map(function (c) { return nomClasse(c) + " · " + (par[c].tout ? "tout" : par[c].n + "/" + resClasse(c).length); }).join("  ·  ");
+  }
+  function editeurAcces(p, fini) {
+    var choisi = (p.ressources || []).slice(), boite = el("div", { class: "acc" });
+    function a(id) { return choisi.indexOf(id) >= 0; }
+    function mettre(id, oui) { var i = choisi.indexOf(id); if (oui && i < 0) choisi.push(id); if (!oui && i >= 0) choisi.splice(i, 1); }
+    CLASSES.forEach(function (c) {
+      var res = resClasse(c.id); if (!res.length) return;
+      var det = el("details", { class: "acc-cl" }), som = el("summary"), cpt = el("span", { class: "aide" });
+      var tout = el("input", { type: "checkbox" });
+      som.appendChild(el("b", { texte: c.nom })); som.appendChild(cpt);
+      var lTout = el("label", { class: "case acc-tout" }, [tout, document.createTextNode(" Toute la classe")]);
+      var chips = el("div", { class: "acc-types" }), liste = el("div", { class: "pp-cases" }), cases = [];
+      var seqs = []; res.forEach(function (r) { var s = r.sequence || r.onglet || "Autres"; if (seqs.indexOf(s) < 0) seqs.push(s); });
+      seqs.forEach(function (s) {
+        liste.appendChild(el("div", { class: "acc-seq", texte: s }));
+        res.filter(function (r) { return (r.sequence || r.onglet || "Autres") === s; }).forEach(function (r) {
+          var id = r.classe + "/" + r.fichier, cb = el("input", { type: "checkbox", value: id });
+          cb.onchange = function () { mettre(id, cb.checked); maj(); };
+          cases.push({ cb: cb, r: r, id: id });
+          liste.appendChild(el("label", { class: "case" }, [cb, document.createTextNode(" " + r.titre + (r.en_ligne ? "" : " (bientôt)"))]));
+        });
+      });
+      var types = []; res.forEach(function (r) { var t = r.type || "activite"; if (types.indexOf(t) < 0) types.push(t); });
+      types.forEach(function (t) {
+        var b = el("button", { type: "button", class: "btn mini", texte: TYPES_NOM[t] || t });
+        b.onclick = function () {
+          var du = cases.filter(function (x) { return (x.r.type || "activite") === t; }), tous = du.every(function (x) { return a(x.id); });
+          du.forEach(function (x) { mettre(x.id, !tous); }); maj();
+        };
+        chips.appendChild(b);
+      });
+      tout.onchange = function () { mettre(c.id + "/*", tout.checked); maj(); };
+      function maj() {
+        var w = a(c.id + "/*"); tout.checked = w;
+        cases.forEach(function (x) { x.cb.checked = w || a(x.id); x.cb.disabled = w; });
+        chips.querySelectorAll("button").forEach(function (b) { b.disabled = w; });
+        var n = cases.filter(function (x) { return a(x.id); }).length;
+        cpt.textContent = w ? " · tout" : n ? " · " + n + "/" + cases.length : "";
+      }
+      maj();
+      if (a(c.id + "/*") || cases.some(function (x) { return a(x.id); })) det.open = true;
+      det.appendChild(som); det.appendChild(el("div", { class: "acc-corps" }, [lTout, chips, liste]));
+      boite.appendChild(det);
+    });
+    var etat = el("span", { class: "aide" }), bEnr = el("button", { class: "btn primary", type: "button", texte: "Enregistrer" });
+    bEnr.onclick = async function () {
+      bEnr.disabled = true; etat.textContent = "…";
+      var cl = null; choisi.some(function (id) { cl = id.split("/")[0]; return true; });
+      try {
+        await TH.rest("profils?id=eq." + p.id, { method: "PATCH", headers: { "Prefer": "return=minimal" }, body: { ressources: choisi, classe: cl || p.classe || null } });
+        etat.textContent = "Enregistré."; p.ressources = choisi.slice(); if (fini) fini();
+      } catch (e) { etat.textContent = "Erreur : " + message(e); }
+      bEnr.disabled = false;
+    };
+    boite.appendChild(el("div", { class: "ligne-outils" }, [bEnr, etat]));
+    return boite;
+  }
   async function chargerCollegues() {
     var t = $("k-table"); if (!t) return; vider(t);
     try {
       var liste = await TH.rest("profils?select=id,identifiant,nom,prenom,classe,ressources&role=eq.collegue&order=nom");
       if (!liste.length) { t.appendChild(el("tr", {}, [el("td", { class: "aide", texte: "Aucun compte collègue pour l'instant." })])); return; }
-      t.appendChild(el("tr", {}, ["Collègue", "Identifiant", "Classe", "Ressources ouvertes", ""].map(function (h) { return el("th", { texte: h }); })));
+      t.appendChild(el("tr", {}, ["Collègue", "Identifiant", "Accès", ""].map(function (h) { return el("th", { texte: h }); })));
       liste.forEach(function (p) {
-        var cMdp = null;
         var info = el("span", { class: "aide" });
         var bMdp = el("button", { class: "btn", type: "button", texte: "Nouveau mot de passe" });
         bMdp.onclick = async function () {
           var m = genMdp(); bMdp.disabled = true;
           try {
-            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m }); await memoMdp(p.id, m); if (cMdp) cMdp.textContent = m;
+            await TH.rpc("reinitialiser_mdp", { eleve: p.id, mdp: m }); await memoMdp(p.id, m);
             vider(info); info.appendChild(el("span", { class: "mdp", texte: m }));
-            preparerFiches([{ nom: p.nom, prenom: p.prenom, classe: p.classe, identifiant: p.identifiant, mdp: m, collegue: true }]);
+            preparerFiches([{ nom: p.nom, prenom: p.prenom, classe: null, identifiant: p.identifiant, mdp: m, collegue: true }]);
             var imp = el("button", { class: "btn", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
             info.appendChild(document.createTextNode(" ")); info.appendChild(imp);
           } catch (e) { info.textContent = "Erreur : " + message(e); }
@@ -229,40 +288,42 @@ window.TH_PROF = function (acces) {
           if (!confirm("Supprimer le compte de " + p.prenom + " " + p.nom + " ?")) return;
           try { await TH.rpc("supprimer_eleve", { eleve: p.id }); chargerCollegues(); } catch (e) { alert("Erreur : " + message(e)); }
         };
+        var resume = el("span", { texte: resumeAcces(p.ressources) });
+        var bAcc = el("button", { class: "btn primary", type: "button", texte: "Accès" });
+        var ligneEd = el("tr", { class: "acc-ligne" }); ligneEd.hidden = true;
+        var tdEd = el("td"); tdEd.colSpan = 4; ligneEd.appendChild(tdEd);
+        bAcc.onclick = function () {
+          if (!ligneEd.hidden) { ligneEd.hidden = true; return; }
+          vider(tdEd); tdEd.appendChild(editeurAcces(p, function () { resume.textContent = resumeAcces(p.ressources); }));
+          ligneEd.hidden = false;
+        };
         t.appendChild(el("tr", {}, [
-          el("td", { texte: p.prenom + " " + p.nom }), el("td", { texte: p.identifiant }), el("td", { texte: nomClasse(p.classe) }),
-          el("td", { texte: (p.ressources || []).map(titreRessource).join(" · ") || "—" }),
-          el("td", {}, [el("div", { class: "actions" }, [bMdp, bSup, info])])
+          el("td", { texte: p.prenom + " " + p.nom }), el("td", { texte: p.identifiant }), el("td", {}, [resume]),
+          el("td", {}, [el("div", { class: "actions" }, [bAcc, bMdp, bSup, info])])
         ]));
+        t.appendChild(ligneEd);
       });
     } catch (e) {
       t.appendChild(el("tr", {}, [el("td", { texte: /ressources|column/.test(message(e)) ? "Lance d'abord le script 02-collegues.sql dans Supabase." : "Erreur : " + message(e) })]));
     }
   }
-  var kc = $("k-classe");
-  if (kc) {
-    CLASSES.forEach(function (c) { kc.appendChild(el("option", { value: c.id, texte: c.nom })); });
-    kc.addEventListener("change", majChoixRessources); majChoixRessources();
+  if ($("k-creer")) {
     $("k-creer").onclick = async function () {
-      var nom = $("k-nom").value.trim(), prenom = $("k-prenom").value.trim(), classe = kc.value;
-      var res = [].slice.call(document.querySelectorAll("#k-ressources input:checked")).map(function (x) { return x.value; });
-      var etat = $("k-etat");
+      var nom = $("k-nom").value.trim(), prenom = $("k-prenom").value.trim(), etat = $("k-etat");
       if (!nom || !prenom) { etat.textContent = "Indique le nom et le prénom."; return; }
-      if (!res.length) { etat.textContent = "Coche au moins une ressource."; return; }
       this.disabled = true; etat.textContent = "Création…";
       try {
         var tous = await TH.rest("profils?select=identifiant");
         tousIdentifiants = tous.map(function (p) { return p.identifiant; });
-        var e = { nom: nom.toUpperCase(), prenom: joliNom(prenom), classe: classe, mdp: genMdp(), role: "collegue", ressources: res };
+        var e = { nom: nom.toUpperCase(), prenom: joliNom(prenom), classe: null, mdp: genMdp(), role: "collegue", ressources: [] };
         await creerCompte(e);
-        etat.textContent = "Compte créé.";
+        etat.textContent = "Compte créé : clique sur « Accès » pour ouvrir ses classes.";
         $("k-nom").value = ""; $("k-prenom").value = "";
         preparerFiches([Object.assign({ collegue: true }, e)]);
         var z = $("k-resultat"); vider(z);
         var imp = el("button", { class: "btn primary", type: "button", texte: "Imprimer la fiche" }); imp.onclick = function () { window.print(); };
         z.appendChild(el("p", {}, [document.createTextNode("Identifiant : "), el("b", { texte: e.identifiant }),
           document.createTextNode("   Mot de passe : "), el("span", { class: "mdp", texte: e.mdp })]));
-        z.appendChild(el("p", { class: "aide", texte: "Le mot de passe ne sera plus affiché ensuite : note-le ou imprime la fiche." }));
         z.appendChild(imp);
         chargerCollegues();
       } catch (err) { etat.textContent = "Erreur : " + message(err); }
@@ -312,7 +373,7 @@ window.TH_PROF = function (acces) {
       var eleves = await TH.rest("profils?select=id,nom,prenom,identifiant&role=eq.eleve&classe=eq." + classe + "&order=nom,prenom");
       var prog = eleves.length ? await TH.rest("progression?select=eleve,ressource,avancement,score,termine,debut_le,maj_le&eleve=in.(" + eleves.map(function (e) { return e.id; }).join(",") + ")") : [];
       var colonnes = CAT.filter(function (r) { return r.classe === classe && r.fichier && !/^https?:/.test(r.fichier)
-          && (!COLLEGUE || (acces.ressources || []).indexOf(r.classe + "/" + r.fichier) >= 0); })
+          && TH.autorise(acces, r.classe + "/" + r.fichier); })
         .map(function (r) { return { id: r.classe + "/" + r.fichier, titre: r.titre, onglet: r.onglet || "", partie: r.partie || "" }; });
       prog.forEach(function (p) { if (!colonnes.some(function (c) { return c.id === p.ressource; })) colonnes.push({ id: p.ressource, titre: p.ressource.split("/").pop() }); });
       var index = {}; prog.forEach(function (p) { index[p.eleve + "|" + p.ressource] = p; });
@@ -476,7 +537,7 @@ window.TH_PROF = function (acces) {
     document.querySelectorAll(".vue").forEach(function (v) { if (v.id !== "vue-suivi") v.remove(); });
     $("vue-suivi").hidden = false; boutons = document.querySelectorAll("#ongletsProf .onglet");
     boutons.forEach(function (b) { b.classList.add("actif"); });
-    var sel = $("s-classe"); if (sel) sel.disabled = true;
+    var sel = $("s-classe"); if (sel) sel.disabled = sel.options.length < 2;
     chargerSuivi();
     return;
   }
