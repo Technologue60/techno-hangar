@@ -82,6 +82,10 @@ window.CATALOGUE = [
   /* ---------------- 1ère IT ---------------- */
   { classe: "premiere-it", onglet: "it", sequence: "Projet 1 · Le casque connecté",
     titre: "Séance 1 · Lancement et cahier des charges", fichier: "it-casque-seance1-eleve.html", type: "activite", icone: "casque", en_ligne: true },
+  { classe: "premiere-it", onglet: "it", sequence: "Projet 1 · Le casque connecté",
+    titre: "Séance 2 · Conception préliminaire du boîtier", fichier: "it-casque-seance2-eleve.html", type: "activite", icone: "casque", en_ligne: true,
+    titre_consigne: "Séance 2 : conception préliminaire du boîtier",
+    consigne: "4 parties. À la fin de chaque partie, appelle ton professeur : il valide avec toi, puis la partie suivante s'ouvre." },
 
   /* ---------------- SNT seconde ---------------- */
   { classe: "snt", sequence: "Thème 2 · Le Web",
