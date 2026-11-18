@@ -38,6 +38,8 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?",
     partie: "sin",
     titre: "Spécialité SIN · Vidéosurveillance", fichier: "sin-videosurveillance.html", type: "activite", en_ligne: true },
+  { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Thème 2 · Comment sécuriser un bâtiment ?", partie: "sin",
+    titre: "Spécialité SIN · TP · Robot de surveillance HuskyLens", fichier: "sin-tp-huskylens.html", type: "activite", en_ligne: true },
 
   { classe: "terminale-sti2d", onglet: "2i2d", sequence: "Étude de système",
     titre: "TP · Portail automatisé", fichier: "suivi-tp-portail.html", type: "activite", icone: "portail", en_ligne: false },
@@ -81,7 +83,7 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique",
     titre: "Grand défi · Statique graphique", fichier: "defi-statique-eleve.html", type: "activite", icone: "defi", defi: true, en_ligne: true,
     titre_consigne: "Grand défi de fin de séquence",
-    consigne: "Une seule réponse par question, pas de retour en arrière. Ne quitte pas la page pendant le défi." },
+    consigne: "Regarde l'exemple, puis lance le test (plein écran). Tu peux modifier tes réponses jusqu'à l'envoi de ta copie. Ne quitte pas la page pendant le test." },
 
   /* ---------------- 1ère IT ---------------- */
   { classe: "premiere-it", onglet: "it", sequence: "Projet 1 · Le casque connecté",
