@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grand défi · Statique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0614;--pn:rgba(26,15,43,.80);--pn2:#1a0f2b;--ln:rgba(183,123,255,.20);--tx:#f6f0ff;--mu:#ab9cc8;--a1:#b77bff;--a2:#d8b4ff;--g1:#ffd23f;--g2:#ff9f1c;--ok:#45f0a6;--ko:#ff5c7c;--or:#ff9a3d;--gold:#ffd23f;--vi:#b07cff;--display:"Space Grotesk","Segoe UI",sans-serif;--body:"Atkinson Hyperlegible",Verdana,sans-serif;--mono:"JetBrains Mono",Consolas,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 var(--body)}
+body{overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 20% 15%,rgba(140,60,255,.28),transparent 70%),radial-gradient(35% 30% at 85% 25%,rgba(255,200,60,.10),transparent 70%),radial-gradient(45% 40% at 60% 95%,rgba(90,40,200,.22),transparent 70%);animation:aur 22s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.45;background-image:radial-gradient(rgba(200,170,255,.18) 1px,transparent 1px);background-size:26px 26px;-webkit-mask-image:linear-gradient(#000,transparent 85%);mask-image:linear-gradient(#000,transparent 85%)}
+@keyframes aur{50%{transform:translate(3%,-2%) rotate(4deg)}100%{transform:translate(-3%,2%) rotate(-3deg)}}
+@keyframes shine{to{background-position:-200% 0}}
+h1,h2,.qt,.chip,.node small,.btn{font-family:var(--display)}
+.cnt,.meta,#chrono{font-family:var(--mono)!important}
+button{font:inherit;color:inherit;cursor:pointer}
+#app{max-width:840px;margin:0 auto;padding:10px 12px 40px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px;gap:10px}
+.top .tt b{font-size:13px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(90deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.top .tt span{margin-left:10px;color:var(--mu);font-size:13px}
+.meta{display:flex;gap:8px;align-items:center;font:13px ui-monospace,Menlo,monospace;color:var(--mu)}
+.meta button{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:3px 8px}
+.tag{white-space:nowrap;font:12px system-ui;padding:2px 8px;border-radius:99px;border:1px solid var(--ln)}
+.tag.ap{color:var(--gold);border-color:rgba(245,183,74,.5)}
+
+/* ---------- échelle des paliers ---------- */
+.ladder{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:16px 10px 12px;border:1px solid var(--ln);border-radius:16px;
+ background:radial-gradient(90% 120% at 50% 0%,rgba(183,123,255,.16),transparent 60%),rgba(16,9,28,.75)}
+.ladder .rail{position:absolute;left:10%;right:10%;top:36px;height:3px;background:var(--ln);border-radius:2px}
+.ladder .rail b{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,var(--g1),var(--a2));box-shadow:0 0 12px rgba(183,123,255,.6);transition:width .8s cubic-bezier(.2,.9,.2,1)}
+.node{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.node .hx{width:42px;height:42px;display:grid;place-items:center;clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%);background:#24163d;color:var(--mu);font:700 15px ui-monospace,monospace;transition:background .4s,color .4s,transform .4s}
+.node{transition:transform .35s cubic-bezier(.2,.9,.2,1)}
+.node .hw{position:relative;filter:drop-shadow(0 0 0 transparent);transition:filter .4s}
+.node .hx{position:relative;overflow:hidden}
+.node .hx::after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.75) 50%,transparent 65%);transform:translateX(-130%);transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.node.done .hx{background:linear-gradient(135deg,#fff3b0 0%,var(--g1) 35%,var(--g2) 100%);color:#3a2600;font-size:18px}
+.node.done .hw{filter:drop-shadow(0 0 10px rgba(255,190,40,.55))}
+.node.done small{color:var(--g1)}
+.node.done .dots i{background:var(--g1)}
+.node:hover{transform:translateY(-3px)}
+.node:hover .hx::after{transform:translateX(130%)}
+.node.done:hover .hw{filter:drop-shadow(0 0 18px rgba(255,190,40,.9))}
+.node.done .hx{animation:or 3.2s ease-in-out infinite}
+@keyframes or{50%{background-position:100% 0;filter:brightness(1.12)}}
+.node.cur .hw{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{filter:drop-shadow(0 0 12px rgba(183,123,255,.7))}}
+.node.gagne .hx{animation:gain .9s cubic-bezier(.3,1.6,.4,1)}
+@keyframes gain{0%{transform:scale(.4) rotate(-90deg)}100%{transform:none}}
+.node.cur .hx{background:#35205c;color:var(--tx);box-shadow:0 0 0 2px var(--a2) inset;transform:scale(1.12)}
+.node.cur .hx{outline:2px solid var(--a2)}
+.node small{font-size:11.5px;line-height:1.2;color:var(--mu);max-width:120px}
+.node.cur small{color:var(--tx);font-weight:600}
+.node .dots{display:flex;gap:3px;height:6px}
+.node .dots i{width:6px;height:6px;border-radius:50%;background:#33224f}
+.node .dots i.f{background:var(--a2)}
+.node.done .dots i{background:var(--a2)}
+@media (max-width:560px){.node small{display:none}.node.cur small{display:block;position:absolute;top:58px;white-space:nowrap}.ladder{padding-bottom:30px}}
+
+/* ---------- carte ---------- */
+main{margin-top:12px}
+.card{position:relative;overflow:hidden;background:var(--pn);backdrop-filter:blur(8px);border:1px solid var(--ln);border-radius:18px;padding:18px}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--a1),var(--a2))}
+.qh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.chip{font-size:12px;padding:3px 9px;border-radius:99px;border:1px solid var(--ln);color:var(--a2)}
+.cnt{font:12px ui-monospace,monospace;color:var(--mu)}
+.ctx{margin:0 0 8px;padding:7px 10px;border-radius:10px;background:var(--pn2);color:var(--mu);font-size:13px}
+.ctx b{color:var(--tx)}
+.qt{position:relative;font-size:17px;font-weight:600;margin:4px 0 14px;padding:12px 16px 12px 18px;color:#ffe9a8;background:linear-gradient(90deg,rgba(255,210,63,.13),rgba(255,210,63,.02));border:1px solid rgba(255,210,63,.28);border-left:4px solid var(--g1);border-radius:12px}
+.qt::before{content:"QUESTION";display:block;font:700 10.5px/1 var(--mono);letter-spacing:.18em;color:var(--g2);margin-bottom:6px}
+.qt b{color:#fff}
+.rep{position:relative;margin:4px 0 0;padding:28px 14px 14px;border:1.5px solid rgba(183,123,255,.55);border-radius:14px;background:linear-gradient(180deg,rgba(183,123,255,.12),rgba(183,123,255,.04));box-shadow:inset 0 0 24px rgba(183,123,255,.08)}
+.rep::before{content:"TA RÉPONSE";position:absolute;top:9px;left:14px;font:700 10.5px/1 var(--mono);letter-spacing:.18em;color:var(--a2)}
+.rep .opt,.rep .tagc,.rep .numrow input,.rep .bsel select,.rep .acro input{background:#120a20}
+.rep .opt:hover:not(:disabled){border-color:var(--a1)}
+.fig{background:#0d0818;border:1px solid var(--ln);border-radius:12px;padding:6px;margin:0 0 12px}
+.fig svg{display:block;width:100%;height:auto;max-height:360px}
+.fig .hint{font-size:12px;color:var(--mu);text-align:center;padding:2px 0 4px}
+.fig.clic svg{cursor:crosshair}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;background:var(--pn2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px;transition:border-color .15s}
+.opt:hover:not(:disabled){border-color:#3e4454}
+.opt.sel{border-color:var(--a1);box-shadow:0 0 0 1px var(--a1) inset}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips .opt{padding:8px 12px}
+.numrow{display:flex;align-items:center;gap:8px}
+.numrow input{width:180px;background:var(--pn2);border:1px solid var(--ln);border-radius:10px;color:var(--tx);font:16px ui-monospace,monospace;padding:9px 11px}
+.numrow input:focus{outline:none;border-color:var(--a1)}
+.numrow span{color:var(--mu)}
+.tors{display:flex;align-items:center;gap:6px;font:16px ui-monospace,monospace}
+.tors .br{font-size:64px;line-height:1;color:var(--mu);font-weight:200}
+.tg{display:grid;grid-template-columns:repeat(2,52px);gap:6px}
+.tg button{height:38px;background:var(--pn2);border:1px solid var(--ln);border-radius:9px;font:600 16px ui-monospace,monospace}
+.tg button.z{color:var(--ko);border-color:rgba(255,93,108,.5);background:rgba(255,93,108,.08)}
+.tors .pt{color:var(--mu);font-size:13px;align-self:flex-end;margin-bottom:12px}
+.bame{width:100%;border-collapse:separate;border-spacing:6px}
+.bame th{font-size:12px;color:var(--mu);font-weight:600;text-align:center}
+.bame th:first-child{text-align:left}
+.bame td:first-child{font-weight:700}
+.bame td button{width:100%;height:38px;border-radius:9px;border:1px solid var(--ln);background:var(--pn2);font-weight:700}
+.trous{font-size:16px;line-height:2.5}
+.trous p.trou{margin:0 0 6px}
+.slot{min-width:110px;border:1px dashed var(--a2);background:rgba(183,123,255,.06);color:var(--mu);border-radius:8px;padding:2px 10px;margin:0 3px;font:inherit;line-height:1.6}
+.slot.f{border-style:solid;color:var(--tx);font-weight:600}
+.slot.on{box-shadow:0 0 0 2px var(--a1)}
+.bame.tete .slot{width:100%;min-width:0;margin:0;font-size:13px;line-height:1.3;padding:6px 4px}
+.bame.tete td{text-align:center;color:var(--mu);line-height:1.4}
+.tagz{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:36px}
+.tagc{background:var(--pn2);border:1px solid var(--ln);border-radius:99px;padding:6px 14px}
+.tagc:hover{border-color:var(--a2)}
+.rec{display:grid;gap:8px;margin:0 0 12px}
+.rec div{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rec b{min-width:170px;font-size:13px}
+.rec span{display:flex;flex-wrap:wrap;gap:6px}
+.rq{width:38px;height:34px;border-radius:9px;border:1px dashed var(--ko);background:none;color:var(--ko);font-weight:700}
+.rq.ok{border:1px solid var(--a2);color:#04131a;background:var(--a2)}
+.rq.lk{border:1px solid var(--ln);color:var(--mu);background:var(--pn2)}
+.fb.ok{color:var(--ok)}
+.burst{position:fixed;left:0;top:0;pointer-events:none;z-index:60;width:7px;height:7px;border-radius:50%;animation:bu .8s cubic-bezier(.15,.8,.3,1) forwards}
+.burst.sq{border-radius:2px}
+@keyframes bu{to{transform:translate(var(--x),var(--y)) rotate(var(--r)) scale(.2);opacity:0}}
+.ripple{position:fixed;pointer-events:none;z-index:59;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid var(--g1);animation:rp .55s ease-out forwards}
+@keyframes rp{to{transform:scale(7);opacity:0}}
+.node.done .dots i,.node.done .dots i.f{background:var(--g1);box-shadow:0 0 6px rgba(255,200,60,.7)}
+.node.done .hx{font-size:22px}
+.pal>div{text-align:center}
+.pal .hx{background:linear-gradient(135deg,#fff3b0,var(--g1) 40%,var(--g2))!important;color:#3a2600!important;filter:drop-shadow(0 0 18px rgba(255,190,40,.7))}
+.tsteps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+.tsteps div{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;border:1px solid var(--ln);background:var(--pn2);color:var(--mu);font-size:13px;transition:all .3s}
+.tsteps i{font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#24163d;color:var(--a2);font:700 12px var(--mono)}
+.tsteps div.on{border-color:var(--g1);color:var(--tx);box-shadow:0 0 0 1px var(--g1) inset,0 0 18px -6px var(--g1);transform:translateY(-2px)}
+.tsteps div.on i{background:var(--g1);color:#3a2600}
+.tsteps div.fait{color:var(--tx)}
+.tsteps div.fait i{background:var(--a1);color:#fff}
+.demo{position:relative;padding:28px 14px 6px;border:1.5px dashed rgba(255,210,63,.45);border-radius:16px;background:rgba(0,0,0,.18);overflow:hidden;min-height:340px}
+.demo .dtag{position:absolute;top:9px;left:14px;font:700 10.5px/1 var(--mono);letter-spacing:.18em;color:var(--g1)}
+.demo button{pointer-events:none}
+.tfig{display:flex;justify-content:center;margin:-4px 0 6px}
+.curs{position:absolute;z-index:5;left:92%;top:95%;transition:left .8s cubic-bezier(.5,0,.2,1),top .8s cubic-bezier(.5,0,.2,1),opacity .4s,transform .15s;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.curs.press{transform:scale(.8)}
+.dtoast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--pn2);border:1px solid var(--a2);color:var(--a2);padding:7px 14px;border-radius:99px;font-weight:600;animation:pop .4s}
+.btn.go-t.pret{animation:prete 1.6s ease-in-out infinite}
+@keyframes prete{50%{box-shadow:0 0 0 6px rgba(255,210,63,.18),0 10px 30px -8px var(--g2)}}
+.sortw,.veil p.sortw{color:var(--ko);font-weight:700}
+@media (max-width:560px){.tsteps{grid-template-columns:1fr}}
+.tgrid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+.tgrid>.fig svg{max-height:260px}
+@media (max-width:700px){.tgrid{grid-template-columns:1fr}}
+.tgrid>.fig{position:static}
+.tgrid>.fig svg{transform-origin:14% 40%}
+.tgrid>.fig svg.equi{animation:equi 1.3s ease}
+@keyframes equi{0%,100%{filter:none}40%{filter:drop-shadow(0 0 14px #45f0a6) brightness(1.15)}}
+.tgrid>.fig svg.tombe{animation:tombe 1.4s cubic-bezier(.5,0,.6,1)}
+@keyframes tombe{0%{transform:none}55%{transform:translateX(-14px) rotate(-16deg);filter:drop-shadow(0 0 12px #ff5c7c)}75%{transform:translateX(-14px) rotate(-16deg)}100%{transform:none}}
+.tracer{padding-top:30px}
+.tbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.tb{background:#120a20;border:1px solid var(--ln);border-radius:9px;padding:6px 10px;font-size:13px}
+.tb.on{border-color:var(--g1);color:var(--g1);box-shadow:0 0 0 1px var(--g1) inset}
+.tsc{margin-left:auto;font:12px var(--mono);color:var(--mu)}
+.tfig2{margin:0;background:#0d0818}
+.tmes{margin:8px 0 0;font:12.5px var(--mono);color:var(--g1)}
+.acro{display:grid;gap:8px}
+.acro div{display:flex;align-items:center;gap:6px}
+.acro b{font:800 30px/1 ui-monospace,monospace;width:30px;color:var(--a2)}
+.acro input{flex:1;max-width:320px;background:var(--pn2);border:0;border-bottom:2px solid var(--ln);color:var(--tx);font:18px system-ui;padding:6px 4px}
+.acro input:focus{outline:none;border-bottom-color:var(--a1)}
+.pk line{stroke:transparent;stroke-width:26;cursor:pointer;pointer-events:stroke}
+.pk line:hover{stroke:rgba(183,123,255,.18)}
+.bsel select{width:100%;background:var(--pn2);color:var(--tx);border:1px solid var(--ln);border-radius:9px;padding:8px 6px;font:inherit}
+.bsel select.v{border-color:var(--a2)}
+.bame td button.k{border-color:rgba(63,214,154,.55);color:var(--ok);background:rgba(63,214,154,.08)}
+.act{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--ln);flex-wrap:wrap}
+.btn.nav{background:transparent;color:var(--a2);border:1.5px solid rgba(183,123,255,.6);box-shadow:none}
+.btn.nav:hover:not(:disabled){background:rgba(183,123,255,.14);box-shadow:0 8px 22px -10px var(--a1)}
+.btn.nav.suiv{color:#f6f0ff;border-color:rgba(246,240,255,.45)}
+.btn.nav.suiv:hover:not(:disabled){background:rgba(246,240,255,.10);box-shadow:0 8px 22px -10px #fff}
+.act .fb{flex-basis:100%;order:9}
+.btn{position:relative;overflow:hidden;border:0;border-radius:999px;padding:10px 20px;font-weight:700;color:#1a1203;background:linear-gradient(90deg,var(--g1),var(--g2));box-shadow:0 6px 20px rgba(255,163,26,.22)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);transition:transform .6s}
+.btn:hover:not(:disabled)::after{transform:translateX(120%)}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px -8px var(--g2)}
+.btn{transition:transform .2s,box-shadow .2s}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sec{background:var(--pn2);color:var(--tx);border:1px solid var(--ln);box-shadow:none}
+.btn.lien{background:none;border:0;box-shadow:none;color:var(--mu);padding:10px 6px;text-decoration:underline}
+.fb{font-weight:600}.fb.ok{color:var(--ok)}.fb.ko{color:var(--ko)}.fb.mu{color:var(--mu)}
+.corr{margin:12px 0 0;padding:8px 10px;border-radius:10px;border:1px dashed var(--ko);color:#ff8a95;font-size:14px}
+sub{font-size:.7em}
+.saved{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--pn2);border:1px solid var(--a2);color:var(--a2);padding:8px 16px;border-radius:99px;font-weight:600;z-index:20}
+
+/* intro / bilan */
+.intro h1{margin:0 0 6px;font:700 28px/1.15 var(--display);background:linear-gradient(90deg,#fff,var(--a1) 45%,var(--a2));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+.intro p{color:var(--mu);margin:0 0 12px}
+.regles{display:grid;gap:8px;margin:0 0 16px;padding:0;list-style:none}
+.regles li{display:flex;gap:10px;align-items:center;padding:9px 12px;background:var(--pn2);border:1px solid var(--ln);border-radius:12px}
+.regles i{font-style:normal;font-size:18px;width:24px;text-align:center}
+.regles li.w{border-color:rgba(255,93,108,.45)}
+.big{font:800 46px/1 ui-monospace,monospace;margin:6px 0}
+.big small{font-size:20px;color:var(--mu)}
+.bars{display:grid;gap:8px;margin:14px 0}
+.bars div{display:grid;grid-template-columns:170px 1fr 48px;gap:8px;align-items:center;font-size:13px}
+.bars em{height:8px;border-radius:5px;background:var(--pn2);overflow:hidden}
+.bars em b{display:block;height:100%;background:linear-gradient(90deg,var(--a1),var(--a2))}
+
+/* bandeau palier + sortie */
+.veil{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(5,6,9,.82);backdrop-filter:blur(3px);padding:20px}
+.veil .box{max-width:440px;text-align:center;background:var(--pn);border:1px solid var(--ln);border-radius:18px;padding:22px}
+.veil .box.w{border-color:var(--ko);box-shadow:0 0 40px rgba(255,93,108,.25)}
+.veil h2{margin:6px 0 6px}
+.veil p{color:var(--mu);margin:0 0 14px}
+.pal{animation:pal 2.2s forwards}
+.pal .hx{width:74px;height:74px;margin:0 auto;display:grid;place-items:center;clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%);background:linear-gradient(135deg,var(--a1),var(--a2));color:#1a1203;font:800 26px ui-monospace,monospace;animation:pop .7s cubic-bezier(.3,1.6,.4,1)}
+.pal b{display:block;margin-top:10px;font:800 13px/1 system-ui;letter-spacing:.2em;color:var(--a2)}
+.pal span{display:block;margin-top:6px;font-size:20px;font-weight:700}
+@keyframes pal{0%{opacity:0}10%{opacity:1}82%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes pop{0%{transform:scale(.2) rotate(-30deg)}100%{transform:none}}
+
+/* pilotage prof */
+.pilot h2{margin:0 0 10px;font-size:18px}
+.sw{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.sw label{display:flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--ln);border-radius:12px;background:var(--pn2);cursor:pointer}
+.sw label.on{border-color:var(--a2)}
+.big-sw{font-weight:700}
+.tab{width:100%;border-collapse:collapse;font-size:13px}
+.tab th{text-align:left;color:var(--mu);font-weight:600;padding:6px;border-bottom:1px solid var(--ln)}
+.tab td{padding:7px 6px;border-bottom:1px solid #1d2029}
+.tab .w{color:var(--ko);font-weight:700}
+.tab tr.flash td{animation:flash 1.2s 3}
+@keyframes flash{50%{background:rgba(255,92,124,.18)}}
+.sw select{background:var(--pn2);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:3px 6px;font:inherit}
+.tab button{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:2px 8px;font-size:12px}
+.qstat{display:grid;gap:5px;margin-top:8px}
+.qstat div{display:grid;grid-template-columns:190px 1fr 70px;gap:8px;align-items:center;font-size:12px}
+.qstat em{height:7px;border-radius:4px;background:var(--pn2);overflow:hidden}
+.qstat em b{display:block;height:100%;background:var(--a2)}
+.qstat em b.lo{background:var(--ko)}
+.scroll{overflow-x:auto}
+@media (max-width:560px){.top .tt span{display:none}.top .tt b{white-space:nowrap}.bars div{grid-template-columns:110px 1fr 44px}.big{font-size:38px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+ <header class="top">
+  <div class="tt"><b>Grand défi</b><span>Statique</span></div>
+  <div class="meta"><span id="sorties"></span><span id="mode"></span><span id="chrono"></span><button id="fs" type="button" title="Plein écran">⛶</button></div>
+ </header>
+ <section class="ladder" id="ladder"></section>
+ <main id="main"></main>
+</div>
+
+<script>
+/* =====================================================================
+   Grand défi de fin de séquence · Statique (Terminale STI2D)
+   Sur le site : réponses envoyées au serveur (RPC defi_*), corrigées côté serveur,
+   une seule réponse par question, sortie de page détectée.
+   ===================================================================== */
+const SECOURS=/*SECOURS*/null;
+const PROF_NAV=false;
+const RESS_DEF='terminale-sti2d/defi-statique-eleve.html';
+const PAL=[null,
+ {n:'Le PFS',i:'Énoncé et conséquences'},
+ {n:'Décrire une action',i:'Notation et caractéristiques'},
+ {n:'Modéliser',i:'Les actions mécaniques'},
+ {n:'Isoler',i:'BAME pas à pas · potence'},
+ {n:'Cas pratique',i:'Méthode graphique · potence'}];
+const NP=PAL.length-1;
+const CTX={pot:'Potence : charge <b>P = 1200 N</b> en D · 0 mur, 1 poutre, 2 jambe de force · poids des pièces négligés',
+ ech:'Échelle appuyée contre un mur : <b>P = 800 N</b> en G (peintre + échelle) · contact en B sans frottement · frottement au sol en A · 0 mur et sol, 1 échelle'};
+const V=(l,i)=>`${l}<sub>${i}</sub>`;
+
+const Q=[
+
+ {id:'p1',p:1,type:'tags',ord:1,q:'Complète l\'énoncé du PFS avec les étiquettes.',tpl:'<p class="trou">Un solide est en {0} si la somme des actions mécaniques {1} qui s\'exercent sur lui est {2}.</p>',tags:['équilibre','mouvement','extérieures','intérieures','nulle','maximale']},
+ {id:'p2',p:1,type:'tags',ord:1,q:'Complète les deux conséquences du PFS.',tpl:'<p class="trou">La somme des {0} est nulle : le solide ne se {1} pas.</p><p class="trou">La somme des {2} est nulle : le solide ne {3} pas.</p>',tags:['forces','moments','déplace','tourne','masses','déforme']},
+ {id:'b4',p:1,type:'qcm',q:'Solide en équilibre sous l\'action de 2 forces : ces forces ont…',o:['même direction, même intensité, sens contraires','même point d\'application et même sens','des directions perpendiculaires','seulement la même intensité']},
+ {id:'b6',p:1,type:'tags',ord:1,q:'Complète la condition d\'équilibre d\'un solide soumis à 3 forces non parallèles.',tpl:'<p class="trou">Les 3 forces sont {0} : leurs directions se coupent en un même point I.</p><p class="trou">Le {1} des forces (triangle des forces) est {2}.</p>',tags:['concourantes','parallèles','dynamique','moment','fermé','ouvert']},
+
+ {id:'b2',p:2,type:'qcm',fig:'a12',q:`Sur ce schéma, ${V('A','1/2')} désigne :`,o:['l\'action de 1 sur 2 au point A','l\'action de 2 sur 1 au point A','la distance entre 1 et 2 en A','le moment en A de 2 sur 1']},
+ {id:'b3',p:2,type:'tags',fig:'a12',q:'Complète l\'en-tête du tableau avec les 4 caractéristiques d\'une action mécanique.',tpl:'<table class="bame tete"><tr><th>Action</th><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th></tr><tr><td>A<sub>1/2</sub></td><td>…</td><td>…</td><td>…</td><td>…</td></tr></table>',tags:['point d\'application','direction','sens','intensité','masse','vitesse']},
+ {id:'b5',p:2,type:'mots',lettres:['B','A','M','E'],q:'Ce tableau s\'appelle un BAME. Complète chaque mot.'},
+
+ {id:'m1',p:3,type:'num',fig:'caisse',q:'Caisse de masse m = 45 kg (g = 9,81 m/s²). Son poids P ?',u:'N'},
+ {id:'m5',p:3,type:'click',fig:'vec',q:'Représente le poids P à l\'échelle : clique sur l\'extrémité de la flèche.'},
+ {id:'m2',p:3,type:'qcm',fig:'ponct',q:`Contact ponctuel <b>sans frottement</b> en A entre le rouleau 1 et le plan incliné 0 : la direction de ${V('A','0/1')} est…`,o:['perpendiculaire (normale) au plan, en A','parallèle au plan incliné','verticale','horizontale']},
+ {id:'m4',p:3,type:'qcm',fig:'cable',q:'Le câble (poids négligé) soulève la caisse. Il exerce sur elle une action…',o:['selon la direction du câble, qui tire','perpendiculaire au câble','selon le câble, qui pousse','toujours verticale']},
+
+ {id:'i1',p:4,type:'pick',cas:'pot',fig:'pot',f:{pick:1},q:'<b>Étape 1</b> · Isole la jambe de force 2 : clique sur la pièce.'},
+ {id:'i2',p:4,isoFrom:'i1',type:'qcm',ns:1,cas:'pot',fig:'pot',f:{iso:'2'},q:'<b>Étape 2</b> · Combien d\'actions mécaniques extérieures s\'exercent sur la jambe de force 2 ?',o:['1','2','3','4']},
+ {id:'i3',p:4,isoFrom:'i1',type:'qcm',cas:'pot',fig:'pot',f:{iso:'2'},q:'<b>Étape 3</b> · La jambe de force 2 est un…',o:['solide soumis à 2 forces','solide soumis à 3 forces non parallèles','solide soumis à 3 forces parallèles','solide soumis à 4 forces']},
+ {id:'i4',p:4,isoFrom:'i1',type:'bsel',cas:'pot',fig:'pot',f:{iso:'2'},q:'<b>Étape 4</b> · Complète le BAME de la jambe de force 2.',rows:[V('B','1/2'),V('C','0/2')]},
+ {id:'i5',p:4,type:'pick',cas:'pot',fig:'pot',f:{pick:1},q:'<b>Étape 5</b> · Isole maintenant la poutre 1 : clique sur la pièce.'},
+ {id:'i6',p:4,isoFrom:'i5',type:'qcm',ns:1,cas:'pot',fig:'pot',f:{iso:'1'},q:'<b>Étape 6</b> · Combien d\'actions mécaniques extérieures s\'exercent sur la poutre 1 ?',o:['1','2','3','4']},
+ {id:'i7',p:4,isoFrom:'i5',type:'bsel',cas:'pot',fig:'pot',f:{iso:'1'},q:'<b>Étape 7</b> · Complète le BAME de la poutre 1.',rows:['P',V('B','2/1'),V('A','0/1')]},
+ {id:'i8',p:4,isoFrom:'i5',type:'qcm',cas:'pot',fig:'pot',f:{iso:'1'},q:'<b>Étape 8</b> · La poutre 1 est un…',o:['solide soumis à 2 forces','solide soumis à 3 forces non parallèles','solide soumis à 3 forces parallèles','solide soumis à 4 forces']},
+ {id:'e1',p:5,type:'click',cas:'pot',fig:'pot',f:{grid:1},q:'La poutre 1 est soumise à 3 forces. Clique sur leur point de concours I.'},
+ {id:'e2',p:5,type:'qcm',cas:'pot',fig:'pot',f:{},q:`Direction de ${V('A','0/1')} ?`,o:['la droite (AI)','la droite (AD)','la verticale en A','la droite (AC)']},
+ {id:'e3',p:5,type:'trace',cas:'pot',q:`Trace le dynamique (triangle des forces) de la poutre 1, puis vérifie si elle est en équilibre. <b>3 essais.</b>`}
+
+
+];
+const LAB={"b2": "Notation A1/2", "b3": "Caractéristiques (tableau)", "b4": "Solide soumis à 2 forces", "m1": "Calcul du poids", "m2": "Contact ponctuel (plan incliné)", "m4": "Action d'un câble", "p1": "Énoncé du PFS", "p2": "Conséquences du PFS", "b5": "BAME : compléter les mots", "m5": "Tracer P à l'échelle", "i1": "Isoler la jambe de force 2", "i2": "Nb d'actions sur 2", "i3": "2 : solide soumis à 2 forces", "i4": "BAME de la jambe de force 2", "i5": "Isoler la poutre 1", "i6": "Nb d'actions sur 1", "i7": "BAME de la poutre 1", "i8": "1 : solide soumis à 3 forces", "e1": "Point de concours I (potence)", "e2": "Direction de A0/1", "e3": "Tracé du dynamique (3 essais)", "b6": "Solide soumis à 3 forces"};
+const N=Q.length,PN=Array(NP+1).fill(0);Q.forEach(q=>PN[q.p]++);
+
+/* ---------- contexte : site (élève / prof), secours, aperçu ---------- */
+const TS=(()=>{try{return window.parent!==window&&parent.TH&&parent.TH_ACCES?{TH:parent.TH,me:parent.TH_ACCES}:null;}catch(e){return null;}})();
+const RESS=(()=>{try{return new URLSearchParams(parent.location.search).get('r')||RESS_DEF;}catch(e){return RESS_DEF;}})();
+let MODE=PROF_NAV?'apercu':TS?(TS.me.role==='eleve'?'serveur':TS.me.role==='prof'?'prof':'apercu'):(SECOURS?'secours':'apercu');
+const PRENOM=TS?(TS.me.prenom||''):'';
+let CLES=SECOURS||null; // prof : chargées depuis le serveur pour l'aperçu
+
+/* ---------- correction (secours / aperçu prof), identique au serveur ---------- */
+function juste(c,r){
+ try{
+  if(r==null)return false;
+  if(c.t==='qcm'||c.t==='txt')return String(r)===String(c.a);
+  if(c.t==='seq')return Array.isArray(r)&&r.length===c.a.length&&r.every((v,k)=>v===c.a[k]);
+  if(c.t==='num'){const x=Number(r);return isFinite(x)&&Math.abs(x-c.a)<=Math.max(Math.abs(c.a)*(c.tol||.03),.5);}
+  if(c.t==='set'){const a=[...new Set(r.map(String))].sort(),b=[...new Set(c.a.map(String))].sort();return a.length===b.length&&a.every((v,k)=>v===b[k]);}
+  if(c.t==='mots'){const n=x=>String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'').replace(/s$/,'');return Array.isArray(r)&&r.length===c.a.length&&r.every((w,k)=>n(w)===c.a[k]||n(String(w).slice(1))===c.a[k]);}
+  if(c.t==='dyn')return dynCheck(r&&r.v,c).ok;
+  if(c.t==='pt')return Math.hypot(r[0]-c.a[0],r[1]-c.a[1])<=c.tol;
+ }catch(e){}
+ return false;
+}
+
+/* ---------- API : même interface pour le serveur et le mode local ---------- */
+const LSK='defi-statique-secours';
+const loc={rep:{},sorties:0,rendu:false};
+if(MODE==='secours'){try{Object.assign(loc,JSON.parse(localStorage.getItem(LSK)||'{}'));}catch(e){}}
+const saveLoc=()=>{if(MODE==='secours')try{localStorage.setItem(LSK,JSON.stringify(loc))}catch(e){}};
+function bilanLocal(){
+ const pal=PAL.slice(1).map((_,k)=>k+1).map(p=>({palier:p,total:PN[p],justes:Q.filter(q=>q.p===p&&loc.rep[q.id]&&loc.rep[q.id].j).length}));
+ const j=pal.reduce((s,x)=>s+x.justes,0);
+ return {score:Math.round(j/N*200)/10,paliers:pal};
+}
+const API={
+ async etat(){
+  if(MODE==='serveur')return await TS.TH.rpc('defi_mon_etat',{p_ressource:RESS});
+  const reps={},verrous=[],essais={};for(const k in loc.rep){if(loc.rep[k].s)verrous.push(k);else reps[k]=loc.rep[k].r;if(loc.rep[k].e)essais[k]={n:loc.rep[k].e,ok:loc.rep[k].j};}
+  return Object.assign({essais,ouvert:true,sortie_zero:MODE==='secours',sortie_max:MODE==='secours'?3:0,montrer_score:true,reps,verrous,rendu:loc.rendu,sorties:loc.sorties},loc.rendu&&CLES?bilanLocal():{});
+ },
+ async repondre(qid,r){
+  if(MODE==='serveur')return await TS.TH.rpc('defi_repondre',{p_ressource:RESS,p_qid:qid,p_reponse:r});
+  if(loc.rendu)return {ok:false,raison:'rendu'};
+  if(loc.rep[qid]&&loc.rep[qid].s)return {ok:false,raison:'verrou'};
+  const c=CLES&&CLES[qid],old=loc.rep[qid];
+  if(c&&c.max){if(old&&(old.j||old.e>=c.max))return {ok:false,raison:'essais'};const j=juste(c,r),e=((old&&old.e)||0)+1;loc.rep[qid]={r,j,e};saveLoc();return {ok:true,juste:j,essais:e};}
+  loc.rep[qid]={r,j:c?juste(c,r):false};saveLoc();return {ok:true};
+ },
+ async rendre(){
+  if(MODE==='serveur')return await TS.TH.rpc('defi_rendre',{p_ressource:RESS});
+  loc.rendu=true;saveLoc();return {ok:true};
+ },
+ async sortie(qid){
+  if(MODE==='serveur')return await TS.TH.rpc('defi_sortie',{p_ressource:RESS,p_qid:qid});
+  if(MODE!=='secours')return {zero:false};
+  loc.sorties++;if(qid)loc.rep[qid]={r:null,j:false,s:1};let rendu=false;if(loc.sorties>=3){loc.rendu=true;rendu=true;}saveLoc();return {zero:!!qid,rendu};
+ }
+};
+
+/* ---------- état de la page ---------- */
+let E=null;          // état renvoyé par le serveur
+let I=0;             // index de la question affichée
+let SCR='charge';    // charge | intro | q | recap | fin | ferme | pilot
+let R={};            // réponse en cours (non envoyée)
+let BUSY=false,T0=null,MES={};
+const $=s=>document.querySelector(s);
+const fr=(n,d=1)=>n.toFixed(d).replace('.',',');
+const norm=x=>{x.reps=x.reps||{};x.verrous=x.verrous||[];x.essais=x.essais||{};return x;};
+const done=id=>!!E&&(E.reps&&E.reps[id]!=null||E.verrous&&E.verrous.includes(id));
+const locked=id=>!!E&&E.verrous&&E.verrous.includes(id);
+const firstOpen=()=>{const k=Q.findIndex(q=>!done(q.id));return k<0?N:k;};
+function fromRep(q,r){
+ if(r==null)return undefined;
+ switch(q.type){case 'trace':return {lines:[],vecs:(r&&r.v||[]).map(v=>v.slice())};case 'qcm':return Number(r);case 'num':return String(r);case 'mots':return r.map(w=>String(w).slice(1));default:return Array.isArray(r)?r.slice():r;}
+}
+function openQ(i){
+ const prev=SCR==='q'?Q[I].p:0;I=Math.max(0,Math.min(N-1,i));const q=Q[I];
+ R={};MES={};if(MODE!=='apercu'||!PROF_NAV){const v=fromRep(q,E.reps[q.id]);if(v!==undefined)R.v=v;}
+ SCR='q';render();window.scrollTo({top:0,behavior:'smooth'});
+ if(q.p!==prev)palier(q.p);
+}
+
+/* ---------- dessin ---------- */
+function arr(x1,y1,x2,y2,col,w=3,h=11){
+ const a=Math.atan2(y2-y1,x2-x1),bx=x2-h*Math.cos(a),by=y2-h*Math.sin(a),px=Math.sin(a)*h*.45,py=-Math.cos(a)*h*.45;
+ return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${bx+px},${by+py} ${bx-px},${by-py}" fill="${col}"/>`;
+}
+function sens(cx,cy){
+ const R=13,p=t=>[cx+R*Math.cos(t*Math.PI/180),cy-R*Math.sin(t*Math.PI/180)],[sx,sy]=p(-60),[ex,ey]=p(200);
+ const t=200*Math.PI/180,dx=-Math.sin(t),dy=-Math.cos(t);
+ return `<g><path d="M${sx} ${sy}A${R} ${R} 0 1 0 ${ex} ${ey}" fill="none" stroke="#3b8bff" stroke-width="2"/>${arr(ex-dx*.1,ey-dy*.1,ex+dx*7,ey+dy*7,'#3b8bff',2,7)}<text x="${cx}" y="${cy+5}" text-anchor="middle" fill="#3b8bff" font-size="15" font-weight="700">+</text></g>`;
+}
+const T=(x,y,s,o='')=>`<text x="${x}" y="${y}" ${o}>${s}</text>`;
+const sb=(l,i)=>`${l}<tspan font-size="70%" dy="4">${i}</tspan>`;
+const LBL='fill="#e9ebf1" font-size="15" font-weight="700"';
+
+function pot(f={}){
+ const s=80,ox=70,oy=140,X=x=>ox+x*s,Y=y=>oy-y*s;
+ let g='';
+ if(f.grid){
+  for(let x=-.25;x<=5.26;x+=.25){const m=Math.abs(x-Math.round(x))<.01;g+=`<line x1="${X(x)}" y1="${Y(1.5)}" x2="${X(x)}" y2="${Y(-2.6)}" stroke="${m?'#2b3140':'#191d26'}"/>`}
+  for(let y=-2.5;y<=1.51;y+=.25){const m=Math.abs(y-Math.round(y))<.01;g+=`<line x1="${X(-.25)}" y1="${Y(y)}" x2="${X(5.25)}" y2="${Y(y)}" stroke="${m?'#2b3140':'#191d26'}"/>`}
+ }
+ const sel=f.iso||f.sel,op=p=>f.iso&&f.iso!==p?.18:1,cc=(p,c)=>sel===p?'#ffd23f':c;
+ g+=`<g opacity="${op('0')}"><line x1="${X(0)}" y1="${Y(1.2)}" x2="${X(0)}" y2="${Y(-2.6)}" stroke="${cc('0','#aab2c3')}" stroke-width="2.5"/>`;
+ for(let y=1.1;y>-2.6;y-=.2)g+=`<line x1="${X(0)}" y1="${Y(y)}" x2="${X(-.16)}" y2="${Y(y-.16)}" stroke="${cc('0','#6d7586')}" stroke-width="1.2"/>`;
+ g+='</g>';
+ if(f.cand){
+  const L=(a,b,c,d,col,n,lx,ly)=>`<line x1="${X(a)}" y1="${Y(b)}" x2="${X(c)}" y2="${Y(d)}" stroke="${col}" stroke-width="2.4" stroke-dasharray="8 6"/><text x="${X(lx)}" y="${Y(ly)}" fill="${col}" font-size="15" font-weight="700">${n}</text>`;
+  g+=L(-.2,-2.4,4.2,.9,'#ff9a3d','①',4.25,.95)+L(3,-2.45,3,1.3,'#b07cff','②',3.1,1.25)+L(-.1,.06,5.1,.06,'#ff6fb0','③',4.75,.25);
+ }
+ if(f.bc)g+=`<line x1="${X(-.2)}" y1="${Y(-2.4)}" x2="${X(3.4)}" y2="${Y(.3)}" stroke="#ff9a3d" stroke-width="2" stroke-dasharray="7 6" opacity=".9"/>`;
+ if(f.constr){
+  g+=`<line x1="${X(4)}" y1="${Y(-1.3)}" x2="${X(4)}" y2="${Y(1.3)}" stroke="#ff7a5c" stroke-width="2" stroke-dasharray="7 6"/>`;
+  g+=`<line x1="${X(-.2)}" y1="${Y(-2.4)}" x2="${X(4.4)}" y2="${Y(1.05)}" stroke="#ff9a3d" stroke-width="2" stroke-dasharray="7 6"/>`;
+  g+=`<circle cx="${X(4)}" cy="${Y(.75)}" r="5" fill="#f5b74a"/>`+T(X(4.12),Y(.82),'I','fill="#f5b74a" font-size="16" font-weight="700"');
+ }
+ g+=`<line opacity="${op('2')}" x1="${X(0)}" y1="${Y(-2.25)}" x2="${X(3)}" y2="${Y(0)}" stroke="${cc('2','#707a91')}" stroke-width="10" stroke-linecap="round"/>`;
+ g+=`<g opacity="${op('1')}"><line x1="${X(0)}" y1="${Y(0)}" x2="${X(4.12)}" y2="${Y(0)}" stroke="${cc('1','#949db1')}" stroke-width="13"/><line x1="${X(0)}" y1="${Y(.05)}" x2="${X(4.12)}" y2="${Y(.05)}" stroke="#c3cad8" stroke-width="2" opacity=".5"/></g>`;
+ [[0,0],[3,0],[0,-2.25],[4,0]].forEach(([x,y],k)=>{g+=k<3?`<circle cx="${X(x)}" cy="${Y(y)}" r="7" fill="#13151b" stroke="#dfe4ee" stroke-width="2"/>`:`<circle cx="${X(x)}" cy="${Y(y)}" r="3.5" fill="#dfe4ee"/>`});
+ g+=T(X(.12),Y(.2),'A',LBL)+T(X(2.9),Y(.2),'B',LBL)+T(X(.15),Y(-2.42),'C',LBL)+T(X(3.86),Y(.2),'D',LBL);
+ const num=(x,y,n)=>`<circle cx="${X(x)}" cy="${Y(y)}" r="10" fill="none" stroke="#8a90a0"/>`+T(X(x),Y(y)+5,n,'text-anchor="middle" fill="#8a90a0" font-size="13"');
+ g+=num(1.6,-.33,'1')+num(1.85,-1.05,'2')+num(-.45,-2.45,'0');
+ g+=`<g opacity="${op('1')}">`+arr(X(4),Y(0)+7,X(4),Y(-1.15),'#ff7a5c',3.5,13)+T(X(4.12),Y(-.95),'P','fill="#ff7a5c" font-size="16" font-weight="700"')+'</g>';
+ const dh=(a,b,y,t)=>arr(X((a+b)/2),Y(y),X(a),Y(y),'#6f7688',1,7)+arr(X((a+b)/2),Y(y),X(b),Y(y),'#6f7688',1,7)+`<line x1="${X(a)}" y1="${Y(y-.1)}" x2="${X(a)}" y2="${Y(y+.1)}" stroke="#6f7688"/><line x1="${X(b)}" y1="${Y(y-.1)}" x2="${X(b)}" y2="${Y(y+.1)}" stroke="#6f7688"/>`+T(X((a+b)/2),Y(y)-5,t,'text-anchor="middle" fill="#8a90a0" font-size="12"');
+ g+=dh(0,3,1.3,'3 m')+dh(3,4,1.3,'1 m');
+ g+=arr(X(-.55),Y(-1.1),X(-.55),Y(0),'#6f7688',1,7)+arr(X(-.55),Y(-1.1),X(-.55),Y(-2.25),'#6f7688',1,7)+T(X(-.62),Y(-1.12),'2,25 m',`text-anchor="middle" fill="#8a90a0" font-size="12" transform="rotate(-90 ${X(-.62)} ${Y(-1.12)})"`);
+ g+=sens(X(4.75),Y(-1.85));
+ if(f.mark){const [x,y]=f.mark;g+=`<g stroke="#f5b74a" stroke-width="2.5"><line x1="${X(x)-9}" y1="${Y(y)}" x2="${X(x)+9}" y2="${Y(y)}"/><line x1="${X(x)}" y1="${Y(y)-9}" x2="${X(x)}" y2="${Y(y)+9}"/></g><circle cx="${X(x)}" cy="${Y(y)}" r="13" fill="none" stroke="#f5b74a"/>`;}
+ if(f.pick)g+=`<g class="pk"><line data-p="0" x1="${X(-.08)}" y1="${Y(1.2)}" x2="${X(-.08)}" y2="${Y(-2.6)}"/><line data-p="2" x1="${X(.1)}" y1="${Y(-2.18)}" x2="${X(2.9)}" y2="${Y(-.08)}"/><line data-p="1" x1="${X(.12)}" y1="${Y(0)}" x2="${X(4.12)}" y2="${Y(0)}"/></g>`;
+ return `<svg id="potsvg" viewBox="0 0 500 370">${g}</svg>`;
+}
+function dyn(){
+ const c=26,X=x=>20+(x+1.5)*c,Y=y=>16+(3.2-y)*c,K=[10.667,2];
+ let g='';
+ for(let x=-1;x<=12;x++)g+=`<line x1="${X(x)}" y1="${Y(3)}" x2="${X(x)}" y2="${Y(-7)}" stroke="#1f2430"/>`;
+ for(let y=-7;y<=3;y++)g+=`<line x1="${X(-1)}" y1="${Y(y)}" x2="${X(12)}" y2="${Y(y)}" stroke="#1f2430"/>`;
+ g+=`<rect x="${X(5.3)}" y="${Y(-5.15)}" width="${6.5*c}" height="26" rx="6" fill="#13151b" stroke="#2a2e39"/>`+T(X(5.55),Y(-5.15)+18,'Échelle : 1 carreau = 200 N','fill="#cfd6e4" font-size="13"');
+ g+=`<line x1="${X(-.96)}" y1="${Y(-6.72)}" x2="${X(12)}" y2="${Y(3)}" stroke="#ff9a3d" stroke-dasharray="6 6" opacity=".55"/>`;
+ g+=`<line x1="${X(-.98)}" y1="${Y(-.18)}" x2="${X(12)}" y2="${Y(2.25)}" stroke="#3fd6c6" stroke-dasharray="6 6" opacity=".55"/>`;
+ g+=arr(X(0),Y(-6),X(K[0]),Y(K[1]),'#ff9a3d',3.5,13)+arr(X(K[0]),Y(K[1]),X(0),Y(0),'#3fd6c6',3.5,13);
+ g+=T(X(6.3),Y(-1.4),sb('B','2/1'),'fill="#ff9a3d" font-size="16" font-weight="700"')+T(X(4.6),Y(1.85),sb('A','0/1'),'fill="#3fd6c6" font-size="16" font-weight="700"');
+ g+=arr(X(0),Y(0),X(0),Y(-6),'#ff7a5c',3.5,13)+T(X(-1.2),Y(-3),'P','fill="#ff7a5c" font-size="16" font-weight="700"');
+ const segs={P:[[0,0],[0,-6]],B:[[0,-6],K],A:[K,[0,0]]};
+ for(const k in segs){
+  const [[a,b],[d,e]]=segs[k];
+  g+=`<line class="mz" data-k="${k}" x1="${X(a)}" y1="${Y(b)}" x2="${X(d)}" y2="${Y(e)}" stroke="transparent" stroke-width="22" style="cursor:pointer"/>`;
+  if(MES[k]){const L=Math.hypot(d-a,e-b);g+=`<g pointer-events="none"><rect x="${X((a+d)/2)+6}" y="${Y((b+e)/2)-26}" width="96" height="22" rx="6" fill="#0a0b0f" stroke="#f5b74a"/>`+T(X((a+d)/2)+54,Y((b+e)/2)-10,fr(L)+' carreaux','text-anchor="middle" fill="#f5b74a" font-size="13" font-weight="700"')+'</g>';}
+ }
+ return `<svg id="dynsvg" viewBox="0 0 380 296">${g}</svg>`;
+}
+function caisse(){
+ let g=`<line x1="40" y1="170" x2="280" y2="170" stroke="#aab2c3" stroke-width="2.5"/>`;
+ for(let x=45;x<280;x+=12)g+=`<line x1="${x}" y1="170" x2="${x-8}" y2="178" stroke="#4d5465"/>`;
+ g+=`<rect x="110" y="80" width="100" height="90" rx="3" fill="#6b4f2c" stroke="#c49a5a" stroke-width="2"/><path d="M110 110h100M110 140h100M118 80v90M202 80v90" stroke="#8a6a3c" stroke-width="2"/>`;
+ g+=`<circle cx="160" cy="125" r="8" fill="#13151b" stroke="#e9ebf1" stroke-width="1.5"/><path d="M152 125h16M160 117v16" stroke="#e9ebf1" stroke-width="1.5"/>`+T(172,121,'G',LBL);
+ g+=T(160,66,'m = 45 kg','text-anchor="middle" fill="#cfd6e4" font-size="14"');
+ return `<svg viewBox="20 40 280 150" style="max-height:220px">${g}</svg>`;
+}
+const CORR=()=>MODE==='apercu'&&!!CLES;
+const RC='#ff5c7c';
+function vec(v){
+ const c=28,X=x=>150+x*c,Y=y=>64-y*c;
+ let g=`<rect x="${X(-1.6)}" y="${Y(1.3)}" width="${3.2*c}" height="${2.6*c}" rx="3" fill="#6b4f2c" opacity=".45"/>`;
+ for(let x=-4;x<=4;x++)g+=`<line x1="${X(x)}" y1="${Y(2)}" x2="${X(x)}" y2="${Y(-6)}" stroke="#2b3140"/>`;
+ for(let y=-6;y<=2;y++)g+=`<line x1="${X(-4)}" y1="${Y(y)}" x2="${X(4)}" y2="${Y(y)}" stroke="#2b3140"/>`;
+ g+=`<circle cx="${X(0)}" cy="${Y(0)}" r="4.5" fill="#e9ebf1"/>`+T(X(.25),Y(.25),'G',LBL);
+ if(v&&Math.hypot(v[0],v[1])>.2)g+=arr(X(0),Y(0),X(v[0]),Y(v[1]),'#ff7a5c',3.5,13)+T(X(v[0])+8,Y(v[1])+4,'P','fill="#ff7a5c" font-size="16" font-weight="700"');
+ if(CORR())g+=`<g opacity=".9">`+arr(X(0),Y(0),X(0),Y(-4.41),RC,2.5,12).replace('stroke-linecap="round"','stroke-linecap="round" stroke-dasharray="6 4"')+T(X(.3),Y(-4.3),'corrigé : 4,4 carreaux',`fill="${RC}" font-size="11"`)+'</g>';
+ return `<svg id="vecsvg" viewBox="30 0 240 250" style="max-height:320px">${g}</svg>`;
+}
+function ponct(){
+ const a=25*Math.PI/180,x0=30,y0=180,x1=290,y1=y0-(x1-x0)*Math.tan(a);
+ let g=`<polygon points="${x0},${y0} ${x1},${y0} ${x1},${y1}" fill="#232833" stroke="#aab2c3" stroke-width="2"/>`;
+ for(let x=x0+6;x<x1;x+=12)g+=`<line x1="${x}" y1="${y0}" x2="${x-8}" y2="${y0+8}" stroke="#4d5465"/>`;
+ const t=.48,Ax=x0+(x1-x0)*t,Ay=y0-(x1-x0)*t*Math.tan(a),n=[-Math.sin(a),-Math.cos(a)],r=38,Cx=Ax+r*n[0],Cy=Ay+r*n[1];
+ g+=`<circle cx="${Cx}" cy="${Cy}" r="${r}" fill="#2d3d55" stroke="#6f86a8" stroke-width="2"/><circle cx="${Cx}" cy="${Cy}" r="3" fill="#6f86a8"/>`;
+ g+=`<circle cx="${Cx-14}" cy="${Cy-14}" r="10" fill="none" stroke="#cfd6e4"/>`+T(Cx-14,Cy-9,'1','text-anchor="middle" fill="#cfd6e4" font-size="13"');
+ g+=`<circle cx="245" cy="160" r="10" fill="none" stroke="#cfd6e4"/>`+T(245,165,'0','text-anchor="middle" fill="#cfd6e4" font-size="13"');
+ g+=`<circle cx="${Ax}" cy="${Ay}" r="4" fill="#ff9a3d"/>`+T(Ax+8,Ay+18,'A','fill="#ff9a3d" font-size="15" font-weight="700"');
+ g+=`<path d="M${x0+40} ${y0} A40 40 0 0 0 ${x0+40*Math.cos(a)} ${y0-40*Math.sin(a)}" fill="none" stroke="#6f7688"/>`+T(x0+48,y0-6,'25°','fill="#8a90a0" font-size="12"');
+ return `<svg viewBox="20 20 290 175" style="max-height:240px">${g}</svg>`;
+}
+let ANIM=0;
+function cable(){
+ return `<svg id="cablesvg" viewBox="0 0 300 230" style="max-height:260px"><rect x="40" y="10" width="220" height="14" fill="#949db1"/>${Array.from({length:18},(_,k)=>`<line x1="${46+k*12}" y1="10" x2="${40+k*12}" y2="2" stroke="#4d5465"/>`).join('')}
+ <circle cx="150" cy="30" r="5" fill="none" stroke="#dfe4ee" stroke-width="2.5"/>
+ <g id="cbg"><line id="cbl" x1="150" y1="34" x2="150" y2="140" stroke="#cfd6e4" stroke-width="2.5"/>
+ <g id="cbc"><path d="M150 140l-22 14M150 140l22 14" stroke="#cfd6e4" stroke-width="2"/><rect x="118" y="154" width="64" height="48" rx="3" fill="#6b4f2c" stroke="#c49a5a" stroke-width="2"/><path d="M118 170h64M118 186h64" stroke="#8a6a3c" stroke-width="2"/></g></g></svg>`;
+}
+function animerCable(){
+ cancelAnimationFrame(ANIM);const g=document.getElementById('cbg');if(!g)return;
+ const l=document.getElementById('cbl'),c=document.getElementById('cbc'),t0=performance.now();
+ const f=t=>{if(!document.getElementById('cbg'))return;const s=(t-t0)/1000,L=106-26*(.5-.5*Math.cos(s*.9)),th=5*Math.sin(s*1.7);
+  l.setAttribute('y2',34+L);c.setAttribute('transform',`translate(0 ${L-106})`);g.setAttribute('transform',`rotate(${th} 150 30)`);ANIM=requestAnimationFrame(f);};
+ ANIM=requestAnimationFrame(f);
+}
+function a12(){
+ let g='';
+ g+=`<rect x="40" y="128" width="280" height="20" rx="3" fill="#949db1"/><rect x="60" y="148" width="14" height="40" fill="#707a91"/><rect x="286" y="148" width="14" height="40" fill="#707a91"/>`;
+ g+=`<rect x="140" y="58" width="96" height="70" rx="4" fill="#2d3d55" stroke="#6f86a8" stroke-width="2"/>`;
+ g+=`<circle cx="188" cy="93" r="11" fill="none" stroke="#cfd6e4"/>`+T(188,98,'1','text-anchor="middle" fill="#cfd6e4" font-size="13"');
+ g+=`<circle cx="96" cy="168" r="11" fill="none" stroke="#cfd6e4"/>`+T(96,173,'2','text-anchor="middle" fill="#cfd6e4" font-size="13"');
+ g+=arr(188,128,188,186,'#ff9a3d',3.5,12)+`<circle cx="188" cy="128" r="4" fill="#e9ebf1"/>`+T(166,124,'A',LBL)+T(198,178,sb('A','1/2'),'fill="#ff9a3d" font-size="16" font-weight="700"');
+ return `<svg viewBox="20 45 330 155" style="max-height:240px">${g}</svg>`;
+}
+function ech(f={}){
+ const s=66,ox=48,oy=330,X=x=>ox+x*s,Y=y=>oy-y*s;
+ let g='';
+ if(f.grid){
+  for(let x=-.5;x<=2.51;x+=.25){const m=Math.abs(x-Math.round(x))<.01;g+=`<line x1="${X(x)}" y1="${Y(4.6)}" x2="${X(x)}" y2="${Y(0)}" stroke="${m?'#2b3140':'#191d26'}"/>`}
+  for(let y=0;y<=4.61;y+=.25){const m=Math.abs(y-Math.round(y))<.01;g+=`<line x1="${X(-.5)}" y1="${Y(y)}" x2="${X(2.5)}" y2="${Y(y)}" stroke="${m?'#2b3140':'#191d26'}"/>`}
+ }
+ g+=`<line x1="${X(-.5)}" y1="${Y(0)}" x2="${X(1.6)}" y2="${Y(0)}" stroke="#aab2c3" stroke-width="2.5"/>`;
+ for(let x=-.45;x<1.6;x+=.15)g+=`<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x-.1)}" y2="${Y(-.1)}" stroke="#4d5465"/>`;
+ g+=`<line x1="${X(1.6)}" y1="${Y(0)}" x2="${X(1.6)}" y2="${Y(4.6)}" stroke="#aab2c3" stroke-width="2.5"/>`;
+ for(let y=.1;y<4.6;y+=.2)g+=`<line x1="${X(1.6)}" y1="${Y(y)}" x2="${X(1.72)}" y2="${Y(y-.12)}" stroke="#4d5465"/>`;
+ const u=[1.6,4],L=Math.hypot(...u),n=[-u[1]/L*.12,u[0]/L*.12];
+ g+=`<line x1="${X(0+n[0])}" y1="${Y(0+n[1])}" x2="${X(1.6+n[0])}" y2="${Y(4+n[1])}" stroke="#949db1" stroke-width="4"/><line x1="${X(0-n[0])}" y1="${Y(0-n[1])}" x2="${X(1.6-n[0])}" y2="${Y(4-n[1])}" stroke="#949db1" stroke-width="4"/>`;
+ for(let t=.08;t<1;t+=.09)g+=`<line x1="${X(1.6*t+n[0])}" y1="${Y(4*t+n[1])}" x2="${X(1.6*t-n[0])}" y2="${Y(4*t-n[1])}" stroke="#707a91" stroke-width="2.5"/>`;
+ g+=`<circle cx="${X(0)}" cy="${Y(0)}" r="5" fill="#e9ebf1"/><circle cx="${X(1.6)}" cy="${Y(4)}" r="5" fill="#e9ebf1"/>`;
+ g+=T(X(-.28),Y(.12),'A',LBL)+T(X(1.22),Y(4.22),'B',LBL);
+ g+=`<circle cx="${X(1.2)}" cy="${Y(3)}" r="7" fill="none" stroke="#e9ebf1" stroke-width="1.5"/><path d="M${X(1.2)-7} ${Y(3)}h14M${X(1.2)} ${Y(3)-7}v14" stroke="#e9ebf1" stroke-width="1.5"/>`+T(X(.85),Y(3.05),'G',LBL);
+ g+=arr(X(1.2),Y(3)+7,X(1.2),Y(2.0),'#ff7a5c',3.5,13)+T(X(1.27),Y(2.25),'P','fill="#ff7a5c" font-size="16" font-weight="700"');
+ g+=`<circle cx="${X(.35)}" cy="${Y(1.75)}" r="10" fill="none" stroke="#8a90a0"/>`+T(X(.35),Y(1.75)+5,'1','text-anchor="middle" fill="#8a90a0" font-size="13"');
+ const dh=(a,b,y,t)=>arr(X((a+b)/2),Y(y),X(a),Y(y),'#6f7688',1,7)+arr(X((a+b)/2),Y(y),X(b),Y(y),'#6f7688',1,7)+T(X((a+b)/2),Y(y)+15,t,'text-anchor="middle" fill="#8a90a0" font-size="12"');
+ g+=`<line x1="${X(1.2)}" y1="${Y(2.9)}" x2="${X(1.2)}" y2="${Y(-.45)}" stroke="#4d5465" stroke-dasharray="2 4"/>`;
+ g+=dh(0,1.2,-.35,'1,2 m')+dh(1.2,1.6,-.35,'0,4 m');
+ g+=arr(X(2.1),Y(2),X(2.1),Y(0),'#6f7688',1,7)+arr(X(2.1),Y(2),X(2.1),Y(4),'#6f7688',1,7)+T(X(2.2),Y(2),'4 m','fill="#8a90a0" font-size="12"');
+ g+=`<line x1="${X(1.6)}" y1="${Y(4)}" x2="${X(2.2)}" y2="${Y(4)}" stroke="#4d5465" stroke-dasharray="2 4"/>`;
+ 
+ if(f.mark){const [x,y]=f.mark;g+=`<g stroke="#f5b74a" stroke-width="2.5"><line x1="${X(x)-9}" y1="${Y(y)}" x2="${X(x)+9}" y2="${Y(y)}"/><line x1="${X(x)}" y1="${Y(y)-9}" x2="${X(x)}" y2="${Y(y)+9}"/></g><circle cx="${X(x)}" cy="${Y(y)}" r="13" fill="none" stroke="#f5b74a"/>`;}
+ if(f.corr){g+=`<g stroke="${RC}" stroke-width="1.8" stroke-dasharray="6 4" fill="none"><line x1="${X(1.2)}" y1="${Y(2.9)}" x2="${X(1.2)}" y2="${Y(4.4)}"/><line x1="${X(.4)}" y1="${Y(4)}" x2="${X(1.6)}" y2="${Y(4)}"/><line x1="${X(0)}" y1="${Y(0)}" x2="${X(1.32)}" y2="${Y(4.4)}"/></g><circle cx="${X(1.2)}" cy="${Y(4)}" r="5" fill="${RC}"/>`+T(X(.95),Y(4.12),'I',`fill="${RC}" font-size="15" font-weight="700"`);}
+ return `<svg id="echsvg" viewBox="0 0 250 380">${g}</svg>`;
+}
+function dyn2(){
+ const c=26,X=x=>40+(x+3.5)*c,Y=y=>50+(1-y)*c,K=[-2.4,-8];
+ let g='';
+ for(let x=-3;x<=3;x++)g+=`<line x1="${X(x)}" y1="${Y(.5)}" x2="${X(x)}" y2="${Y(-8.5)}" stroke="#1f2430"/>`;
+ for(let y=-8;y<=0;y++)g+=`<line x1="${X(-3)}" y1="${Y(y)}" x2="${X(3)}" y2="${Y(y)}" stroke="#1f2430"/>`;
+ g+=`<rect x="${X(-3)}" y="8" width="${6.2*c}" height="26" rx="6" fill="#13151b" stroke="#2a2e39"/>`+T(X(-2.8),26,'Échelle : 1 carreau = 100 N','fill="#cfd6e4" font-size="13"');
+ g+=arr(X(0),Y(0),X(0),Y(-8),'#ff7a5c',3.5,13)+T(X(.25),Y(-4),'P','fill="#ff7a5c" font-size="16" font-weight="700"');
+ g+=arr(X(0),Y(-8),X(K[0]),Y(K[1]),'#ff9a3d',3.5,13)+arr(X(K[0]),Y(K[1]),X(0),Y(0),'#3fd6c6',3.5,13);
+ g+=T(X(-1.9),Y(-8.2)+10,sb('B','0/1'),'fill="#ff9a3d" font-size="16" font-weight="700"')+T(X(-2.6),Y(-3.6),sb('A','0/1'),'fill="#3fd6c6" font-size="16" font-weight="700"');
+ const segs={P:[[0,0],[0,-8]],B:[[0,-8],K],A:[K,[0,0]]};
+ for(const k in segs){
+  const [[a,b],[d,e]]=segs[k];
+  g+=`<line class="mz" data-k="${k}" x1="${X(a)}" y1="${Y(b)}" x2="${X(d)}" y2="${Y(e)}" stroke="transparent" stroke-width="22" style="cursor:pointer"/>`;
+  if(MES[k]){const L=Math.hypot(d-a,e-b);g+=`<g pointer-events="none"><rect x="${X((a+d)/2)+8}" y="${Y((b+e)/2)-26}" width="96" height="22" rx="6" fill="#0a0b0f" stroke="#f5b74a"/>`+T(X((a+d)/2)+56,Y((b+e)/2)-10,fr(L)+' carreaux','text-anchor="middle" fill="#f5b74a" font-size="13" font-weight="700"')+'</g>';}
+ }
+ return `<svg id="dynsvg" viewBox="0 0 300 320">${g}</svg>`;
+}
+
+/* ---------- échelle des paliers ---------- */
+function ladder(){
+ const cur=SCR==='q'?Q[I].p:0;
+ const fill=Math.max(0,Math.min(1,(SCR==='fin'?N:Q.filter(q=>done(q.id)).length)/N));
+ const nav=['q','recap'].includes(SCR)&&MODE!=='prof';
+ let h=`<div class="rail"><b style="width:${fill*100}%"></b></div>`;
+ for(let p=1;p<=NP;p++){
+  const qs=Q.filter(q=>q.p===p),nd=qs.filter(q=>done(q.id)).length,st=nd===qs.length?'done':p===cur?'cur':'';
+  h+=`<div class="node ${st}" data-pal="${p}" ${nav?'style="cursor:pointer"':''}><div class="hw"><div class="hx">${st==='done'?'★':p}</div></div><div class="dots">${qs.map(q=>`<i class="${done(q.id)?'f':''}"></i>`).join('')}</div><small>${PAL[p].n}<br>${PAL[p].i}</small></div>`;
+ }
+ const L=$('#ladder');const avant=[...L.querySelectorAll('.node.done')].map(n=>n.dataset.pal);L.style.gridTemplateColumns=`repeat(${NP},1fr)`;L.innerHTML=h;L.querySelector('.rail').style.cssText=`left:${50/NP}%;right:${50/NP}%`;
+ if(L.dataset.init)L.querySelectorAll('.node.done').forEach(n=>{if(!avant.includes(n.dataset.pal)){n.classList.add('gagne');}});
+ L.dataset.init=1;
+ if(nav)document.querySelectorAll('#ladder .node').forEach(n=>n.onclick=()=>openQ(Q.findIndex(q=>q.p===+n.dataset.pal)));
+}
+
+/* ---------- écrans ---------- */
+function render(){
+ const sc=$('#sorties');if(sc)sc.innerHTML=E&&E.sorties&&['q','recap'].includes(SCR)?`<span class="tag" style="color:var(--ko);border-color:rgba(255,92,124,.5)">⚠ ${E.sorties} sortie${E.sorties>1?'s':''}${E.sortie_max?' / '+E.sortie_max:''}</span>`:'';
+ $('#mode').innerHTML=MODE==='apercu'?`<span class="tag ap">${PROF_NAV?'Version prof · corrigé':'Aperçu · rien n\'est enregistré'}</span>`:MODE==='secours'?'<span class="tag ap">Version de secours</span>':'';
+ ladder();
+ const m=$('#main');
+ if(SCR==='charge'){m.innerHTML='<div class="card"><p class="fb mu">Chargement…</p></div>';return;}
+ if(SCR==='pilot')return pilot();
+ if(SCR==='ferme'){m.innerHTML=`<div class="card intro"><h1>Le défi est fermé.</h1><p>${E&&Object.keys(E.reps||{}).length?'Tes réponses sont gardées. Ton professeur ramassera les copies.':'Ton professeur ouvrira l\'accès au moment voulu.'} Cette page se met à jour toute seule.</p></div>`;return;}
+ if(SCR==='intro'){SCR='tuto';return tuto();}
+ if(SCR==='fin')return fin();
+ if(SCR==='recap')return recap();
+ if(SCR==='tuto')return tuto();
+ question();
+}
+function intro(){
+ const enc=Q.some(q=>done(q.id));
+ $('#main').innerHTML=`<div class="card intro"><h1>${PRENOM?PRENOM+', '+NP:NP} paliers pour valider la statique.</h1>
+ <p>Du cours jusqu'au cas pratique. ${N} questions · environ 20 min.</p>
+ <ul class="regles">
+  <li><i>↔</i>Tu peux revenir en arrière et modifier tes réponses tant que tu n'as pas envoyé ta copie.</li>
+  <li><i>✉</i>À la fin, tu envoies ta copie : ensuite, plus rien n'est modifiable. Une question sans réponse compte faux.</li>
+  <li><i>⛶</i>Le test se fait en plein écran : quitter le plein écran (touche Échap) compte comme une sortie.</li>
+  <li class="w"><i>⚠</i><span>Ne quitte pas cette page : chaque sortie est enregistrée et signalée à ton professeur${E.sortie_zero?', la question en cours est comptée fausse et verrouillée':''}.${E.sortie_max>0?` Au bout de <b>${E.sortie_max} sorties</b>, ta copie est envoyée automatiquement.`:''}</span></li>
+ </ul>
+ <div class="act"><button class="btn" id="go">${enc?'Reprendre':'Suivant : comment répondre ▶'}</button>${MODE==='apercu'&&TS?'<button class="btn sec" id="back">Retour au pilotage</button>':''}</div></div>`;
+ $('#go').onclick=()=>{if(enc)lancer();else{SCR='tuto';render();}};
+ if($('#back'))$('#back').onclick=()=>{MODE='prof';SCR='pilot';render();};
+}
+function fsDoc(){try{if(window.frameElement)return parent.document;}catch(e){}return document;}
+function pleinEcran(){
+ if(MODE==='apercu'||MODE==='prof')return;
+ try{let el=document.documentElement;try{if(window.frameElement)el=window.frameElement;}catch(e){}
+  const f=el.requestFullscreen||el.webkitRequestFullscreen;if(f&&!(fsDoc().fullscreenElement||fsDoc().webkitFullscreenElement)){const p=f.call(el);if(p&&p.catch)p.catch(()=>{});}}catch(e){}
+}
+function sortirPleinEcran(){try{const d=fsDoc();if(d.fullscreenElement)d.exitFullscreen();}catch(e){}}
+function lancer(){pleinEcran();if(!T0)T0=Date.now();const k=MODE==='apercu'?0:firstOpen();if(k>=N){SCR='recap';render();}else openQ(k);}
+/* ---------- tutoriel animé : comment répondre ---------- */
+let TUTO=0;
+const dort=ms=>new Promise(r=>setTimeout(r,ms));
+function tuto(){
+ const id=++TUTO,enc=Q.some(q=>done(q.id));
+ $('#main').innerHTML=`<div class="card intro"><h1>${PRENOM?PRENOM+', voici c':'C'}omment répondre</h1><p>Regarde l'exemple, puis lance le test.</p>
+ <div class="tsteps"><div data-t="1"><i>1</i>Clique sur ta réponse</div><div data-t="2"><i>2</i>Clique sur ✓ Enregistrer</div><div data-t="3"><i>3</i>À la fin, vérifie et envoie ta copie</div></div>
+ <div class="demo" id="demo"><span class="dtag">EXEMPLE</span><div id="dz"></div><div class="curs" id="curs"><svg width="22" height="26" viewBox="0 0 22 26"><path d="M2 2l16 11-7 1.5 4 8.5-3 1.5-4-8.5L2 21z" fill="#fff" stroke="#120a20" stroke-width="1.6" stroke-linejoin="round"/></svg></div></div>
+ <div class="act"><button class="btn nav" id="rejouer">↻ Revoir</button><button class="btn go-t${enc?' pret':''}" id="lt" ${enc?'':'disabled'}>${enc?'🚀 Reprendre le test':'🚀 Lancer le test'}</button>${MODE==='apercu'&&TS?'<button class="btn sec" id="back">Retour au pilotage</button>':''}</div></div>`;
+ $('#rejouer').onclick=()=>tuto();$('#lt').onclick=lancer;
+ if($('#back'))$('#back').onclick=()=>{MODE='prof';SCR='pilot';render();};
+ animTuto(id);
+}
+async function animTuto(id){
+ const ok=()=>id===TUTO&&SCR==='tuto';
+ const dz=$('#dz'),demo=$('#demo'),cu=$('#curs');
+ const step=n=>document.querySelectorAll('.tsteps div').forEach(d=>{d.classList.toggle('on',+d.dataset.t===n);d.classList.toggle('fait',+d.dataset.t<n);});
+ const vers=async el=>{const a=demo.getBoundingClientRect(),b=el.getBoundingClientRect();cu.style.left=(b.left-a.left+b.width*.5)+'px';cu.style.top=(b.top-a.top+b.height*.55)+'px';await dort(800);};
+ const clic=async el=>{cu.classList.add('press');const b=el.getBoundingClientRect();eclat(b.left+b.width/2,b.top+b.height/2,10,40);await dort(180);cu.classList.remove('press');};
+ dz.innerHTML=`<div class="qt">Une lampe est suspendue à un câble. Combien d'actions mécaniques extérieures s'exercent sur la lampe ?</div>
+ <div class="tfig"><svg viewBox="0 0 160 110" width="150"><rect x="20" y="4" width="120" height="8" fill="#949db1"/><line x1="80" y1="12" x2="80" y2="58" stroke="#cfd6e4" stroke-width="2"/><path d="M62 74 Q80 52 98 74 Z" fill="#f5b74a"/><circle cx="80" cy="80" r="7" fill="#ffe9a8"/></svg></div>
+ <div class="rep"><div class="opts"><button class="opt" tabindex="-1">1</button><button class="opt" tabindex="-1" id="d2">2</button><button class="opt" tabindex="-1">3</button></div></div>
+ <div class="act"><button class="btn nav" tabindex="-1">◀ Précédente</button><button class="btn" tabindex="-1" id="dval">✓ Enregistrer</button><button class="btn nav suiv" tabindex="-1">Suivante ▶</button></div>`;
+ cu.style.left='92%';cu.style.top='95%';cu.style.opacity=1;
+ await dort(700);if(!ok())return;
+ step(1);await dort(500);await vers($('#d2'));if(!ok())return;await clic($('#d2'));$('#d2').classList.add('sel');await dort(900);if(!ok())return;
+ step(2);await vers($('#dval'));if(!ok())return;await clic($('#dval'));
+ const t=document.createElement('div');t.className='dtoast';t.textContent='✓ Réponse enregistrée';demo.appendChild(t);await dort(1300);t.remove();if(!ok())return;
+ step(3);
+ dz.innerHTML=`<div class="qt">Vérifie avant d'envoyer</div><div class="rec"><div><b>Toutes les questions</b><span>${[1,2,3,4,5,6].map(i=>`<button class="rq ${i<6?'ok':''}" tabindex="-1" id="dq${i}">${i}</button>`).join('')}</span></div></div>
+ <p class="fb ko" id="dmsg">1 question sans réponse : clique dessus pour y revenir.</p><div class="act"><button class="btn" tabindex="-1" id="dsend">✉ Envoyer ma copie</button></div>`;
+ await dort(600);await vers($('#dq6'));if(!ok())return;await clic($('#dq6'));$('#dq6').classList.add('ok');$('#dmsg').className='fb ok';$('#dmsg').textContent='Toutes les réponses sont enregistrées.';await dort(900);if(!ok())return;
+ await vers($('#dsend'));if(!ok())return;await clic($('#dsend'));$('#dsend').textContent='Confirmer : envoi définitif';await dort(700);await clic($('#dsend'));if(!ok())return;
+ $('#dsend').textContent='✓ Copie envoyée';await dort(600);
+ step(4);cu.style.opacity=0;const lt=$('#lt');if(lt){lt.disabled=false;lt.classList.add('pret');}
+}
+function input(q){
+ if(q.type==='qcm'||q.type==='multi'){
+  if(!q.ord){q.ord=q.o.map((_,k)=>k);if(!q.ns)q.ord.sort(()=>Math.random()-.5);}
+  const sel=k=>q.type==='qcm'?R.v===k:(R.v||[]).includes(k);
+  return `<div class="${q.type==='multi'?'chips':'opts'}">${q.ord.map(k=>`<button class="opt${sel(k)?' sel':''}" data-k="${k}">${q.o[k]}</button>`).join('')}</div>`;
+ }
+ if(q.type==='num')return `<div class="numrow"><input id="nv" inputmode="decimal" autocomplete="off" value="${R.v!=null?String(R.v).replace(/"/g,''):''}"><span>${q.u}</span></div>`;
+ if(q.type==='grid'){const z=R.v||[];const c=k=>`<button data-c="${k}" class="${z.includes(k)?'z':''}">${z.includes(k)?'0':k}</button>`;
+  return `<div class="tors"><span class="br">{</span><div class="tg">${c('X')}${c('L')}${c('Y')}${c('M')}${c('Z')}${c('N')}</div><span class="br">}</span><span class="pt">${q.pt}</span></div>`;}
+ if(q.type==='bsel'){
+  const C=[['Point',['A','B','C','D']],['Direction',['?','verticale','horizontale','(BC)','(AD)']],['Sens',['?','vers le haut','vers le bas']],['Intensité',['?','1200 N']]];
+  if(!R.v)R.v=Array(q.rows.length*4).fill('');
+  return `<table class="bame bsel"><tr><th>Action</th>${C.map(c=>`<th>${c[0]}</th>`).join('')}</tr>${q.rows.map((r,i)=>`<tr><td>${r}</td>${C.map((c,j)=>{const k=i*4+j,v=R.v[k];return `<td><select data-b="${k}" class="${v?'v':''}"><option value="">…</option>${c[1].map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('')}</select></td>`}).join('')}</tr>`).join('')}</table>`;
+ }
+ if(q.type==='click')return `<p class="fb mu" style="margin:0">${R.v?'Point placé. Clique ailleurs sur la figure pour le déplacer.':'Clique directement sur la figure.'}</p>`;
+ if(q.type==='pick')return `<p class="fb mu">${R.v?'Pièce sélectionnée : '+({'0':'le mur 0','1':'la poutre 1','2':'la jambe de force 2'})[R.v]+'. Clique sur une autre pièce pour changer.':'Clique sur une pièce de la figure.'}</p>`;
+ if(q.type==='mots'){if(!R.v)R.v=q.lettres.map(()=>'');
+  return `<div class="acro">${q.lettres.map((l,k)=>`<div><b>${l}</b><input data-m="${k}" autocomplete="off" spellcheck="false" value="${R.v[k].replace(/"/g,'')}"></div>`).join('')}</div>`;}
+ if(q.type==='tags'){
+  const n=(q.tpl.match(/\{\d\}/g)||[]).length;if(!R.v)R.v=Array(n).fill(null);if(R.act===undefined)R.act=0;
+  if(!q.tord){q.tord=q.tags.map((_,k)=>k).sort(()=>Math.random()-.5);}
+  const html=q.tpl.replace(/\{(\d)\}/g,(m,k)=>`<button class="slot${R.v[k]?' f':''}${R.act==k?' on':''}" data-s="${k}">${R.v[k]||'……'}</button>`);
+  return `<div class="trous">${html}</div><div class="tagz">${q.tord.filter(k=>!R.v.includes(q.tags[k])).map(k=>`<button class="tagc" data-t="${k}">${q.tags[k]}</button>`).join('')}</div>`;
+ }
+ if(q.type==='bame'){const b=R.v||'000000000';
+  return `<table class="bame"><tr><th>Action</th><th>Direction</th><th>Sens</th><th>Intensité</th></tr>${q.rows.map((r,i)=>`<tr><td>${r}</td>${[0,1,2].map(j=>{const k=i*3+j;return `<td><button data-b="${k}" class="${b[k]==='1'?'k':''}">${b[k]==='1'?'✓':'?'}</button></td>`}).join('')}</tr>`).join('')}</table>`;}
+ return '';
+}
+/* ---------- outil de tracé du dynamique (cas pratique de l'échelle) ---------- */
+const DYN={o:[0,0],e:[0,-6],dirs:[[4,3],[16,3]],tol:.35,ang:1.5,max:3,ech:200,g:[-1,12,-7,3],K:[10.667,2],lab:[['B','2/1'],['A','0/1']]};
+function dynCheck(v,c=DYN){
+ const res=(ok,msg)=>({ok,msg});
+ if(!Array.isArray(v)||!v.length)return res(false,'Trace au moins un vecteur.');
+ if(v.length!==c.dirs.length)return res(false,`Il faut ${c.dirs.length} vecteurs pour fermer le dynamique avec P.`);
+ const d=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]),sa=Math.sin(c.ang*Math.PI/180),used=[],usedD=[];let cur=c.e.slice();
+ for(let i=0;i<v.length;i++){
+  const k=v.findIndex((w,j)=>!used.includes(j)&&d([w[0],w[1]],cur)<=c.tol);
+  if(k<0)return res(false,i?'Les vecteurs doivent se suivre (l\'origine de l\'un à l\'extrémité du précédent).':'Le tracé doit partir de l\'extrémité de P.');
+  used.push(k);const w=v[k],dx=w[2]-w[0],dy=w[3]-w[1],L=Math.hypot(dx,dy);if(L<.2)return res(false,'Un vecteur est trop court.');
+  const j=c.dirs.findIndex((D,jj)=>!usedD.includes(jj)&&Math.abs(dx*D[1]-dy*D[0])/(L*Math.hypot(D[0],D[1]))<=sa);
+  if(j<0)return res(false,'Une direction ne correspond à aucune action.');
+  usedD.push(j);cur=[w[2],w[3]];
+ }
+ if(d(cur,c.o)>c.tol)return res(false,'Le dynamique n\'est pas fermé.');
+ return res(true,'');
+}
+const TC=26,TX=x=>20+(x-DYN.g[0])*TC,TY=y=>20+(DYN.g[3]-y)*TC,TXi=px=>(px-20)/TC+DYN.g[0],TYi=py=>DYN.g[3]-(py-20)/TC;
+function inter(a,b){const [x1,y1,x2,y2]=a,[x3,y3,x4,y4]=b,den=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);if(Math.abs(den)<1e-9)return null;
+ const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/den;return [x1+t*(x2-x1),y1+t*(y2-y1)];}
+function snap(p,st){
+ const c=[DYN.o.slice(),DYN.e.slice()];(st.vecs||[]).forEach(v=>{c.push([v[0],v[1]],[v[2],v[3]]);});
+ const L=st.lines||[];for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const q=inter(L[i],L[j]);if(q)c.push(q);}
+ let best=null,bd=.3;for(const q of c){const dd=Math.hypot(q[0]-p[0],q[1]-p[1]);if(dd<bd){bd=dd;best=q;}}
+ if(best)return [Math.round(best[0]*1000)/1000,Math.round(best[1]*1000)/1000];
+ const g=[Math.round(p[0]*2)/2,Math.round(p[1]*2)/2];if(Math.hypot(g[0]-p[0],g[1]-p[1])<.18)return g;
+ return [Math.round(p[0]*10)/10,Math.round(p[1]*10)/10];
+}
+function clipLine(l){ // prolonge une droite sur toute la grille
+ const [x1,y1,x2,y2]=l,dx=x2-x1,dy=y2-y1,T=[];
+ const B=DYN.g;
+ if(Math.abs(dx)>1e-9){T.push((B[0]-x1)/dx,(B[1]-x1)/dx);} if(Math.abs(dy)>1e-9){T.push((B[2]-y1)/dy,(B[3]-y1)/dy);}
+ const pts=T.map(t=>[x1+t*dx,y1+t*dy]).filter(p=>p[0]>=B[0]-1e-6&&p[0]<=B[1]+1e-6&&p[1]>=B[2]-1e-6&&p[1]<=B[3]+1e-6);
+ if(pts.length<2)return l;pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);return [...pts[0],...pts[pts.length-1]];
+}
+function traceSVG(st,lock){
+ let g='';
+ const [gx0,gx1,gy0,gy1]=DYN.g;
+ for(let x=gx0;x<=gx1;x++)g+=`<line x1="${TX(x)}" y1="${TY(gy1)}" x2="${TX(x)}" y2="${TY(gy0)}" stroke="#2a2040"/>`;
+ for(let y=gy0;y<=gy1;y++)g+=`<line x1="${TX(gx0)}" y1="${TY(y)}" x2="${TX(gx1)}" y2="${TY(y)}" stroke="#2a2040"/>`;
+ for(const l of st.lines||[]){const c=clipLine(l);g+=`<line x1="${TX(c[0])}" y1="${TY(c[1])}" x2="${TX(c[2])}" y2="${TY(c[3])}" stroke="#b77bff" stroke-width="1.6" stroke-dasharray="7 5"/>`;}
+ g+=arr(TX(DYN.o[0]),TY(DYN.o[1]),TX(DYN.e[0]),TY(DYN.e[1]),'#ff7a5c',3.5,13)+T(TX(-.85),TY((DYN.o[1]+DYN.e[1])/2),'P','fill="#ff7a5c" font-size="16" font-weight="700"');
+ (st.vecs||[]).forEach((v,i)=>{g+=arr(TX(v[0]),TY(v[1]),TX(v[2]),TY(v[3]),'#ffd23f',3.5,13)+T((TX(v[0])+TX(v[2]))/2+8,(TY(v[1])+TY(v[3]))/2-6,'v'+(i+1),'fill="#ffd23f" font-size="13" font-weight="700"');});
+ if(st.p0)g+=`<circle cx="${TX(st.p0[0])}" cy="${TY(st.p0[1])}" r="5" fill="#fff"/>`;
+ g+=`<line id="tprev" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0"/><circle id="tcur" r="4" fill="none" stroke="#fff" opacity="0"/>`;
+ if(CORR()){const K=DYN.K,E0=DYN.e,O=DYN.o,d=DYN.dirs,l1=clipLine([E0[0],E0[1],E0[0]+d[0][0],E0[1]+d[0][1]]),l2=clipLine([O[0],O[1],O[0]+d[1][0],O[1]+d[1][1]]);
+  g+=`<g stroke="${RC}" stroke-width="1.4" stroke-dasharray="5 5" opacity=".8"><line x1="${TX(l1[0])}" y1="${TY(l1[1])}" x2="${TX(l1[2])}" y2="${TY(l1[3])}"/><line x1="${TX(l2[0])}" y1="${TY(l2[1])}" x2="${TX(l2[2])}" y2="${TY(l2[3])}"/></g>`;
+  const n1=Math.round(Math.hypot(K[0]-E0[0],K[1]-E0[1])*DYN.ech),n2=Math.round(Math.hypot(K[0]-O[0],K[1]-O[1])*DYN.ech);
+  g+=arr(TX(E0[0]),TY(E0[1]),TX(K[0]),TY(K[1]),RC,3,12)+arr(TX(K[0]),TY(K[1]),TX(O[0]),TY(O[1]),RC,3,12)+T(TX(5.4),TY(-2.6),sb(...DYN.lab[0])+' '+n1+' N',`fill="${RC}" font-size="13" font-weight="700"`)+T(TX(3.6),TY(1.6),sb(...DYN.lab[1])+' '+n2+' N',`fill="${RC}" font-size="13" font-weight="700"`);}
+ return `<svg id="tracesvg" viewBox="0 0 ${40+(DYN.g[1]-DYN.g[0])*TC} ${40+(DYN.g[3]-DYN.g[2])*TC}" style="max-height:440px;${lock?'':'cursor:crosshair'}">${g}</svg>`;
+}
+function traceQ(q){
+ const st=R.v||(R.v={lines:[],vecs:[]});if(!R.tool)R.tool='vec';
+ const es=E.essais[q.id]||{n:0,ok:false},max=DYN.max,apc=MODE==='apercu',fin=!apc&&(es.ok||es.n>=max),lk=!apc&&locked(q.id);
+ const mesures=(st.vecs||[]).map((v,i)=>{const L=Math.hypot(v[2]-v[0],v[3]-v[1]);return `v${i+1} : ${fr(L)} carreaux → ${Math.round(L*DYN.ech)} N`}).join(' · ');
+ $('#main').innerHTML=`<div class="card"><div class="qh"><span class="chip">Palier ${q.p} · ${PAL[q.p].n}</span><span class="cnt">${I+1} / ${N}</span></div>
+ <p class="ctx">${CTX[q.cas]}</p><div class="qt">${q.q}</div>
+ <div class="tgrid"><div class="fig">${pot(CORR()?{constr:1,ai:1}:{})}</div>
+ <div class="rep tracer"><div class="tbar">${fin||lk?'':`<button class="tb ${R.tool==='line'?'on':''}" data-tool="line">📏 Droite</button><button class="tb ${R.tool==='vec'?'on':''}" data-tool="vec">➜ Vecteur</button><button class="tb" id="tund">↶ Annuler</button><button class="tb" id="tclr">🗑 Effacer</button>`}<span class="tsc">1 carreau = ${DYN.ech} N</span></div>
+ <div class="fig tfig2" id="tfig">${traceSVG(st,fin||lk)}</div>
+ <div class="hint">${fin||lk?'':R.tool==='line'?'Droite : clique sur 2 points pour tracer une droite de construction.':'Vecteur : clique sur l\'origine puis sur l\'extrémité. Les points s\'aimantent aux intersections.'}</div>
+ ${mesures?`<p class="tmes">${mesures}</p>`:''}</div></div>
+ <div class="act"><button class="btn nav" id="prev" ${I===0?'disabled':''}>◀ Précédente</button>
+ ${lk?'':fin?'':`<button class="btn" id="tchk">⚖ Vérifier l'équilibre</button>`}
+ <button class="btn nav suiv" id="skip">${I===N-1?'Aller à l\'envoi ▶':'Suivante ▶'}</button>
+ <span class="fb" id="fb">${lk?'🔒 Question verrouillée (sortie de page).':es.ok?'✓ Équilibre trouvé : réponse enregistrée.':es.n>=max?'✗ 3 essais utilisés : réponse enregistrée.':apc?'':`Essais restants : ${max-es.n} / ${max}`}</span></div>
+ ${(MODE==='apercu'||MODE==='prof')&&CLES&&CLES[q.id]?`<p class="corr">Réponse attendue : ${CLES[q.id].c}</p>`:''}</div>`;
+ if(fin||lk)$('#fb').className='fb '+(es.ok?'ok':'ko');
+ const sv=$('#tracesvg'),pt=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const w=p.matrixTransform(sv.getScreenCTM().inverse());return snap([TXi(w.x),TYi(w.y)],st);};
+ if(!(fin||lk)){
+  sv.onclick=e=>{const p=pt(e);if(!st.p0){st.p0=p;traceQ(q);return;}
+   const s=[...st.p0,...p];delete st.p0;if(Math.hypot(s[2]-s[0],s[3]-s[1])<.15){traceQ(q);return;}
+   (R.tool==='line'?st.lines:st.vecs).push(s);traceQ(q);};
+  sv.onpointermove=e=>{const p=pt(e),c=$('#tcur'),l=$('#tprev');c.setAttribute('cx',TX(p[0]));c.setAttribute('cy',TY(p[1]));c.setAttribute('opacity',1);
+   if(st.p0){l.setAttribute('x1',TX(st.p0[0]));l.setAttribute('y1',TY(st.p0[1]));l.setAttribute('x2',TX(p[0]));l.setAttribute('y2',TY(p[1]));l.setAttribute('opacity',.8);}};
+  document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{R.tool=b.dataset.tool;delete st.p0;traceQ(q);});
+  $('#tund').onclick=()=>{if(st.p0)delete st.p0;else{const a=R.lastT||'vec';(st.vecs.length?st.vecs:st.lines).pop();}traceQ(q);};
+  $('#tclr').onclick=e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Confirmer ?';return;}R.v={lines:[],vecs:[]};traceQ(q);};
+  $('#tchk').onclick=()=>verifierTrace(q);
+ }
+ $('#prev').onclick=()=>quitterQ(()=>openQ(I-1));$('#skip').onclick=()=>quitterQ(suivant);
+}
+async function verifierTrace(q){
+ if(BUSY)return;const st=R.v,vecs=(st.vecs||[]).map(v=>v.map(x=>Math.round(x*1000)/1000)),r=dynCheck(vecs);
+ const fig=document.querySelector('.tgrid .fig svg');
+ BUSY=true;$('#tchk').disabled=true;
+ fig.classList.remove('equi','tombe');void fig.getBoundingClientRect();fig.classList.add(r.ok?'equi':'tombe');
+ if(MODE==='apercu'){BUSY=false;const f=$('#fb');f.className='fb '+(r.ok?'ok':'ko');f.textContent=r.ok?'✓ L\'échelle est en équilibre !':'✗ '+r.msg;$('#tchk').disabled=false;return;}
+ try{
+  const x=await API.repondre(q.id,{v:vecs});BUSY=false;
+  if(x&&x.ok===false){if(x.raison==='ferme'){SCR='ferme';render();return;}if(x.raison==='rendu'){E=norm(await API.etat());SCR='fin';render();return;}if(x.raison!=='essais')throw new Error(x.raison);}
+  const ok=x&&x.juste!=null?!!x.juste:r.ok,n=(x&&x.essais)||((E.essais[q.id]||{}).n||0)+1;
+  E.essais[q.id]={n,ok};E.reps[q.id]={v:vecs};
+  setTimeout(()=>{traceQ(q);const f=$('#fb');if(!ok&&n<DYN.max){f.className='fb ko';f.textContent=`✗ Pas en équilibre : ${r.msg} Essais restants : ${DYN.max-n} / ${DYN.max}`;}},1400);
+ }catch(e){BUSY=false;const f=$('#fb');f.className='fb ko';f.textContent='Connexion perdue : essai non enregistré. Réessaie.';$('#tchk').disabled=false;}
+}
+function question(){
+ const q=Q[I],lk=MODE!=='apercu'&&locked(q.id);
+ if(q.type==='trace')return traceQ(q);
+ let fig='';
+ const qf=Object.assign({},q.f||{});if(q.isoFrom&&!(MODE==='apercu'&&PROF_NAV)){const p=E.reps[q.isoFrom];if(p)qf.iso=p;else delete qf.iso;}
+ if(q.type==='click'&&q.fig==='pot'&&CORR())qf.constr=1;
+ if(q.fig==='pot')fig=`<div class="fig${q.type==='click'?' clic':''}">${pot(Object.assign(qf,q.type==='click'&&R.v?{mark:R.v}:{},q.type==='pick'&&R.v&&!lk?{sel:R.v}:{}))}</div>`;
+ if(q.fig==='caisse')fig=`<div class="fig">${caisse()}</div>`;
+ if(q.fig==='vec')fig=`<div class="fig clic">${vec(R.v)}<div class="hint">Échelle : 1 carreau = 100 N</div></div>`;
+ if(q.fig==='ponct')fig=`<div class="fig">${ponct()}</div>`;
+ if(q.fig==='cable')fig=`<div class="fig">${cable()}</div>`;
+ if(q.fig==='a12')fig=`<div class="fig">${a12()}</div>`;
+ if(q.fig==='dyn')fig=`<div class="fig">${dyn()}<div class="hint">Clique sur un vecteur pour mesurer sa longueur.</div></div>`;
+ if(q.fig==='ech')fig=`<div class="fig${q.type==='click'?' clic':''}">${ech(Object.assign({},q.f||{},q.type==='click'&&R.v?{mark:R.v}:{},q.type==='click'&&CORR()?{corr:1}:{}))}</div>`;
+ if(q.fig==='dyn2')fig=`<div class="fig">${dyn2()}<div class="hint">Clique sur un vecteur pour mesurer sa longueur.</div></div>`;
+ const c=CLES&&CLES[q.id];
+ $('#main').innerHTML=`<div class="card"><div class="qh"><span class="chip">Palier ${q.p} · ${PAL[q.p].n}</span><span class="cnt">${I+1} / ${N}</span></div>
+ ${q.cas?`<p class="ctx">${CTX[q.cas]}</p>`:''}<div class="qt">${q.q}</div>${fig}${lk?'<p class="fb ko">🔒 Question verrouillée : tu as quitté la page pendant cette question. Elle compte faux.</p>':`<div class="rep">${input(q)}</div>`}
+ ${MODE==='apercu'?`<div class="act"><button class="btn nav" id="prev" ${I===0?'disabled':''}>◀ Précédente</button><button class="btn" id="chk">Vérifier</button><button class="btn nav suiv" id="next" ${I===N-1?'disabled':''}>Suivante ▶</button><span class="fb" id="fb"></span></div>`:`<div class="act"><button class="btn nav" id="prev" ${I===0?'disabled':''}>◀ Précédente</button>${lk?'':`<button class="btn" id="val">${I===N-1?'✓ Enregistrer et terminer':'✓ Enregistrer'}</button>`}<button class="btn nav suiv" id="skip">${I===N-1?'Aller à l\'envoi ▶':'Suivante ▶'}</button><span class="fb ${E.reps[q.id]!=null?'ok':''}" id="fb">${E.reps[q.id]!=null?'✓ Réponse enregistrée · modifiable':''}</span></div>`}
+ ${(MODE==='apercu'||MODE==='prof')&&c?`<p class="corr">Réponse attendue : ${c.c}</p>`:''}</div>`;
+ bind(q);
+}
+function bind(q){
+ const m=$('#main');
+ m.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(q.type==='qcm')R.v=k;else{R.v=R.v||[];R.v=R.v.includes(k)?R.v.filter(x=>x!==k):R.v.concat(k);}question();});
+ m.querySelectorAll('.tg button').forEach(b=>b.onclick=()=>{const k=b.dataset.c;R.v=R.v||[];R.v=R.v.includes(k)?R.v.filter(x=>x!==k):R.v.concat(k);question();});
+ m.querySelectorAll('.bsel select').forEach(x=>x.onchange=()=>{R.v[+x.dataset.b]=x.value;x.classList.toggle('v',!!x.value);});
+ m.querySelectorAll('.pk line').forEach(l=>l.onclick=()=>{R.v=l.dataset.p;question();});
+ m.querySelectorAll('.acro input').forEach(i=>{i.oninput=()=>{R.v[+i.dataset.m]=i.value;};i.onkeydown=e=>{if(e.key==='Enter'){const nx=m.querySelector(`.acro input[data-m="${+i.dataset.m+1}"]`);nx?nx.focus():$('#val').click();}};});
+ const a0=m.querySelector('.acro input');if(a0&&!R.v.some(x=>x))a0.focus({preventScroll:true});
+ m.querySelectorAll('.slot').forEach(b=>b.onclick=()=>{const k=+b.dataset.s;if(R.v[k]){R.v[k]=null;}R.act=k;question();});
+ m.querySelectorAll('.tagc').forEach(b=>b.onclick=()=>{const t=q.tags[+b.dataset.t];let k=R.act!=null&&!R.v[R.act]?R.act:R.v.indexOf(null);if(k<0)return;R.v[k]=t;const nx=R.v.indexOf(null);R.act=nx<0?null:nx;question();});
+ m.querySelectorAll('.bame:not(.tete) button').forEach(b=>b.onclick=()=>{const k=+b.dataset.b,s=(R.v||'000000000').split('');s[k]=s[k]==='1'?'0':'1';R.v=s.join('');question();});
+ const nv=$('#nv');if(nv){nv.oninput=()=>{R.v=nv.value;};nv.onkeydown=e=>{if(e.key==='Enter')$('#val').click();};nv.focus({preventScroll:true});}
+ const ps=$('#potsvg');
+ if(ps&&q.type==='click')ps.onclick=e=>{const p=ps.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const w=p.matrixTransform(ps.getScreenCTM().inverse());R.v=[Math.round((w.x-70)/80*100)/100,Math.round((140-w.y)/80*100)/100];question();};
+ const vs=$('#vecsvg');
+ if(vs&&q.type==='click')vs.onclick=e=>{const p=vs.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const w=p.matrixTransform(vs.getScreenCTM().inverse());R.v=[Math.round((w.x-150)/28*20)/20,Math.round((64-w.y)/28*20)/20];question();};
+ if(q.fig==='cable')animerCable();
+ const es=$('#echsvg');
+ if(es&&q.type==='click')es.onclick=e=>{const p=es.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const w=p.matrixTransform(es.getScreenCTM().inverse());R.v=[Math.round((w.x-48)/66*100)/100,Math.round((330-w.y)/66*100)/100];question();};
+ const ds=$('#dynsvg');if(ds)ds.querySelectorAll('.mz').forEach(l=>l.onclick=()=>{MES[l.dataset.k]=!MES[l.dataset.k];question();});
+ if(MODE==='apercu'){
+  const go=d=>openQ(I+d);
+  $('#prev').onclick=()=>go(-1);$('#next').onclick=()=>go(1);
+  $('#chk').onclick=()=>{const r=lireReponse(q),f=$('#fb');if(r===undefined){f.className='fb mu';f.textContent='Aucune réponse saisie.';return;}
+   if(!CLES||!CLES[q.id]){f.className='fb mu';f.textContent='Réponses non chargées.';return;}
+   const ok=juste(CLES[q.id],r);f.className='fb '+(ok?'ok':'ko');f.textContent=ok?'✓ Juste':'✗ Faux';};
+  return;
+ }
+ if($('#val'))$('#val').onclick=()=>envoyer(q);
+ $('#prev').onclick=()=>quitterQ(()=>openQ(I-1));
+ $('#skip').onclick=()=>quitterQ(suivant);
+}
+const nb=v=>{if(v==null)return null;const m=String(v).replace(/\s/g,'').replace(/−/g,'-').replace(',','.').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;};
+function lireReponse(q){
+ const v=R.v;
+ switch(q.type){
+  case 'qcm':return v==null?undefined:String(v);
+  case 'multi':return v&&v.length?v.map(String):undefined;
+  case 'num':{const x=nb(v);return x==null?undefined:x;}
+  case 'grid':return v&&v.length?v.slice():undefined;
+  case 'bame':return v||'000000000';
+  case 'tags':return v&&v.every(x=>x)?v.slice():undefined;
+  case 'click':return v?v.slice():undefined;
+  case 'bsel':return v&&v.every(x=>x)?v.slice():undefined;
+  case 'pick':return v||undefined;
+  case 'mots':return v&&v.every(x=>x.trim())?q.lettres.map((l,k)=>l+v[k].trim()):undefined;
+ }
+}
+/* Enregistrement automatique : si l'élève a saisi une réponse complète puis change de question sans cliquer « Enregistrer » */
+async function autoSave(){
+ if(SCR!=='q'||MODE==='apercu'||BUSY)return true;
+ const q=Q[I];if(!q||q.type==='trace'||locked(q.id))return true;
+ const r=lireReponse(q);if(r===undefined)return true;
+ if(JSON.stringify(r)===JSON.stringify(E.reps[q.id]))return true;
+ BUSY=true;
+ try{const x=await API.repondre(q.id,r);BUSY=false;
+  if(x&&x.ok===false){if(x.raison==='verrou'&&!E.verrous.includes(q.id))E.verrous.push(q.id);return true;}
+  E.reps[q.id]=r;toast('Réponse enregistrée');return true;}
+ catch(e){BUSY=false;const f=$('#fb');if(f){f.className='fb ko';f.textContent='Connexion perdue : réponse non enregistrée. Réessaie.';}return false;}
+}
+async function quitterQ(go){if(await autoSave())go();}
+async function envoyer(q){
+ if(BUSY)return;
+ const r=lireReponse(q);
+ if(r===undefined){const f=$('#fb');f.className='fb mu';f.textContent=q.type==='click'?'Clique sur la figure.':q.type==='num'?'Entre une valeur.':q.type==='tags'?'Place une étiquette dans chaque case.':q.type==='mots'?'Complète les 4 mots.':q.type==='bsel'?'Remplis toutes les cases du tableau.':q.type==='pick'?'Clique sur une pièce.':'Choisis une réponse.';return;}
+ BUSY=true;$('#val').disabled=true;
+ try{
+  const x=await API.repondre(q.id,r);
+  BUSY=false;
+  if(x&&x.ok===false){
+   if(x.raison==='ferme'){SCR='ferme';render();return;}
+   if(x.raison==='rendu'){E=norm(await API.etat());SCR='fin';render();return;}
+   if(x.raison==='verrou'){if(!E.verrous.includes(q.id))E.verrous.push(q.id);delete E.reps[q.id];question();return;}
+   throw new Error(x.raison||'refus');
+  }
+  E.reps[q.id]=r;toast('Réponse enregistrée');suivant();
+ }catch(e){
+  BUSY=false;const f=$('#fb');if(f){f.className='fb ko';f.textContent='Connexion perdue : réponse non enregistrée. Réessaie.';}const v=$('#val');if(v)v.disabled=false;
+ }
+}
+function suivant(){if(I<N-1)openQ(I+1);else{SCR='recap';render();window.scrollTo({top:0,behavior:'smooth'});}}
+function recap(){
+ const nr=Q.filter(q=>E.reps[q.id]!=null).length,nl=Q.filter(q=>locked(q.id)).length,nv=N-nr-nl;
+ $('#main').innerHTML=`<div class="card intro"><h1>Vérifie avant d'envoyer</h1>
+ <p>${nr} / ${N} réponses enregistrées${nl?` · ${nl} verrouillée${nl>1?'s':''}`:''}. Clique sur une question pour la revoir ou la modifier.</p>
+ <div class="rec">${PAL.slice(1).map((P,k)=>{const p=k+1;return `<div><b>${p} · ${P.n}</b><span>${Q.map((q,i)=>q.p===p?`<button class="rq ${locked(q.id)?'lk':E.reps[q.id]!=null?'ok':''}" data-i="${i}">${i+1}</button>`:'').join('')}</span></div>`}).join('')}</div>
+ ${nv?`<p class="fb ko">${nv} question${nv>1?'s':''} sans réponse : ${nv>1?'elles seront comptées':'elle sera comptée'} fausse${nv>1?'s':''}.</p>`:''}
+ <div class="act"><button class="btn sec" id="rev">◀ Revenir aux questions</button><button class="btn" id="send">✉ Envoyer ma copie</button><span class="fb" id="fb"></span></div></div>`;
+ document.querySelectorAll('.rq').forEach(b=>b.onclick=()=>openQ(+b.dataset.i));
+ $('#rev').onclick=()=>{const k=Q.findIndex(q=>!done(q.id));openQ(k<0?N-1:k);};
+ $('#send').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Confirmer : envoi définitif';return;}
+  b.disabled=true;try{const x=await API.rendre();if(x&&x.ok===false)throw new Error(x.raison);E=norm(await API.etat());SCR='fin';render();}
+  catch(err){b.disabled=false;const f=$('#fb');f.className='fb ko';f.textContent='Envoi impossible : réessaie.';}};
+}
+function fin(){
+ sortirPleinEcran();
+ const sc=E&&E.score!=null&&E.montrer_score!==false;
+ const pal=(E&&E.paliers)||[];
+ $('#main').innerHTML=`<div class="card intro"><h1>Bravo${PRENOM?' '+PRENOM:''} !</h1><p style="margin:0 0 6px">Ta copie est envoyée : tes réponses ne sont plus modifiables.</p><p style="color:var(--a2);font-weight:700;margin:0 0 10px">Prochaine étape : la partie sur papier.</p>
+ ${sc?`<div class="big">${fr(+E.score)}<small> / 20</small></div>
+ <div class="bars">${pal.map(x=>{const v=Math.round(x.justes/x.total*100);return `<div><span>${x.palier} · ${PAL[x.palier].n}</span><em><b style="width:${v}%"></b></em><span>${v} %</span></div>`}).join('')}</div>`
+ :`<p>Ton professeur a tes résultats.</p>`}
+ ${MODE==='apercu'&&TS?'<div class="act"><button class="btn sec" id="back">Retour au pilotage</button></div>':''}</div>`;
+ if($('#back'))$('#back').onclick=()=>{MODE='prof';SCR='pilot';render();};
+}
+
+/* ---------- animations ---------- */
+const COLS=['#ffd23f','#ff9f1c','#c99bff','#ffe9a8','#ffffff'];
+function eclat(x,y,n=14,force=60){
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const r=document.createElement('div');r.className='ripple';r.style.left=x+'px';r.style.top=y+'px';document.body.appendChild(r);setTimeout(()=>r.remove(),600);
+ for(let i=0;i<n;i++){const e=document.createElement('i');e.className='burst'+(i%3?'':' sq');const a=Math.random()*Math.PI*2,d=force*(.4+Math.random());
+  e.style.cssText=`left:${x-3}px;top:${y-3}px;background:${COLS[i%COLS.length]};box-shadow:0 0 8px ${COLS[i%COLS.length]};--x:${Math.cos(a)*d}px;--y:${Math.sin(a)*d}px;--r:${Math.random()*360}deg`;
+  document.body.appendChild(e);setTimeout(()=>e.remove(),850);}
+}
+function pluie(){for(let k=0;k<6;k++)setTimeout(()=>eclat(innerWidth*(.15+Math.random()*.7),innerHeight*(.2+Math.random()*.4),22,140),k*160);}
+document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.btn');eclat(e.clientX,e.clientY,b?16:10,b?65:45);},true);
+function toast(t){const e=document.createElement('div');e.className='saved';e.textContent='✓ '+t;document.body.appendChild(e);setTimeout(()=>e.remove(),1100);}
+function palier(p){const e=document.createElement('div');e.className='veil pal';e.innerHTML=`<div><div class="hx">${p}</div><b>PALIER ${p}</b><span>${PAL[p].n} · ${PAL[p].i}</span></div>`;document.body.appendChild(e);setTimeout(()=>e.remove(),2300);}
+
+/* ---------- sortie de page (façon Pix) ---------- */
+let AWAY=null,ALERTE=null,ATTENTE=[];
+const arme=()=>['q','recap'].includes(SCR)&&MODE!=='apercu'&&MODE!=='prof'&&!ALERTE&&!(SCR==='q'&&locked(Q[I].id));
+function envoiSortie(a){
+ return API.sortie(a.qid).then(x=>{a.ret=x||{};a.ok=true;return x;}).catch(()=>{if(!ATTENTE.includes(a))ATTENTE.push(a);});
+}
+function rejouerAttente(){const l=ATTENTE.splice(0);l.forEach(a=>envoiSortie(a));}
+function quitte(){
+ if(!arme()||AWAY)return;
+ AWAY={qid:SCR==='q'?Q[I].id:null};E.sorties=(E.sorties||0)+1;
+ envoiSortie(AWAY);
+}
+function revient(){
+ if(!AWAY)return;const a=AWAY;AWAY=null;rejouerAttente();
+ setTimeout(async()=>{
+  const r=a.ret||{},zero=a.qid&&(r.zero!==undefined?r.zero:!!E.sortie_zero),max=E.sortie_max||0,auto=r.rendu||(max>0&&E.sorties>=max&&MODE==='secours');
+  if(zero){if(!E.verrous.includes(a.qid))E.verrous.push(a.qid);delete E.reps[a.qid];}
+  const e=document.createElement('div');e.className='veil';ALERTE=e;
+  e.innerHTML=`<div class="box w"><div style="font-size:34px">⚠</div><h2>Sortie de page détectée</h2>
+  <p>Sortie n° <b class="sortw">${E.sorties}</b>${max>0?` sur ${max} autorisées`:''}. Elle est signalée à ton professeur.${zero?' La question en cours est comptée fausse et verrouillée.':''}</p>
+  ${auto?'<p class="sortw">Limite atteinte : ta copie a été envoyée automatiquement.</p>':''}<button class="btn" id="okA">${auto?'Continuer':'⛶ Reprendre en plein écran'}</button></div>`;
+  document.body.appendChild(e);
+  $('#okA').onclick=async()=>{e.remove();ALERTE=null;if(!auto)pleinEcran();
+   if(auto){try{E=norm(await API.etat());}catch(err){}SCR='fin';render();return;}
+   if(zero)suivant();else render();};
+ },450);
+}
+document.addEventListener('visibilitychange',()=>document.visibilityState==='hidden'?quitte():revient());
+window.addEventListener('blur',()=>setTimeout(()=>{
+ if(document.visibilityState!=='visible')return;
+ let pf=false;try{pf=window.parent!==window&&parent.document.hasFocus();}catch(e){}
+ if(!document.hasFocus()&&!pf)quitte();
+},300));
+window.addEventListener('focus',revient);
+try{if(window.parent!==window)parent.addEventListener('focus',revient);}catch(e){}
+function finPleinEcran(){
+ const d=fsDoc();if(d.fullscreenElement||d.webkitFullscreenElement)return;
+ if(!arme()||AWAY)return;
+ quitte();setTimeout(()=>{if(document.visibilityState==='visible')revient();},250);
+}
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>{document.addEventListener(ev,finPleinEcran);try{if(window.frameElement)parent.document.addEventListener(ev,finPleinEcran);}catch(e){}});
+window.addEventListener('pagehide',()=>{if(arme()&&!AWAY)quitte();});
+setInterval(()=>{if(ATTENTE.length&&!AWAY)rejouerAttente();},8000);
+
+/* ---------- pilotage prof ---------- */
+let SUIVI=null,REG=null,TIMER=null;
+async function chargerPilot(){
+ try{
+  const enc=encodeURIComponent(RESS);
+  const [s,r]=await Promise.all([TS.TH.rpc('defi_suivi',{p_ressource:RESS}),TS.TH.rest('defi_reglages?select=*&ressource=eq.'+enc)]);
+  const avant={};((SUIVI&&SUIVI.eleves)||[]).forEach(x=>avant[x.id]=x.sorties||0);
+  const nouv=(s.eleves||[]).filter(x=>SUIVI&&SUIVI.eleves&&(x.sorties||0)>(avant[x.id]||0));
+  SUIVI=s;if(nouv.length)setTimeout(()=>{nouv.forEach(x=>toastProf(`⚠ ${x.prenom||''} ${x.nom||''} a quitté la page (${x.sorties} sortie${x.sorties>1?'s':''})`));document.querySelectorAll('.tab tr').forEach(tr=>{if(nouv.some(x=>tr.textContent.includes(x.nom||'§')))tr.classList.add('flash');});},50);
+  REG=r[0]||{ressource:RESS,ouvert:false,sortie_zero:true,montrer_score:true};
+  if(!CLES){const k=await TS.TH.rest('defi_cles?select=qid,cle&ressource=eq.'+enc);CLES={};k.forEach(x=>CLES[x.qid]=x.cle);}
+ }catch(e){SUIVI={erreur:e.message};}
+ if(SCR==='pilot')pilot();
+}
+async function regler(champ,val){
+ REG[champ]=val;pilot();
+ try{await TS.TH.rest('defi_reglages?on_conflict=ressource',{method:'POST',body:{ressource:RESS,ouvert:REG.ouvert,sortie_zero:REG.sortie_zero,montrer_score:REG.montrer_score,sortie_max:REG.sortie_max??3},headers:{Prefer:'resolution=merge-duplicates,return=minimal'}});}
+ catch(e){alertePilot('Réglage non enregistré : '+e.message);}
+ chargerPilot();
+}
+function toastProf(t){const e=document.createElement('div');e.className='saved';e.style.borderColor='var(--ko)';e.style.color='#ffb3c1';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),4000);}
+function alertePilot(t){const f=$('#pfb');if(f){f.className='fb ko';f.textContent=t;}}
+function pilot(){
+ const m=$('#main');
+ if(!SUIVI){m.innerHTML='<div class="card"><p class="fb mu">Chargement du suivi…</p></div>';return;}
+ if(SUIVI.erreur){m.innerHTML=`<div class="card pilot"><h2>Pilotage du défi</h2><p class="fb ko">Serveur : ${SUIVI.erreur}. Le script 10-defis.sql est-il installé ?</p></div>`;return;}
+ const el=SUIVI.eleves||[],qs=SUIVI.questions||[],fini=el.filter(x=>x.rendu).length,enc=el.filter(x=>x.n>0&&!x.rendu).length;
+ const sw=(k,t)=>`<label class="${REG[k]?'on':''}"><input type="checkbox" data-k="${k}" ${REG[k]?'checked':''}> ${t}</label>`;
+ m.innerHTML=`<div class="card pilot">
+ <h2>Pilotage du défi</h2>
+ <div class="sw"><label class="big-sw ${REG.ouvert?'on':''}"><input type="checkbox" data-k="ouvert" ${REG.ouvert?'checked':''}> ${REG.ouvert?'🟢 Défi ouvert':'🔴 Défi fermé'}</label>
+ ${sw('sortie_zero','Sortie = question comptée fausse')}<label>Envoi auto de la copie après <select id="smax">${[[0,'jamais'],[2,'2 sorties'],[3,'3 sorties'],[5,'5 sorties']].map(([v,t])=>`<option value="${v}" ${(REG.sortie_max??3)==v?'selected':''}>${t}</option>`).join('')}</select></label>${sw('montrer_score','Note affichée à la fin')}</div>
+ <p class="fb mu" id="pfb">${el.length} élèves · ${enc} en cours · ${fini} copie${fini>1?'s':''} rendue${fini>1?'s':''}</p>
+ <div class="scroll"><table class="tab"><tr><th>Élève</th><th>Réponses</th><th>Sorties</th><th>Copie</th><th>Note</th><th></th></tr>
+ ${el.map(x=>{return `<tr><td>${x.nom||''} ${x.prenom||''}</td><td>${x.n} / ${N}</td><td class="${x.sorties?'w':''}">${x.sorties||0}</td><td>${x.rendu?'✉ rendue':x.n?'en cours':'–'}</td><td>${x.rendu?fr(+x.score)+' / 20':x.n?`<span style="color:var(--mu)">${fr(+x.score)} prov.</span>`:''}</td><td>${x.n?`<button data-raz="${x.id}">Réinitialiser</button>`:''}</td></tr>`}).join('')}</table></div>
+ <h2 style="margin-top:18px">Réussite par question</h2>
+ <div class="qstat">${Q.map(q=>{const s=qs.find(x=>x.qid===q.id)||{n:0,justes:0};const v=s.n?Math.round(s.justes/s.n*100):0;return `<div><span>${q.p} · ${LAB[q.id]}</span><em><b class="${s.n&&v<50?'lo':''}" style="width:${v}%"></b></em><span>${s.n?v+' % ('+s.n+')':'–'}</span></div>`}).join('')}</div>
+ <div class="act"><button class="btn" id="ram">📥 Ramasser toutes les copies</button><button class="btn sec" id="ap">Aperçu élève (avec réponses)</button><button class="btn sec" id="rf">↻ Actualiser</button></div></div>`;
+ m.querySelectorAll('.sw input').forEach(i=>i.onchange=()=>regler(i.dataset.k,i.checked));
+ $('#smax').onchange=e=>regler('sortie_max',+e.target.value);
+ m.querySelectorAll('[data-raz]').forEach(b=>b.onclick=async()=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Confirmer ?';return;}
+  try{await TS.TH.rpc('defi_reinitialiser',{p_ressource:RESS,p_eleve:b.dataset.raz});}catch(e){alertePilot(e.message);}chargerPilot();});
+ $('#ap').onclick=()=>{MODE='apercu';loc.rep={};loc.rendu=false;E=norm({ouvert:true,sortie_zero:false,montrer_score:true,sorties:0});SCR='intro';render();};
+ $('#rf').onclick=chargerPilot;
+ $('#ram').onclick=async e=>{const b=e.currentTarget;if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Confirmer : ramasser toutes les copies en cours';return;}
+  try{const n=await TS.TH.rpc('defi_rendre_tous',{p_ressource:RESS});chargerPilot();setTimeout(()=>alertePilot(n+' copie(s) ramassée(s).'),300);}catch(err){alertePilot(err.message);}};
+}
+
+/* ---------- démarrage ---------- */
+async function demarrer(){
+ if(MODE==='prof'){SCR='pilot';render();chargerPilot();TIMER=setInterval(()=>{if(SCR==='pilot')chargerPilot();},5000);return;}
+ try{E=await API.etat();}catch(e){$('#main').innerHTML='<div class="card"><p class="fb ko">Serveur injoignable. Recharge la page.</p></div>';return;}
+ if(E.erreur){$('#main').innerHTML=`<div class="card"><p class="fb ko">${E.erreur}</p></div>`;return;}
+ norm(E);
+ if(E.rendu){SCR='fin';}else if(!E.ouvert){SCR='ferme';}else SCR='intro';
+ render();
+}
+// le défi fermé se met à jour seul ; une fermeture en cours de route arrête l'élève
+setInterval(async()=>{
+ if(MODE!=='serveur'||!['ferme','q','intro','recap'].includes(SCR))return;
+ try{const x=norm(await API.etat());const ouvre=SCR==='ferme'&&x.ouvert;const reps=E&&E.reps;E=x;if(reps&&SCR==='q')Object.assign(E.reps,reps);
+  if(x.rendu){SCR='fin';render();}else if(ouvre){SCR='intro';render();}else if(!x.ouvert&&SCR!=='ferme'&&!ALERTE){SCR='ferme';render();}}catch(e){}
+},5000);
+setInterval(()=>{if(!T0||SCR!=='q')return;const t=Math.round((Date.now()-T0)/1000);$('#chrono').textContent=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;},1000);
+$('#fs').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}catch(e){}};
+render();demarrer();
+</script>
+</body>
+</html>
