@@ -186,7 +186,8 @@
         .map(function (x) { return x * 60; }).sort(function (x, y) { return x - y; });
       var en = cours.filter(function (x) { return x.a <= s && s < x.b; })[0];
       var suiv = cours.filter(function (x) { return x.a > s; }).sort(function (x, y) { return x.a - y.a; })[0];
-      var son = sons.filter(function (x) { return x > s; })[0];
+      // prochaine échéance : sonnerie, fin du cours en cours ou début du prochain (cours à horaires décalés)
+      var son = sons.concat(en ? [en.b] : [], suiv ? [suiv.a] : []).filter(function (x) { return x > s; }).sort(function (x, y) { return x - y; })[0];
       if (!en && !suiv) { box.hidden = true; return; }
       box.hidden = false;
       var reste = son != null ? son - s : (en ? en.b - s : suiv.a - s);
@@ -196,7 +197,7 @@
       box.appendChild(el("b", { class: "chrono-temps", texte: duree(reste) }));
       var info = en ? nomCours(en.c) + (en.c.salle ? " · " + en.c.salle : "") + " · fin " + hhmm(en.b)
                     : "Prochain : " + nomCours(suiv.c) + " à " + hhmm(suiv.a);
-      box.appendChild(el("span", { class: "chrono-info", texte: (son != null ? "sonnerie " + hhmm(son) + " · " : "") + info }));
+      box.appendChild(el("span", { class: "chrono-info", texte: (son != null && sons.indexOf(son) >= 0 && son !== (en ? en.b : -1) ? "sonnerie " + hhmm(son) + " · " : "") + info }));
       if (en) { var barre = el("i", { class: "chrono-barre" }); barre.style.width = Math.min(100, (s - en.a) / (en.b - en.a) * 100) + "%"; box.appendChild(barre); }
     }
     charger(); setInterval(maj, 1000);
