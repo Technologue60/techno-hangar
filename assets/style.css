@@ -286,3 +286,9 @@ a.lien-eleve:hover { color: var(--accent); }
 @keyframes chrono-pulse { 50% { box-shadow: 0 0 0 4px rgba(251, 113, 133, .25); } }
 @media (max-width: 900px) { .chrono-info { display: none; } }
 @media (prefers-reduced-motion: reduce) { .chrono.ch-urgent { animation: none; } }
+
+/* Séquences pas encore commencées : une seule ligne discrète */
+.seq-a-venir { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; margin-top: 1.6rem; padding-top: 1rem; border-top: 1px dashed var(--border);
+  font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--faible); }
+.seq-a-venir > span:first-child { color: var(--muted); margin-right: .2rem; }
+.seq-a-venir-nom { padding: .2rem .55rem; border: 1px solid var(--border); border-radius: 999px; }

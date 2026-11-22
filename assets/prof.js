@@ -595,8 +595,83 @@ window.TH_PROF = function (acces) {
   }
   if ($("e-enr")) $("e-enr").onclick = enregistrerEdt;
 
+  /* ---------- Allègement : aides repliées, sections repliables, filtres ---------- */
+  function alleger() {
+    // Longues explications : repliées derrière « Aide »
+    document.querySelectorAll("main .vue > p.aide").forEach(function (p) {
+      if (p.textContent.length < 110 || p.id) return;
+      var d = el("details", { class: "aide-pli" }, [el("summary", { texte: "Aide" })]);
+      p.parentNode.insertBefore(d, p); d.appendChild(p);
+    });
+    // Sections (titre h2) repliables ; état mémorisé
+    var memoPli = {}; try { memoPli = JSON.parse(localStorage.getItem("th-prof-plis") || "{}"); } catch (e) {}
+    var DEFAUT = { "vue-pass": [false, true, false, true], "vue-activites": [true, true, false, false] };
+    Object.keys(DEFAUT).forEach(function (vid) {
+      var vue = $(vid); if (!vue) return;
+      [].slice.call(vue.children).filter(function (n) { return n.tagName === "H2"; }).forEach(function (h, i) {
+        var cle = vid + ":" + i, d = el("details", { class: "pli" }), sm = el("summary");
+        d.open = cle in memoPli ? memoPli[cle] : DEFAUT[vid][i] !== false;
+        vue.insertBefore(d, h); sm.appendChild(h); d.appendChild(sm);
+        var n = d.nextSibling;
+        while (n && n.tagName !== "H2") { var suiv = n.nextSibling; d.appendChild(n); n = suiv; }
+        d.addEventListener("toggle", function () { memoPli[cle] = d.open; try { localStorage.setItem("th-prof-plis", JSON.stringify(memoPli)); } catch (e) {} });
+      });
+    });
+    // « Enregistrer » discret tant que la ligne n'est pas modifiée
+    ["a-zone", "p-paliers", "p-saisons"].forEach(function (id) {
+      var z = $(id); if (!z) return;
+      z.classList.add("enr-discret");
+      var marquer = function (e) { var tr = e.target.closest && e.target.closest("tr"); if (tr && !e.target.closest("button")) tr.classList.add("modifie"); };
+      z.addEventListener("input", marquer); z.addEventListener("change", marquer);
+      z.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("button.primary"); if (b) { var tr = b.closest("tr"); if (tr) tr.classList.remove("modifie"); } });
+    });
+        // Récompenses : filtre par type + recherche
+    var rt = $("p-recomp");
+    if (rt) {
+      var TYPES = [["avatar", "Avatars"], ["titre", "Titres"], ["badge", "Badges"], ["ornement", "Ornements"], ["banniere", "Bannières"], ["", "Tout"]];
+      var choix = "avatar", rech = el("input", { type: "search", placeholder: "Rechercher…", class: "filtre-rech" });
+      var barre = el("div", { class: "filtre-barre" });
+      TYPES.forEach(function (t) {
+        var b = el("button", { type: "button", class: "filtre-puce" + (t[0] === choix ? " on" : ""), texte: t[1] });
+        b.onclick = function () { choix = t[0]; barre.querySelectorAll(".filtre-puce").forEach(function (x) { x.classList.toggle("on", x === b); }); filtrer(); };
+        barre.appendChild(b);
+      });
+      barre.appendChild(rech); rech.oninput = filtrer;
+      rt.parentNode.parentNode.insertBefore(barre, rt.parentNode);
+      function filtrer() {
+        var q = rech.value.trim().toLowerCase(), voir = true;
+        [].slice.call(rt.rows).forEach(function (tr, i) {
+          if (!i || tr.querySelector("th")) return;
+          var sel = tr.cells[0] && tr.cells[0].querySelector("select");
+          if (sel) {
+            var nom = tr.querySelector("input.pp-nom"), txt = (nom ? nom.value : tr.textContent).toLowerCase();
+            voir = (!choix || sel.value === choix) && (!q || txt.indexOf(q) >= 0);
+          }
+          tr.classList.toggle("filtre-cache", !voir);
+        });
+      }
+      new MutationObserver(filtrer).observe(rt, { childList: true, subtree: true });
+      rt.addEventListener("change", filtrer);
+    }
+    // Statistiques : masquer les ressources jamais ouvertes
+    var st = $("st-table");
+    if (st) {
+      var cb = el("input", { type: "checkbox" }); cb.checked = true;
+      var lab = el("label", { class: "case" }, [cb, document.createTextNode(" Masquer les ressources jamais ouvertes")]);
+      var resume = $("st-resume"); if (resume) resume.parentNode.appendChild(lab);
+      var masquer = function () {
+        [].slice.call(st.rows).forEach(function (tr, i) {
+          if (!i || tr.cells.length < 3) return;
+          tr.classList.toggle("filtre-cache", cb.checked && /^0\//.test(tr.cells[1].textContent.trim()));
+        });
+      };
+      cb.onchange = masquer; new MutationObserver(masquer).observe(st, { childList: true });
+    }
+  }
+
   /* ---------- Démarrage ---------- */
   if (COLLEGUE) {
+    document.querySelectorAll(".onglets-groupe").forEach(function (g) { g.remove(); });
     document.querySelector("main h1").textContent = "Suivi de mes élèves";
     var garder = ["suivi", "edt"];
     boutons.forEach(function (b) { if (garder.indexOf(b.getAttribute("data-vue")) < 0) b.remove(); });
@@ -606,6 +681,7 @@ window.TH_PROF = function (acces) {
     montrer((location.hash || "").replace("#", "") === "edt" ? "edt" : "suivi");
     return;
   }
+  alleger();
   chargerEleves();
   chargerCollegues();
   if (window.TH_PROF_PASS) window.TH_PROF_PASS(acces);

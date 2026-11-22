@@ -458,10 +458,11 @@
       }
       function ouvertsLire() { try { return JSON.parse(localStorage.getItem("th-groupes") || "{}"); } catch (e) { return {}; } }
       function ouvertsEcrire(o) { try { localStorage.setItem("th-groupes", JSON.stringify(o)); } catch (e) {} }
+      var aVenir = [];
       ordre.forEach(function (s) {
+        if (!groupes[s].length) { aVenir.push(s); return; }   // séquences vides : regroupées en bas
         var grille = el("div", { class: "ressources" });
         var bloc = el("div", { class: "seq-contenu" });
-        if (!groupes[s].length) grille.appendChild(el("div", { class: "a-venir", texte: "Bientôt disponible" }));
         var vus = {};
         var morceau = null;
         var spe = groupes[s].filter(function (r) { return SPECIALITES[r.partie]; });
@@ -518,6 +519,9 @@
         if (grille.childNodes.length) bloc.insertBefore(grille, bloc.firstChild);
         zone.appendChild(el("section", { class: "sequence" }, [ el("h2", { texte: s }), bloc ]));
       });
+      if (aVenir.length) zone.appendChild(el("div", { class: "seq-a-venir" }, [el("span", { texte: "À venir" })].concat(
+        aVenir.map(function (s) { return el("span", { class: "seq-a-venir-nom", texte: s }); }))));
+      if (!zone.querySelector(".sequence")) zone.insertBefore(el("div", { class: "vide", texte: "Les ressources arrivent bientôt." }), zone.firstChild);
     }
     actif = ongletDepuisHash();
     window.addEventListener("hashchange", function () { actif = ongletDepuisHash(); dessinerOnglets(); afficher(); });
