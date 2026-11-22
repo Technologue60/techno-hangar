@@ -541,6 +541,7 @@ window.TH_PROF = function (acces) {
       var r = await TH.rest("edt_reglages?select=sonneries"); son = (r[0] && r[0].sonneries) || [];
     } catch (e) { $("e-etat").textContent = /edt/.test(message(e)) ? "Lance d'abord le script 21-emploi-du-temps.sql dans Supabase." : "Erreur : " + message(e); }
     $("e-son").value = son.join("  ");
+    dessinerSemaine(cours, son);
     JOURS.slice(0, 6).forEach(function (nomJour, i) {
       var bloc = el("div", { class: "edt-jour", "data-jour": i + 1 }, [el("h3", { texte: nomJour })]);
       var liste = el("div", { class: "edt-liste" }); bloc.appendChild(liste);
@@ -554,6 +555,75 @@ window.TH_PROF = function (acces) {
     });
     edtCharge = true;
   }
+  /* Vue visuelle de la semaine */
+  var semaineTimer = null;
+  function dessinerSemaine(cours, son) {
+    var z = $("e-semaine"); if (!z) return; vider(z);
+    var mn = function (h) { var p = String(h).split(":"); return (+p[0]) * 60 + (+p[1] || 0); };
+    var hh = function (m) { return Math.floor(m / 60) + "h" + String(m % 60).padStart(2, "0"); };
+    if (!cours.length) {
+      var b = el("button", { class: "btn primary", type: "button", texte: "Saisir mon emploi du temps" });
+      b.onclick = function () { sousOnglet("modifier"); };
+      z.appendChild(el("div", { class: "edt-vide" }, [el("p", { texte: "Aucun cours pour l'instant." }), b])); return;
+    }
+    var bornes = cours.map(function (c) { return mn(c.debut); }).concat(cours.map(function (c) { return mn(c.fin); })).concat(son.map(mn));
+    var t0 = Math.floor(Math.min.apply(null, bornes) / 30) * 30, t1 = Math.ceil(Math.max.apply(null, cours.map(function (c) { return mn(c.fin); })) / 30) * 30;
+    var K = 1.4, haut = (t1 - t0) * K;
+    // récréations : écart de moins de 30 min entre deux sonneries
+    var sm = son.map(mn).sort(function (x, y) { return x - y; }), recres = [];
+    for (var r = 0; r + 1 < sm.length; r++) if (sm[r + 1] - sm[r] > 0 && sm[r + 1] - sm[r] < 30) recres.push([sm[r], sm[r + 1]]);
+    var nbJours = cours.some(function (c) { return c.jour === 6; }) ? 6 : 5;
+    var grille = el("div", { class: "edt-grille", style: "--n:" + nbJours });
+    var axe = el("div", { class: "edt-axe", style: "height:" + haut + "px" });
+    son.map(mn).filter(function (m) { return m >= t0 && m <= t1; }).forEach(function (m) {
+      axe.appendChild(el("span", { style: "top:" + (m - t0) * K + "px", texte: hh(m) }));
+    });
+    grille.appendChild(el("div", { class: "edt-coin" }));
+    var auj = new Date().getDay() || 7;
+    JOURS.slice(0, nbJours).forEach(function (j, i) { grille.appendChild(el("div", { class: "edt-tete" + (i + 1 === auj ? " auj" : ""), texte: j })); });
+    grille.appendChild(axe);
+    JOURS.slice(0, nbJours).forEach(function (j, i) {
+      var col = el("div", { class: "edt-col" + (i + 1 === auj ? " auj" : ""), style: "height:" + haut + "px", "data-jour": i + 1 });
+      son.map(mn).filter(function (m) { return m > t0 && m < t1; }).forEach(function (m) { col.appendChild(el("i", { class: "edt-trait", style: "top:" + (m - t0) * K + "px" })); });
+      cours.filter(function (c) { return c.jour === i + 1; }).forEach(function (c) {
+        var a = mn(c.debut), f = mn(c.fin), k = CLASSES.filter(function (x) { return x.id === c.classe; })[0];
+        var bloc = el("div", { class: "edt-bloc", style: "top:" + (a - t0) * K + "px;height:" + Math.max(18, (f - a) * K - 3) + "px;--c:var(" + (k ? k.couleur : "--muted") + ")" }, [
+          el("b", { texte: k ? k.court : (c.libelle || "Cours") }),
+          el("span", { texte: [k ? c.libelle : null, c.salle ? "salle " + c.salle : null].filter(Boolean).join(" · ") }),
+          el("small", { texte: hh(a) + " – " + hh(f) })]);
+        bloc.title = (k ? k.nom + " · " : "") + (c.libelle || "") + (c.salle ? " · salle " + c.salle : "") + " · " + hh(a) + "–" + hh(f);
+        bloc.setAttribute("data-a", a); bloc.setAttribute("data-f", f);
+        bloc.insertBefore(el("i", { class: "edt-fait" }), bloc.firstChild);
+        recres.forEach(function (rc) {
+          if (rc[0] < a || rc[1] > f) return;
+          bloc.appendChild(el("i", { class: "edt-recre", style: "top:" + ((rc[0] - a) * K - 1) + "px;height:" + (rc[1] - rc[0]) * K + "px", texte: "récré " + hh(rc[0]) }));
+        });
+        col.appendChild(bloc);
+      });
+      grille.appendChild(col);
+    });
+    z.appendChild(grille);
+    var maintenant = function () {
+      var old = z.querySelector(".edt-maintenant"); if (old) old.remove();
+      var d = new Date(), m = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60, col = z.querySelector('.edt-col[data-jour="' + (d.getDay() || 7) + '"]');
+      z.querySelectorAll(".edt-bloc").forEach(function (b) {
+        var a = +b.getAttribute("data-a"), f = +b.getAttribute("data-f"), dedans = !!col && col.contains(b) && m >= a && m < f;
+        b.classList.toggle("en-cours", dedans);
+        b.querySelector(".edt-fait").style.height = dedans ? (m - a) * K + "px" : "0";
+        var p = b.querySelector(".edt-pct");
+        if (dedans) { if (!p) { p = el("em", { class: "edt-pct" }); b.appendChild(p); } p.textContent = Math.floor((m - a) / (f - a) * 100) + " %"; }
+        else if (p) p.remove();
+      });
+      if (col && m >= t0 && m <= t1) col.appendChild(el("i", { class: "edt-maintenant", style: "top:" + (m - t0) * K + "px" }));
+    };
+    maintenant(); clearInterval(semaineTimer); semaineTimer = setInterval(maintenant, 5000);
+  }
+  function sousOnglet(v) {
+    document.querySelectorAll("[data-edt]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-edt") === v); });
+    $("e-semaine").hidden = v !== "semaine"; $("e-modifier").hidden = v !== "modifier";
+  }
+  document.querySelectorAll("[data-edt]").forEach(function (b) { b.onclick = function () { sousOnglet(b.getAttribute("data-edt")); }; });
+
   function ligneCours(c) {
     var cl = el("select", { "data-k": "classe" }, [el("option", { value: "", texte: "—" })]);
     CLASSES.forEach(function (k) { cl.appendChild(el("option", { value: k.id, texte: k.court || k.nom })); });
@@ -590,6 +660,7 @@ window.TH_PROF = function (acces) {
       await TH.rest("edt_reglages?on_conflict=prof", { method: "POST", headers: { "Prefer": "resolution=merge-duplicates,return=minimal" }, body: { sonneries: son } });
       $("e-son").value = son.join("  ");
       etat.textContent = "Enregistré : " + lignes.length + " cours, " + son.length + " sonneries.";
+      dessinerSemaine(lignes, son);
       if (window.TH_CHRONO_RECHARGER) window.TH_CHRONO_RECHARGER();
     } catch (e) { etat.textContent = "Erreur : " + message(e); }
   }

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="../assets/style.css?v=13">
-<link rel="stylesheet" href="../assets/prof.css?v=5">
+<link rel="stylesheet" href="../assets/prof.css?v=7">
 <link rel="stylesheet" href="../assets/pass.css?v=5">
 <link rel="stylesheet" href="../assets/theme.css?v=6">
 </head>
@@ -81,12 +81,19 @@
 
   <!-- ============ HORAIRES ============ -->
   <section class="vue" id="vue-edt" hidden>
+    <div class="sous-onglets">
+      <button class="sous-onglet on" type="button" data-edt="semaine">Ma semaine</button>
+      <button class="sous-onglet" type="button" data-edt="modifier">Modifier</button>
+    </div>
+    <div id="e-semaine" class="edt-semaine"></div>
+    <div id="e-modifier" hidden>
     <p class="aide">Le temps restant avant la prochaine sonnerie s'affiche en haut de toutes les pages.</p>
     <label class="edt-son">Sonneries <input id="e-son" placeholder="08:00  08:55  09:50  10:05  11:00  11:55  13:30  14:25  15:20  15:35  16:30  17:25"></label>
     <div id="e-jours" class="edt-jours"></div>
     <div class="ligne-outils">
       <button class="btn primary" id="e-enr" type="button">Enregistrer</button>
       <span class="aide" id="e-etat"></span>
+    </div>
     </div>
   </section>
 
@@ -260,7 +267,7 @@
 <script src="../catalogue.js"></script>
 <script src="../assets/pass.js?v=13"></script>
 <script src="../assets/prof-pass.js?v=9"></script>
-<script src="../assets/prof.js?v=9"></script>
+<script src="../assets/prof.js?v=11"></script>
 <script src="../assets/site.js?v=21"></script>
 </body>
 </html>
