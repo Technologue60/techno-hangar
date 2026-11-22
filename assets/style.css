@@ -271,3 +271,18 @@ a.lien-eleve:hover { color: var(--accent); }
 @keyframes defi-pulse { 50% { box-shadow: 0 0 28px rgba(255, 170, 60, .45), 0 0 70px rgba(255, 120, 60, .18); } }
 @keyframes defi-reflet { 0%, 55% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
 @media (prefers-reduced-motion: reduce) { .carte.defi, .carte.defi:after, .rep-ligne.defi { animation: none; } }
+
+/* ---------- Chrono prof (temps avant la sonnerie) ---------- */
+.chrono { position: relative; display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .7rem; border-radius: 999px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; font-size: .82rem; white-space: nowrap; }
+.chrono:hover { border-color: var(--accent); }
+.chrono-cloche { display: grid; color: var(--accent); }
+.chrono-temps { font-family: var(--mono); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.chrono-info { color: var(--muted); max-width: 22rem; overflow: hidden; text-overflow: ellipsis; }
+.chrono-barre { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); opacity: .7; }
+.chrono.ch-bientot { border-color: #f5b74a; } .chrono.ch-bientot .chrono-temps, .chrono.ch-bientot .chrono-cloche { color: #f5b74a; }
+.chrono.ch-urgent { border-color: #fb7185; animation: chrono-pulse 1s ease-in-out infinite; }
+.chrono.ch-urgent .chrono-temps, .chrono.ch-urgent .chrono-cloche { color: #fb7185; }
+@keyframes chrono-pulse { 50% { box-shadow: 0 0 0 4px rgba(251, 113, 133, .25); } }
+@media (max-width: 900px) { .chrono-info { display: none; } }
+@media (prefers-reduced-motion: reduce) { .chrono.ch-urgent { animation: none; } }

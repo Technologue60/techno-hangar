@@ -154,6 +154,54 @@
   }
 
   /* ---------- En-tête ---------- */
+  /* ---------- Chrono prof : temps avant la prochaine sonnerie ---------- */
+  function chronoProf(outils) {
+    var box = el("a", { class: "chrono", href: racine + "prof/index.html#edt", title: "Emploi du temps" });
+    box.hidden = true; outils.appendChild(box);
+    var EDT = null, SON = [];
+    function mn(h) { var p = String(h).split(":"); return (+p[0]) * 60 + (+p[1] || 0); }
+    function duree(s) {
+      s = Math.max(0, Math.round(s));
+      if (s >= 3600) return Math.floor(s / 3600) + " h " + String(Math.floor(s % 3600 / 60)).padStart(2, "0");
+      return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+    function hhmm(sec) { var m = Math.round(sec / 60); return Math.floor(m / 60) + "h" + String(m % 60).padStart(2, "0"); }
+    function nomCours(c) {
+      var k = CLASSES.filter(function (x) { return x.id === c.classe; })[0];
+      return [k ? k.court : c.classe, c.libelle].filter(Boolean).join(" · ") || "Cours";
+    }
+    async function charger() {
+      try {
+        EDT = await TH.rest("edt?select=jour,debut,fin,classe,libelle,salle&order=debut");
+        var r = await TH.rest("edt_reglages?select=sonneries"); SON = (r[0] && r[0].sonneries) || [];
+      } catch (e) { EDT = null; }
+      maj();
+    }
+    window.TH_CHRONO_RECHARGER = charger;
+    function maj() {
+      if (!EDT || !EDT.length) { box.hidden = true; return; }
+      var d = new Date(), j = d.getDay() || 7, s = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+      var cours = EDT.filter(function (c) { return c.jour === j; }).map(function (c) { return { c: c, a: mn(c.debut) * 60, b: mn(c.fin) * 60 }; });
+      var sons = (SON.length ? SON.map(mn) : [].concat.apply([], cours.map(function (x) { return [x.a / 60, x.b / 60]; })))
+        .map(function (x) { return x * 60; }).sort(function (x, y) { return x - y; });
+      var en = cours.filter(function (x) { return x.a <= s && s < x.b; })[0];
+      var suiv = cours.filter(function (x) { return x.a > s; }).sort(function (x, y) { return x.a - y.a; })[0];
+      var son = sons.filter(function (x) { return x > s; })[0];
+      if (!en && !suiv) { box.hidden = true; return; }
+      box.hidden = false;
+      var reste = son != null ? son - s : (en ? en.b - s : suiv.a - s);
+      box.className = "chrono" + (reste <= 120 ? " ch-urgent" : reste <= 300 ? " ch-bientot" : "") + (en ? " en-cours" : "");
+      while (box.firstChild) box.removeChild(box.firstChild);
+      box.appendChild(el("span", { class: "chrono-cloche", html: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>' }));
+      box.appendChild(el("b", { class: "chrono-temps", texte: duree(reste) }));
+      var info = en ? nomCours(en.c) + (en.c.salle ? " · " + en.c.salle : "") + " · fin " + hhmm(en.b)
+                    : "Prochain : " + nomCours(suiv.c) + " à " + hhmm(suiv.a);
+      box.appendChild(el("span", { class: "chrono-info", texte: (son != null ? "sonnerie " + hhmm(son) + " · " : "") + info }));
+      if (en) { var barre = el("i", { class: "chrono-barre" }); barre.style.width = Math.min(100, (s - en.a) / (en.b - en.a) * 100) + "%"; box.appendChild(barre); }
+    }
+    charger(); setInterval(maj, 1000);
+  }
+
   function construireEntete(acces) {
     var nav = el("nav", { class: "nav", "aria-label": "Classes" });
     var visibles = !acces ? [] : (acces.role === "prof" ? CLASSES
@@ -186,6 +234,7 @@
       nav.appendChild(p);
     }
     var outils = el("div", { class: "tools" });
+    if (acces && (acces.role === "prof" || acces.role === "collegue")) chronoProf(outils);
     if (acces) {
       var nom = ((acces.prenom || "") + " " + (acces.nom || "")).trim() || (acces.role === "prof" ? "Prof" : "");
       var qui = el("span", { class: "qui", style: "--c: " + (acces.role === "prof" ? "var(--accent)" : couleurVar(acces.classe)) },

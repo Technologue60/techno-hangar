@@ -18,6 +18,7 @@ window.TH_PROF = function (acces) {
     try { history.replaceState(null, "", "#" + v); } catch (e) {}
     if (v === "suivi") chargerSuivi();
     if (v === "horaires") { chargerHoraires(); chargerExceptions(); }
+    if (v === "edt" && !edtCharge) chargerEdt();
     if (window.TH_PROF_VUE) window.TH_PROF_VUE(v);
   }
   boutons.forEach(function (b) { b.addEventListener("click", function () { montrer(b.getAttribute("data-vue")); }); });
@@ -530,20 +531,86 @@ window.TH_PROF = function (acces) {
     zone.appendChild(el("p", { class: "aide", texte: "Ensuite : dépose ces fichiers dans le dossier « " + classe + " » de ton dépôt GitHub." }));
   };
 
+  /* =================== EMPLOI DU TEMPS =================== */
+  var edtCharge = false;
+  async function chargerEdt() {
+    var z = $("e-jours"); if (!z) return; vider(z); $("e-etat").textContent = "";
+    var cours = [], son = [];
+    try {
+      cours = await TH.rest("edt?select=jour,debut,fin,classe,libelle,salle&order=jour,debut");
+      var r = await TH.rest("edt_reglages?select=sonneries"); son = (r[0] && r[0].sonneries) || [];
+    } catch (e) { $("e-etat").textContent = /edt/.test(message(e)) ? "Lance d'abord le script 21-emploi-du-temps.sql dans Supabase." : "Erreur : " + message(e); }
+    $("e-son").value = son.join("  ");
+    JOURS.slice(0, 6).forEach(function (nomJour, i) {
+      var bloc = el("div", { class: "edt-jour", "data-jour": i + 1 }, [el("h3", { texte: nomJour })]);
+      var liste = el("div", { class: "edt-liste" }); bloc.appendChild(liste);
+      cours.filter(function (c) { return c.jour === i + 1; }).forEach(function (c) { liste.appendChild(ligneCours(c)); });
+      var plus = el("button", { class: "btn mini", type: "button", texte: "+ Cours" });
+      plus.onclick = function () {
+        var der = liste.lastElementChild, d = der ? der.querySelector("[data-k=fin]").value : "08:00";
+        liste.appendChild(ligneCours({ debut: d, fin: d }));
+      };
+      bloc.appendChild(plus); z.appendChild(bloc);
+    });
+    edtCharge = true;
+  }
+  function ligneCours(c) {
+    var cl = el("select", { "data-k": "classe" }, [el("option", { value: "", texte: "—" })]);
+    CLASSES.forEach(function (k) { cl.appendChild(el("option", { value: k.id, texte: k.court || k.nom })); });
+    cl.value = c.classe || "";
+    var sup = el("button", { class: "btn mini danger", type: "button", texte: "✕", title: "Supprimer" });
+    var l = el("div", { class: "edt-ligne" }, [
+      el("input", { type: "time", "data-k": "debut", value: (c.debut || "").slice(0, 5) }),
+      el("input", { type: "time", "data-k": "fin", value: (c.fin || "").slice(0, 5) }),
+      cl,
+      el("input", { "data-k": "libelle", placeholder: "Intitulé (facultatif)", value: c.libelle || "" }),
+      el("input", { "data-k": "salle", placeholder: "Salle", value: c.salle || "", class: "edt-salle" }), sup]);
+    sup.onclick = function () { l.remove(); };
+    return l;
+  }
+  async function enregistrerEdt() {
+    var etat = $("e-etat"), lignes = [], err = "";
+    document.querySelectorAll("#e-jours .edt-jour").forEach(function (b) {
+      var j = +b.getAttribute("data-jour");
+      b.querySelectorAll(".edt-ligne").forEach(function (l) {
+        var v = function (k) { return l.querySelector("[data-k=" + k + "]").value.trim(); };
+        if (!v("debut") && !v("fin")) return;
+        if (!v("debut") || !v("fin") || v("fin") <= v("debut")) { err = JOURS[j - 1] + " : vérifie les heures de début et de fin."; return; }
+        lignes.push({ jour: j, debut: v("debut"), fin: v("fin"), classe: v("classe") || null, libelle: v("libelle") || null, salle: v("salle") || null });
+      });
+    });
+    if (err) { etat.textContent = err; return; }
+    var son = ($("e-son").value.match(/\d{1,2}\s*[h:]\s*\d{2}/g) || []).map(function (x) {
+      var p = x.replace(/\s/g, "").split(/[h:]/); return String(+p[0]).padStart(2, "0") + ":" + p[1];
+    }).sort();
+    etat.textContent = "Enregistrement…";
+    try {
+      await TH.rest("edt?prof=eq." + TH.session().user.id, { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+      if (lignes.length) await TH.rest("edt", { method: "POST", headers: { "Prefer": "return=minimal" }, body: lignes });
+      await TH.rest("edt_reglages?on_conflict=prof", { method: "POST", headers: { "Prefer": "resolution=merge-duplicates,return=minimal" }, body: { sonneries: son } });
+      $("e-son").value = son.join("  ");
+      etat.textContent = "Enregistré : " + lignes.length + " cours, " + son.length + " sonneries.";
+      if (window.TH_CHRONO_RECHARGER) window.TH_CHRONO_RECHARGER();
+    } catch (e) { etat.textContent = "Erreur : " + message(e); }
+  }
+  if ($("e-enr")) $("e-enr").onclick = enregistrerEdt;
+
   /* ---------- Démarrage ---------- */
   if (COLLEGUE) {
     document.querySelector("main h1").textContent = "Suivi de mes élèves";
-    boutons.forEach(function (b) { if (b.getAttribute("data-vue") !== "suivi") b.remove(); });
-    document.querySelectorAll(".vue").forEach(function (v) { if (v.id !== "vue-suivi") v.remove(); });
-    $("vue-suivi").hidden = false; boutons = document.querySelectorAll("#ongletsProf .onglet");
-    boutons.forEach(function (b) { b.classList.add("actif"); });
+    var garder = ["suivi", "edt"];
+    boutons.forEach(function (b) { if (garder.indexOf(b.getAttribute("data-vue")) < 0) b.remove(); });
+    document.querySelectorAll(".vue").forEach(function (v) { if (garder.indexOf(v.id.replace("vue-", "")) < 0) v.remove(); });
+    boutons = document.querySelectorAll("#ongletsProf .onglet");
     var sel = $("s-classe"); if (sel) sel.disabled = sel.options.length < 2;
-    chargerSuivi();
+    montrer((location.hash || "").replace("#", "") === "edt" ? "edt" : "suivi");
     return;
   }
   chargerEleves();
   chargerCollegues();
   if (window.TH_PROF_PASS) window.TH_PROF_PASS(acces);
+  var VUES = ["eleves", "suivi", "edt", "horaires", "chiffrer", "direct", "activites", "pass", "alertes"];
   var h = (location.hash || "").replace("#", "");
-  if (["eleves", "suivi", "horaires", "chiffrer", "direct", "activites", "pass", "alertes"].indexOf(h) >= 0) montrer(h);
+  if (VUES.indexOf(h) >= 0) montrer(h);
+  window.addEventListener("hashchange", function () { var v = location.hash.replace("#", ""); if (VUES.indexOf(v) >= 0) montrer(v); });
 };
