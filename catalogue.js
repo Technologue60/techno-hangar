@@ -97,8 +97,13 @@ window.CATALOGUE = [
   { classe: "snt", sequence: "Thème 2 · Le Web",
     titre: "Chapitre · Le Web", fichier: "snt-le-web.html", type: "activite", icone: "web", en_ligne: true },
   { classe: "snt", sequence: "Thème 2 · Le Web",
-    titre: "Activités · QCM Le Web", fichier: "snt-le-web-activites.html", type: "activite", icone: "quiz", en_ligne: false },
-   { classe: "snt", sequence: "Thème 2 · Le Web", titre: "Activités · QCM Le Web", fichier: "snt-le-web-activites.html", type: "activite", icone: "web", en_ligne: true },
+    titre: "TP 1 · Explorer le Web", fichier: "snt-web-tp1-explorer.html", type: "activite", icone: "web", en_ligne: true },
+  { classe: "snt", sequence: "Thème 2 · Le Web",
+    titre: "TP 2 · Sécurité et vie privée", fichier: "snt-web-tp2-securite.html", type: "activite", icone: "web", en_ligne: true },
+  { classe: "snt", sequence: "Thème 2 · Le Web",
+    titre: "Tâche finale · Ma page web", fichier: "snt-web-tp3-ma-page.html", type: "activite", icone: "doc", en_ligne: true,
+    titre_consigne: "Tâche finale : crée ta page web",
+    consigne: "Construis une page sur le sujet de ton exposé. Le cahier des charges se coche tout seul. À la fin, télécharge ta page (.html) et ton bilan (PDF)." },
 
   /* ---------------- BTS maintenance ---------------- */
   { classe: "bts-maintenance", sequence: "ETLV · A volumetric pump",
