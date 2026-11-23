@@ -307,6 +307,18 @@
       var ol = el("ol", { class: "pa-classement" });
       var moi = liste.filter(function (x) { return x.moi; })[0];
       var max = Math.max(1, liste.reduce(function (m, x) { return Math.max(m, x.points); }, 0));
+      if (acces.role !== "prof") {
+        // Élève : podium + sa propre place, jamais la liste complète
+        var podium = liste.filter(function (x) { return x.rang <= 3 && x.points > 0; });
+        podium.forEach(function (x) { ol.appendChild(ligne(x, max)); });
+        if (!podium.length) ol.appendChild(el("li", { class: "aide", texte: "Podium vide : réponds à la question du jour !" }));
+        if (moi && podium.indexOf(moi) < 0) { ol.appendChild(el("li", { class: "pa-sep", texte: "…" })); ol.appendChild(ligne(moi, max)); }
+        zone.appendChild(ol);
+        if (moi) zone.appendChild(el("div", { class: "pa-ma-place", texte: moi.points > 0
+          ? "Ta place : " + moi.rang + (moi.rang === 1 ? "re" : "e") + " sur " + (moi.sur || "?")
+          : "Réponds à la question du jour pour entrer dans le classement." }));
+        cascade(ol); return;
+      }
       var n = tout ? liste.length : 5;
       liste.slice(0, n).forEach(function (x) { ol.appendChild(ligne(x, max)); });
       if (moi && liste.indexOf(moi) >= n) { ol.appendChild(el("li", { class: "pa-sep", texte: "…" })); ol.appendChild(ligne(moi, max)); }

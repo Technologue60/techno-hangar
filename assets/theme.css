@@ -202,3 +202,4 @@ body.pass-off .pr-cover:before, body.pass-off .pr-cover:after { display: none; }
 .pp-cases .case { display: flex; gap: .45rem; align-items: flex-start; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .pp-pic { display: inline-flex; align-items: center; gap: .4rem; }
 .pp-pic[hidden] { display: none; }
+.pa-ma-place { margin-top: .6rem; font-size: .85rem; color: var(--muted); text-align: center; }
