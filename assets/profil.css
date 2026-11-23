@@ -166,3 +166,16 @@ a.ps-act:hover { border-color: var(--border2); }
 .ps-pli.ps-vide { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; color: var(--muted); }
 .ps-pli.ps-vide small { font: 500 11.5px "Geist Mono", monospace; color: var(--faible); }
 .ps-bientot { text-align: center; }
+/* Jetons et boutique */
+.jeton-ico { display: inline-grid; place-items: center; filter: drop-shadow(0 0 8px rgba(245, 183, 74, .45)); }
+.jeton-ico svg { width: 100%; height: 100%; }
+.ps-tuile.bq-dispo { border-color: rgba(245, 183, 74, .6); box-shadow: 0 0 18px -6px rgba(245, 183, 74, .6); }
+.bq-tete { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; }
+.bq-tete b { display: block; font-size: 1.05rem; }
+.bq-tete small { color: var(--muted); }
+.bq-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
+.bq-art { display: flex; flex-direction: column; align-items: center; gap: .3rem; text-align: center; padding: .9rem .6rem; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
+.bq-art .bq-vis { min-height: 64px; display: grid; place-items: center; }
+.bq-art small { color: var(--muted); font-size: .75rem; }
+.bq-art .btn { margin-top: .3rem; width: 100%; }
+.bq-art.possede { opacity: .6; }

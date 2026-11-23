@@ -497,9 +497,10 @@
         TH.rpc("profil_quiz", id ? { p_eleve: id } : {}).catch(function () { return null; }),
         TH.rpc("activites_eleve", id ? { p_eleve: id } : {}).catch(function () { return {}; }),
         TH.rest("progression?select=ressource,avancement,score,termine,maj_le&eleve=eq." + (id || (TH.session() || { user: {} }).user.id)).catch(function () { return []; }),
-        NOUVEAU ? TH.rpc("mon_profil", id ? { p_eleve: id } : {}).catch(function () { return null; }) : null
+        NOUVEAU ? TH.rpc("mon_profil", id ? { p_eleve: id } : {}).catch(function () { return null; }) : null,
+        TH.rpc("ma_boutique", id ? { p_eleve: id } : {}).catch(function () { return null; })
       ]);
-      D = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [], profil: r[4] };
+      D = { pass: r[0], quiz: r[1], acts: r[2] || {}, prog: r[3] || [], profil: r[4], boutique: r[5] };
       if (NOUVEAU && !D.profil) NOUVEAU = false;   // script 09 pas encore installé : ancien profil
     }
     var rec = function (id) { return trouver(D.pass, id); };
@@ -581,10 +582,50 @@
     async function recharger() {
       oublierBulle(); D.pass = await charger(cible, true);
       if (NOUVEAU) D.profil = await TH.rpc("mon_profil", cible ? { p_eleve: cible } : {}).catch(function () { return D.profil; });
+      D.boutique = await TH.rpc("ma_boutique", cible ? { p_eleve: cible } : {}).catch(function () { return D.boutique; });
       dessiner(); majBulle();
     }
 
     /* ----- Onglet Pass : piste verticale façon Brawl Stars ----- */
+    function palierJeton(saison, rang) {
+      return !!(D.boutique && (D.boutique.paliers_jeton || []).some(function (x) { return x.saison === saison && x.rang === rang; }));
+    }
+    function jetonIco(t) {
+      var s = el("span", { class: "jeton-ico", style: "width:" + t + "px;height:" + t + "px" });
+      s.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset=".55" stop-color="#f5b74a"/><stop offset="1" stop-color="#a8650f"/></linearGradient></defs><circle cx="24" cy="24" r="21" fill="url(#jg)" stroke="#7a4a10" stroke-width="2"/><circle cx="24" cy="24" r="15.5" fill="none" stroke="#7a4a10" stroke-width="1.5" stroke-dasharray="2 3"/><path d="M24 13l3.2 6.6 7.3 1-5.3 5.1 1.3 7.2L24 29.5l-6.5 3.4 1.3-7.2-5.3-5.1 7.3-1z" fill="#fff6d8" stroke="#7a4a10" stroke-width="1.2"/></svg>';
+      return s;
+    }
+    function visuelRec(r, t) {
+      return r.type === "avatar" ? avatar(r, t) : r.type === "badge" ? badge(r, t) : r.type === "ornement" ? cadre(null, Math.round(t * .8), "?", r.style)
+        : r.type === "banniere" ? apercuBanniere(r.style, Math.round(t * .85)) : el("span", { class: "pa-titre-ico", texte: "“ ”" });
+    }
+    function vueBoutique(c) {
+      var B = D.boutique, j = (B && B.jetons) || { dispo: 0, gagnes: 0 }, arts = (B && B.articles) || [];
+      var etat = el("p", { class: "ps-info" });
+      c.appendChild(el("div", { class: "bq-tete" }, [jetonIco(40), el("div", {}, [el("b", { texte: j.dispo + " jeton" + (j.dispo > 1 ? "s" : "") + " à échanger" }),
+        el("small", { texte: "Les jetons se gagnent sur certains paliers du pass. Tes points ne sont jamais dépensés." })])]));
+      if (!arts.length) { c.appendChild(el("p", { class: "aide", texte: "La boutique est vide pour l'instant." })); return; }
+      var grille = el("div", { class: "bq-grille" });
+      var types = { avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" };
+      arts.forEach(function (a) {
+        var r = a.recompense, b = null;
+        if (moiMeme) {
+          b = el("button", { class: "btn" + (a.possede ? "" : " primary"), type: "button", texte: a.possede ? "Déjà à toi" : "Échanger" });
+          b.disabled = a.possede || j.dispo < 1;
+          b.onclick = async function () {
+            if (!confirm("Échanger 1 jeton contre « " + r.nom + " » ?")) return;
+            b.disabled = true;
+            try { D.boutique = await TH.rpc("echanger_jeton", { p_article: a.id }); etat.textContent = "« " + r.nom + " » est à toi !"; await recharger(); }
+            catch (e) { etat.textContent = (e && e.message) || "Échange impossible."; b.disabled = false; }
+          };
+        }
+        grille.appendChild(el("div", { class: "bq-art r-" + r.rarete + (a.possede ? " possede" : "") }, [
+          el("span", { class: "bq-vis" }, [visuelRec(r, 56)]), el("b", { texte: r.nom }),
+          el("small", { texte: (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), b]));
+      });
+      c.appendChild(grille); c.appendChild(etat);
+    }
+
     function vuePass(corps, p) {
       if (!vueSaison) vueSaison = p.courante || (p.saisons[0] || {}).id;
       var bar = el("div", { class: "pa-choix pa-saisons" });
@@ -610,7 +651,8 @@
       var piste = el("div", { class: "vp-piste" });
       var prec = 0, marque = false;
       (sv.paliers || []).forEach(function (pl, k) {
-        var r = rec(pl.recompense) || { nom: "Récompense bientôt disponible", type: "bientot", rarete: "commun" };
+        var estJeton = palierJeton(sv.id, pl.rang);
+        var r = estJeton ? { nom: "Jeton de boutique", type: "jeton", rarete: "rare" } : rec(pl.recompense) || { nom: "Récompense bientôt disponible", type: "bientot", rarete: "commun" };
         var etat = pl.debloque ? "obtenu" : pl.en_attente ? "attente" : "avenir";
         // segment de piste entre le palier précédent et celui-ci
         var seg = el("i");
@@ -618,15 +660,15 @@
         var ligne = el("div", { class: "vp-ligne " + etat + " r-" + r.rarete + (nouveaux.indexOf(pl.rang) >= 0 ? " nouveau" : "") + (sv.points > pl.seuil ? " au-dela" : "") });
         ligne.appendChild(el("div", { class: "vp-seuil" }, [el("b", { texte: nb(pl.seuil) }), el("small", { texte: "pts" })]));
         ligne.appendChild(el("div", { class: "vp-rail" }, [el("span", { class: "vp-seg" }, [seg]), el("span", { class: "vp-noeud", texte: etat === "obtenu" ? "✓" : pl.rang })]));
-        var visuel = r.type === "bientot" ? badge({ rarete: "commun" }, 46, true) : r.type === "avatar" ? avatar(r, 52) : r.type === "badge" ? badge(r, 52) : r.type === "ornement" ? cadre(null, 40, "?", r.style)
+        var visuel = r.type === "jeton" ? jetonIco(46) : r.type === "bientot" ? badge({ rarete: "commun" }, 46, true) : r.type === "avatar" ? avatar(r, 52) : r.type === "badge" ? badge(r, 52) : r.type === "ornement" ? cadre(null, 40, "?", r.style)
           : r.type === "banniere" ? apercuBanniere(r.style, 44) : el("span", { class: "pa-titre-ico", texte: r.nom === "???" ? "?" : "“ ”" });
         var types = { avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" };
         var bas = etat === "obtenu" ? "✓ Obtenu" : etat === "attente" ? "🔒 Dès le " + dateCourte(sv.debut) : sv.statut === "a_venir" ? nb(pl.seuil) + " pts" : "Encore " + nb(Math.max(0, pl.seuil - sv.points)) + " pts";
         ligne.appendChild(el("a", { class: "vp-carte", href: "#collection", title: "Voir la collection" }, [
           el("span", { class: "vp-vis" }, [visuel]),
-          el("span", { class: "vp-txt" }, [el("b", { texte: r.nom }), el("small", { texte: r.type === "bientot" ? "Bientôt" : (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), el("span", { class: "vp-bas", texte: bas })])
+          el("span", { class: "vp-txt" }, [el("b", { texte: r.nom }), el("small", { texte: r.type === "jeton" ? "À échanger dans la boutique" : r.type === "bientot" ? "Bientôt" : (types[r.type] || "") + " · " + (RARETES[r.rarete] || "") }), el("span", { class: "vp-bas", texte: bas })])
         ]));
-        ligne.querySelector(".vp-carte").onclick = function (e) { e.preventDefault(); if (r.type === "bientot") return; ongletColl = r.type; aller("collection"); };
+        ligne.querySelector(".vp-carte").onclick = function (e) { e.preventDefault(); if (r.type === "bientot") return; if (r.type === "jeton") { if (NOUVEAU) ouvrir("boutique"); return; } ongletColl = r.type; aller("collection"); };
         piste.appendChild(ligne);
         (function (i, v) { if (CALME) { i.style.height = v + "%"; return; } setTimeout(function () { i.style.height = v + "%"; }, 200 + k * 90); })(seg, pctSeg);
         // marqueur « tu es ici » juste avant le premier palier non atteint
@@ -908,7 +950,7 @@
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && panVue) fermer(); });
       return PAN;
     }
-    var TITRES = { pass: "Pass de saison", collection: "Personnaliser", activites: "Toutes mes activités", points: "Historique des points", rang: "Rang annuel", saison: "Activités de la saison", badges: "Badges" };
+    var TITRES = { boutique: "Boutique", pass: "Pass de saison", collection: "Personnaliser", activites: "Toutes mes activités", points: "Historique des points", rang: "Rang annuel", saison: "Activités de la saison", badges: "Badges" };
     function ouvrir(vue, arg) {
       var p = panneau();
       if (!panVue) focusAvant = document.activeElement;
@@ -923,7 +965,7 @@
       p.corps.innerHTML = ""; p.titre.textContent = panVue === "pass" && ANNUEL ? "Pass de l'année" : TITRES[panVue] || "";
       p.ret.hidden = panVue !== "badge"; p.ret._vers = "badges";
       ({ pass: function (c) { vuePass(c, D.pass); }, collection: function (c) { vueCollection(c, D.pass); }, activites: function (c) { vueActivites(c); },
-         points: function (c) { vuePoints(c, D.pass); }, rang: vueRang, saison: vueSaison2, badges: vueBadges2, badge: vueFiche })[panVue](p.corps, panArg);
+         points: function (c) { vuePoints(c, D.pass); }, boutique: vueBoutique, rang: vueRang, saison: vueSaison2, badges: vueBadges2, badge: vueFiche })[panVue](p.corps, panArg);
       p.corps.scrollTop = haut;
     }
     function fermer() {
@@ -1023,6 +1065,20 @@
         tB.onclick = function () { ouvrir("badges"); };
       }
       zone.appendChild(tB);
+
+      // Tuile boutique (jetons)
+      var BQ = D.boutique;
+      if (BQ && ((BQ.articles || []).length || (BQ.paliers_jeton || []).length)) {
+        var jd = (BQ.jetons || {}).dispo || 0;
+        var tQ = el("button", { class: "ps-tuile" + (jd ? " bq-dispo" : ""), type: "button" }, [
+          el("span", { class: "ps-ic-t" }, [jetonIco(50)]),
+          el("span", { class: "ps-tx" }, [
+            el("span", { class: "ps-h" }, [el("b", { texte: "Boutique" }), el("span", { class: "ps-chiffre", texte: jd + " jeton" + (jd > 1 ? "s" : "") })]),
+            el("small", { texte: jd ? "Choisis ta récompense !" : (BQ.articles || []).length + " récompense" + ((BQ.articles || []).length > 1 ? "s" : "") + " à choisir avec tes jetons" })]),
+          chev()]);
+        tQ.onclick = function () { ouvrir("boutique"); };
+        zone.appendChild(tQ);
+      }
 
       // Liens secondaires
       var liens = el("div", { class: "ps-liens" });

@@ -300,7 +300,7 @@
     var ps = $("p-saison"), garde = ps.value; vider(ps);
     saisons.forEach(function (s) { ps.appendChild(el("option", { value: s.id, texte: s.nom })); });
     if (garde && saisons.some(function (s) { return String(s.id) === garde; })) ps.value = garde;
-    chargerPaliers(); chargerRecompenses(); chargerEleves();
+    chargerPaliers(); chargerBoutique(); chargerRecompenses(); chargerEleves();
   }
   function optionsRecompenses() {
     return [["", "— aucune —"]].concat(recompenses.map(function (r) {
@@ -312,21 +312,23 @@
     var c = classeChoisie(), s = $("p-saison").value, t = $("p-paliers"); vider(t);
     if (!s) return;
     var l = await TH.rest("paliers?select=*&classe=eq." + c + "&saison=eq." + s + "&order=rang");
-    t.appendChild(th(["Rang", "% de l'objectif", "Récompense", ""]));
+    t.appendChild(th(["Rang", "% de l'objectif", "Récompense", "Jeton", ""]));
     l.forEach(function (p) {
       var pct = input({ type: "number", min: "1", max: "100", value: p.pct, class: "pp-n" });
       var rec = select(optionsRecompenses(), p.recompense || "");
+      var jet = input({ type: "checkbox", title: "Ce palier donne un jeton de boutique" }); jet.checked = !!p.jeton;
+      var majJ = function () { rec.disabled = jet.checked; }; jet.addEventListener("change", majJ); majJ();
       var info = el("span", { class: "aide" });
-      t.appendChild(el("tr", {}, [el("td", { texte: p.rang }), el("td", {}, [pct]), el("td", {}, [rec]),
+      t.appendChild(el("tr", {}, [el("td", { texte: p.rang }), el("td", {}, [pct]), el("td", {}, [rec]), el("td", {}, [jet]),
         el("td", {}, [el("div", { class: "actions" }, [
           bouton("Enregistrer", "primary", async function () {
-            try { await TH.rest("paliers?id=eq." + p.id, { method: "PATCH", body: { pct: +pct.value, recompense: rec.value ? +rec.value : null }, headers: { "Prefer": "return=minimal" } }); etat(info, "✓", true); }
+            try { await TH.rest("paliers?id=eq." + p.id, { method: "PATCH", body: Object.assign({ pct: +pct.value, recompense: rec.value && !jet.checked ? +rec.value : null }, "jeton" in p ? { jeton: jet.checked } : {}), headers: { "Prefer": "return=minimal" } }); etat(info, "✓", true); }
             catch (e) { etat(info, msg(e), false); }
           }),
           bouton("Retirer", "danger", async function () { await supprimer("paliers", "id=eq." + p.id); chargerPaliers(); }), info])])]));
     });
     var rang = l.reduce(function (m, p) { return Math.max(m, p.rang); }, 0) + 1;
-    t.appendChild(el("tr", {}, [el("td", { colspan: "4" }, [bouton("+ Ajouter un palier", "", async function () {
+    t.appendChild(el("tr", {}, [el("td", { colspan: "5" }, [bouton("+ Ajouter un palier", "", async function () {
       await TH.rest("paliers", { method: "POST", body: { classe: c, saison: +s, rang: rang, pct: Math.min(100, (l.length ? l[l.length - 1].pct : 0) + 10) }, headers: { "Prefer": "return=minimal" } });
       chargerPaliers();
     }), document.createTextNode(" "), bouton("Copier ces paliers vers les autres saisons de la classe", "", async function () {
@@ -334,11 +336,42 @@
       for (var i = 0; i < saisons.length; i++) {
         if (String(saisons[i].id) === String(s)) continue;
         await supprimer("paliers", "classe=eq." + c + "&saison=eq." + saisons[i].id);
-        if (l.length) await TH.rest("paliers", { method: "POST", body: l.map(function (p) { return { classe: c, saison: saisons[i].id, rang: p.rang, pct: p.pct, recompense: p.recompense }; }), headers: { "Prefer": "return=minimal" } });
+        if (l.length) await TH.rest("paliers", { method: "POST", body: l.map(function (p) { return Object.assign({ classe: c, saison: saisons[i].id, rang: p.rang, pct: p.pct, recompense: p.recompense }, "jeton" in p ? { jeton: p.jeton } : {}); }), headers: { "Prefer": "return=minimal" } });
       }
       alert("Paliers copiés.");
     })])]));
   }
+  /* Boutique à jetons */
+  async function chargerBoutique() {
+    var z = $("p-boutique"); if (!z) return; vider(z);
+    var c = classeChoisie(), s = $("p-saison").value;
+    var l;
+    try { l = await TH.rest("boutique?select=id,classe,saison,recompense&order=ordre,id"); }
+    catch (e) { z.appendChild(el("p", { class: "aide", texte: "Lance d'abord le script 24-jetons-boutique.sql dans Supabase." })); return; }
+    l = l.filter(function (b) { return (!b.classe || b.classe === c) && (!b.saison || String(b.saison) === String(s)); });
+    var nomS = function (id) { var x = saisons.filter(function (q) { return String(q.id) === String(id); })[0]; return x ? x.nom.split("·")[0].trim() : ""; };
+    var grille = el("div", { class: "pp-bq" });
+    l.forEach(function (b) {
+      var r = recompenses.filter(function (x) { return x.id === b.recompense; })[0] || { nom: "?", type: "", rarete: "commun" };
+      grille.appendChild(el("div", { class: "pp-bq-art r-" + r.rarete }, [
+        el("b", { texte: r.nom }),
+        el("small", { texte: ({ avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" })[r.type] + " · " + (b.saison ? nomS(b.saison) : "toute l'année") + (b.classe ? "" : " · toutes classes") }),
+        bouton("Retirer", "danger", async function () { await supprimer("boutique", "id=eq." + b.id); chargerBoutique(); })]));
+    });
+    if (!l.length) grille.appendChild(el("p", { class: "aide", texte: "Aucun article pour cette saison." }));
+    z.appendChild(grille);
+    var opts = optionsRecompenses().filter(function (o) { var r = recompenses.filter(function (x) { return x.id === o[0]; })[0]; return r && r.type !== "badge"; });
+    var choix = select(opts, ""), annee = input({ type: "checkbox" });
+    z.appendChild(el("div", { class: "ligne-outils" }, [choix,
+      el("label", { class: "case" }, [annee, document.createTextNode(" toute l'année")]),
+      bouton("+ Ajouter à la boutique", "primary", async function () {
+        if (!choix.value) return;
+        try { await TH.rest("boutique", { method: "POST", body: { classe: c, saison: annee.checked ? null : +s, recompense: +choix.value }, headers: { "Prefer": "return=minimal" } }); }
+        catch (e) { alert(/duplicate|unique/.test(msg(e)) ? "Déjà dans la boutique." : msg(e)); }
+        chargerBoutique();
+      })]));
+  }
+
   function chargerRecompenses() {
     var t = $("p-recomp"); vider(t);
     t.appendChild(th(["Type", "Nom", "Rareté", "Symbole", "Couleur", "Image ou motif", "Classe", "Mystère", "Condition", ""]));
@@ -553,7 +586,7 @@
         chargerDeblocages();
       } catch (e) { alert(msg(e)); }
     };
-    $("p-saison").onchange = chargerPaliers;
+    $("p-saison").onchange = function () { chargerPaliers(); chargerBoutique(); };
     $("p-saison-ajout").onclick = async function () {
       var d = new Date().toISOString().slice(0, 10);
       await TH.rest("saisons", { method: "POST", body: { nom: "Nouvelle saison", debut: d, fin: d }, headers: { "Prefer": "return=minimal" } });

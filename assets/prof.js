@@ -676,7 +676,7 @@ window.TH_PROF = function (acces) {
     });
     // Sections (titre h2) repliables ; état mémorisé
     var memoPli = {}; try { memoPli = JSON.parse(localStorage.getItem("th-prof-plis") || "{}"); } catch (e) {}
-    var DEFAUT = { "vue-pass": [false, true, false, true], "vue-activites": [true, true, false, false] };
+    var DEFAUT = { "vue-pass": [false, true, true, false, true], "vue-activites": [true, true, false, false] };
     Object.keys(DEFAUT).forEach(function (vid) {
       var vue = $(vid); if (!vue) return;
       [].slice.call(vue.children).filter(function (n) { return n.tagName === "H2"; }).forEach(function (h, i) {

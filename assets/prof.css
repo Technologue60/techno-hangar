@@ -152,3 +152,7 @@ tr.filtre-cache { display: none; }
   font-family: var(--mono); font-size: .6rem; font-style: normal; color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
   background: repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 4px, transparent 4px 8px); border-top: 1px dashed color-mix(in srgb, var(--c) 70%, transparent); border-bottom: 1px dashed color-mix(in srgb, var(--c) 70%, transparent); }
 .edt-pct { position: absolute !important; right: .45rem; top: .35rem; font-family: var(--mono); font-size: .72rem; font-style: normal; font-weight: 700; color: var(--c); }
+.pp-bq { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .5rem; margin: .4rem 0 .8rem; }
+.pp-bq-art { display: flex; flex-direction: column; gap: .25rem; padding: .6rem .7rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.pp-bq-art small { color: var(--muted); font-size: .75rem; }
+.pp-bq-art .btn { align-self: flex-start; margin-top: .2rem; }
