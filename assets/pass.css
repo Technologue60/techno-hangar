@@ -471,3 +471,42 @@ button.bg-carte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgb
 .pa-bulle .orn-royal:after { display: none; }
 @media (prefers-reduced-motion: reduce) { .orn-neon, .orn-flammes, .vp-ici-txt { animation: none !important; } }
 @media (max-width: 680px) { .pr-cover { padding: 1.1rem; } .pr-trophees { width: 100%; } .pr-slot { width: 54px; height: 58px; } }
+
+/* ---------- Barre du haut élève (HUD) ---------- */
+.hud { border-top: 1px solid var(--border); background: rgba(7,9,12,.55); }
+.hud-in { max-width: 1080px; margin: 0 auto; padding: .45rem 1.2rem; display: flex; gap: .5rem; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.hud-in::-webkit-scrollbar { display: none; }
+.hud-p { position: relative; flex: none; display: inline-flex; align-items: center; gap: .45rem; height: 38px; padding: 0 .75rem 0 .5rem; border-radius: 11px;
+  border: 1px solid var(--border2); background: var(--surface); color: var(--text); text-decoration: none; font-size: .8rem; transition: border-color .2s, box-shadow .2s, transform .15s; }
+.hud-p:hover { border-color: var(--accent); box-shadow: 0 0 14px -4px rgba(63,214,198,.45); transform: translateY(-1px); }
+.hud-p b { font-family: var(--mono); font-weight: 600; font-size: .86rem; }
+.hud-p small { color: var(--muted); font-family: var(--mono); font-size: .68rem; }
+.hud-t { display: flex; flex-direction: column; gap: 4px; min-width: 74px; }
+.hud-t b { font-family: var(--titre, inherit); font-size: .8rem; font-weight: 600; line-height: 1; white-space: nowrap; }
+.hud-j { display: block; height: 4px; border-radius: 4px; background: var(--border2); overflow: hidden; }
+.hud-j i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3b8bff, #3fd6c6); }
+.hud-pic { width: 18px; height: 18px; display: grid; place-items: center; }
+.hud-pic svg { width: 100%; height: 100%; }
+.hud-pts .hud-pic { color: var(--warn, #f5b74a); }
+.hud-saison .hud-pic { color: var(--accent); }
+.hud-serie .hud-pic { color: var(--muted); }
+.hud-serie.chaud .hud-pic { color: #ff7a45; filter: drop-shadow(0 0 5px rgba(255,122,69,.6)); }
+.hud-rang .ps-emb { width: 28px; height: 28px; display: grid; }
+.hud-rang .ps-emb svg { width: 100%; height: 100%; }
+.hud-rang .hud-j i { background: linear-gradient(90deg, #b07cff, #ff6fa8); }
+.hud-jet.dispo { border-color: rgba(245,183,74,.65); box-shadow: 0 0 14px -5px rgba(245,183,74,.7); }
+.hud-pastille { position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--warn, #f5b74a); box-shadow: 0 0 0 2px var(--bg, #07090c); animation: hud-pouls 1.8s ease-in-out infinite; }
+@keyframes hud-pouls { 50% { transform: scale(1.35); opacity: .7; } }
+.avec-hud .pa-bulle-pts { display: none; }
+.avec-hud .pa-bulle { padding-right: .8rem; }
+@media (max-width: 680px) {
+  .hud-in { padding: .4rem .8rem; gap: .4rem; }
+  .hud-p { height: 34px; padding: 0 .55rem 0 .4rem; }
+  .hud-t { min-width: 52px; }
+  .hud-p small, .hud-nom { display: none; }
+  .hud-in { gap: .3rem; padding: .35rem .5rem; }
+  .hud-p { gap: .3rem; }
+  .hud-t b { font-size: .72rem; }
+  .hud-pic { width: 15px; height: 15px; }
+  .hud-rang .ps-emb { width: 22px; height: 22px; }
+}

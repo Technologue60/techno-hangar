@@ -179,3 +179,30 @@ a.ps-act:hover { border-color: var(--border2); }
 .bq-art small { color: var(--muted); font-size: .75rem; }
 .bq-art .btn { margin-top: .3rem; width: 100%; }
 .bq-art.possede { opacity: .6; }
+
+/* Boutique dans le profil */
+.ps-bq { margin-top: 18px; padding: 16px; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); scroll-margin-top: 140px; }
+.ps-bq.bq-dispo { border-color: rgba(245,183,74,.45); box-shadow: 0 0 24px -12px rgba(245,183,74,.7); }
+.ps-bq .bq-tete { margin-bottom: .9rem; }
+.ps-bq .bq-tete > div { flex: 1; }
+.ps-bq .bq-tete b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 18px; }
+.bq-solde { display: flex; flex-direction: column; align-items: center; padding: .3rem .7rem; border-radius: 12px; border: 1px solid var(--border2); background: var(--surface2); }
+.bq-solde b { font-family: var(--mono); font-size: 1.15rem !important; line-height: 1.1; }
+.bq-solde small { font-family: var(--mono); font-size: .66rem; }
+.bq-solde.on { border-color: rgba(245,183,74,.6); color: #ffd27a; }
+.bq-filtres { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin-bottom: .9rem; padding-bottom: .9rem; border-bottom: 1px solid var(--border); }
+.bq-puces { flex-wrap: wrap; }
+.bq-lib { font-family: var(--mono); font-size: .64rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-right: .2rem; }
+.bq-puces button.r-rare, .bq-puces button.r-epique, .bq-puces button.r-legendaire, .bq-puces button.r-commun { border-color: color-mix(in srgb, var(--r) 55%, transparent); }
+.bq-puces button.actif.r-rare, .bq-puces button.actif.r-epique, .bq-puces button.actif.r-legendaire, .bq-puces button.actif.r-commun { color: var(--r); background: color-mix(in srgb, var(--r) 14%, transparent); border-color: var(--r); }
+.bq-cherche { flex: 1; min-width: 140px; font: inherit; font-size: .82rem; color: var(--text); background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: .35rem .7rem; }
+.ps-bq .bq-art { position: relative; border-color: color-mix(in srgb, var(--r, var(--border)) 40%, var(--border)); background: linear-gradient(180deg, color-mix(in srgb, var(--r, transparent) 9%, var(--surface2)), var(--surface) 70%); padding-top: 1.4rem; }
+.ps-bq .bq-art:hover:not(.possede) { border-color: var(--r); box-shadow: 0 0 18px -8px var(--r); }
+.bq-rar { position: absolute; top: 7px; left: 8px; font-family: var(--mono); font-size: .58rem; text-transform: uppercase; letter-spacing: .07em; color: var(--r, var(--muted)); }
+.ps-bq .bq-art .btn { display: inline-flex; align-items: center; justify-content: center; gap: .3rem; }
+.ps-bq .bq-art .btn .jeton-ico { filter: none; }
+.bq-possede { margin-top: .3rem; font-family: var(--mono); font-size: .7rem; color: var(--muted); }
+.ps-bq.bq-flash { animation: bq-flash 1.2s ease; }
+@keyframes bq-flash { 30% { box-shadow: 0 0 0 3px rgba(245,183,74,.55), 0 0 30px -6px rgba(245,183,74,.8); } }
+.ps-bq .bq-vis { width: 100%; }
+.ps-bq .bq-vis .bn-mini { display: block; width: 100%; border-radius: 10px; }

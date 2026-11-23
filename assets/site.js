@@ -255,6 +255,7 @@
       ])
     ]);
     body.insertBefore(header, body.firstChild);
+    if (acces && window.TH_HUD) window.TH_HUD(header, acces);
   }
 
   /* Page d'arrivée : sa classe (élève), la 1re classe ouverte (collègue), sinon le suivi */
