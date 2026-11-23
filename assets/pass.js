@@ -146,7 +146,7 @@
     var frais = c && c._t && Date.now() - c._t < 5 * 60000;
     if (!frais) TH.rpc("mon_equipement").then(function (d) { d._t = Date.now(); try { sessionStorage.setItem("th-equip", JSON.stringify(d)); } catch (e) {} maj(d); }).catch(function () { pts.hidden = true; });
   };
-  function oublierBulle() { try { sessionStorage.removeItem("th-equip"); sessionStorage.removeItem("th-pass"); sessionStorage.removeItem("th-hud"); } catch (e) {} }
+  function oublierBulle() { try { sessionStorage.removeItem("th-equip"); sessionStorage.removeItem("th-pass"); sessionStorage.removeItem("th-hud"); sessionStorage.removeItem("th-profil-moi"); } catch (e) {} }
 
   /* ---------- Barre du haut (élève) : points, rang, saison, série, jetons — toujours visible ---------- */
   var PICTO = {
@@ -405,10 +405,10 @@
       var moi = liste.filter(function (x) { return x.moi; })[0];
       var max = Math.max(1, liste.reduce(function (m, x) { return Math.max(m, x.points); }, 0));
       if (acces.role !== "prof") {
-        // Élève : podium + sa propre place, jamais la liste complète
-        var podium = liste.filter(function (x) { return x.rang <= 3 && x.points > 0; });
+        // Élève : top 5 + sa propre place, jamais les derniers
+        var podium = liste.filter(function (x) { return x.rang <= 5 && x.points > 0; });
         podium.forEach(function (x) { ol.appendChild(ligne(x, max)); });
-        if (!podium.length) ol.appendChild(el("li", { class: "aide", texte: "Podium vide : réponds à la question du jour !" }));
+        if (!podium.length) ol.appendChild(el("li", { class: "aide", texte: "Classement vide : réponds à la question du jour !" }));
         if (moi && podium.indexOf(moi) < 0) { ol.appendChild(el("li", { class: "pa-sep", texte: "…" })); ol.appendChild(ligne(moi, max)); }
         zone.appendChild(ol);
         if (moi) zone.appendChild(el("div", { class: "pa-ma-place", texte: moi.points > 0
@@ -681,6 +681,7 @@
       if (NOUVEAU) D.profil = await TH.rpc("mon_profil", cible ? { p_eleve: cible } : {}).catch(function () { return D.profil; });
       D.boutique = await TH.rpc("ma_boutique", cible ? { p_eleve: cible } : {}).catch(function () { return D.boutique; });
       dessiner(); majBulle();
+      try { sessionStorage.setItem("th-profil-" + (cible || "moi"), JSON.stringify(Object.assign({ _t: Date.now() }, D))); } catch (e) {}
       if (window.TH_HUD_MAJ) window.TH_HUD_MAJ();
     }
 
@@ -1335,15 +1336,27 @@
       c.appendChild(f);
     }
 
-    zone.appendChild(el("p", { class: "aide", texte: "Chargement…" }));
-    try {
-      await toutCharger(); dessiner();
+    // Affichage immédiat depuis la dernière visite (connexion lente), puis mise à jour
+    var CLE_D = "th-profil-" + (cible || "moi"), dejaVu = false, NOUV0 = NOUVEAU;
+    function apresPremier() {
+      if (dejaVu) return; dejaVu = true;
       var h0 = (location.hash || "").replace("#", "");
       window.TH_PROFIL_OUVRIR = ouvrir;
       var VUES_H = { pass: 1, collection: 1, activites: 1, points: 1, rang: 1, saison: 1, badges: 1, boutique: 1 };
       if (NOUVEAU && VUES_H[h0]) setTimeout(function () { ouvrir(h0); }, h0 === "boutique" ? 500 : 0);
       if (NOUVEAU) window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (VUES_H[h]) ouvrir(h); });
-    } catch (e) { erreur(e); }
+    }
+    try {
+      var cD = JSON.parse(sessionStorage.getItem(CLE_D) || "null");
+      if (cD && cD.pass && Date.now() - cD._t < 30 * 60000) { delete cD._t; D = cD; if (NOUVEAU && !D.profil) NOUVEAU = false; dessiner(); apresPremier(); }
+    } catch (e) { D = null; NOUVEAU = NOUV0; }
+    if (!dejaVu) zone.appendChild(el("p", { class: "aide", texte: "Chargement…" }));
+    try {
+      await toutCharger();
+      if (dejaVu) zone.classList.add("sans-anim");
+      dessiner(); apresPremier();
+      try { sessionStorage.setItem(CLE_D, JSON.stringify(Object.assign({ _t: Date.now() }, D))); } catch (e) {}
+    } catch (e) { if (!dejaVu) erreur(e); }
   };
 
   window.TH_PASS = { avatar: avatar, cadre: cadre, badge: badge, charger: charger, absent: absent, compteur: compteur, remplir: remplir, confettis: confettis };

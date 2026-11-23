@@ -514,3 +514,4 @@ button.bg-carte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgb
 .hud-qui small { font-family: var(--mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
 .hud-qui b { font-family: var(--titre, inherit); font-size: .9rem; }
 .hud-prof .hud-pastille { display: none; }
+.sans-anim .pa-apparait, .sans-anim .pa-apparait * { animation: none !important; }

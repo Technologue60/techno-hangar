@@ -94,6 +94,7 @@
     var s = await appel("/auth/v1/token?grant_type=password", { method: "POST",
       body: { email: emailDe(identifiant), password: mdp } });
     purgerTraces();
+    try { sessionStorage.clear(); } catch (e) {}   // rien de l'élève précédent (profil, barre…) ne reste
     ecrireSession(s);
     ssDel(CLE_ACCES);
     return acces(true);
@@ -103,6 +104,7 @@
     var j = await jeton();
     if (j) { try { await appel("/auth/v1/logout", { method: "POST" }, j); } catch (e) {} }
     ecrireSession(null); ssDel(CLE_ACCES); purgerTraces();
+    try { sessionStorage.clear(); } catch (e) {}
   }
 
   /* ---------- Base de données (REST) ---------- */
@@ -177,25 +179,42 @@
     m.appendChild(d);
   }
 
-  /* ---------- Chiffrement AES-GCM ---------- */
+  /* ---------- Chiffrement AES-GCM ----------
+     THv1 : AES-GCM seul. THv2 : compressé (gzip) puis chiffré → fichiers 2 à 4 fois plus légers.
+     Les anciens .enc (THv1) restent lisibles. */
   var MAGIC = [84, 72, 118, 49]; // "THv1"
+  var MAGIC2 = [84, 72, 118, 50]; // "THv2"
   async function importerCle(b64) {
     var brut = Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
     return crypto.subtle.importKey("raw", brut, "AES-GCM", false, ["encrypt", "decrypt"]);
   }
+  async function flux(buffer, Classe, mode) {
+    return new Response(new Blob([buffer]).stream().pipeThrough(new Classe(mode))).arrayBuffer();
+  }
   async function chiffrer(buffer, cleB64) {
-    var cle = await importerCle(cleB64);
+    var cle = await importerCle(cleB64), magic = MAGIC, donnees = buffer;
+    if (window.CompressionStream) {
+      try {
+        var z = await flux(buffer, CompressionStream, "gzip");
+        if (z.byteLength < buffer.byteLength * 0.9) { donnees = z; magic = MAGIC2; }   // déjà compressé (pdf, image…) : on n'insiste pas
+      } catch (e) {}
+    }
     var iv = crypto.getRandomValues(new Uint8Array(12));
-    var ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cle, buffer));
+    var ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cle, donnees));
     var out = new Uint8Array(4 + 12 + ct.length);
-    out.set(MAGIC, 0); out.set(iv, 4); out.set(ct, 16);
+    out.set(magic, 0); out.set(iv, 4); out.set(ct, 16);
     return out;
   }
   async function dechiffrer(buffer, cleB64) {
-    var u = new Uint8Array(buffer);
-    for (var i = 0; i < 4; i++) if (u[i] !== MAGIC[i]) throw new Error("format_inconnu");
+    var u = new Uint8Array(buffer), v = 0;
+    if (MAGIC.every(function (x, i) { return u[i] === x; })) v = 1;
+    else if (MAGIC2.every(function (x, i) { return u[i] === x; })) v = 2;
+    if (!v) throw new Error("format_inconnu");
     var cle = await importerCle(cleB64);
-    return crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(4, 16) }, cle, u.slice(16));
+    var clair = await crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(4, 16) }, cle, u.slice(16));
+    if (v === 1) return clair;
+    if (!window.DecompressionStream) { var e = new Error("navigateur_ancien"); e.navigateur = true; throw e; }
+    return flux(clair, DecompressionStream, "gzip");
   }
 
   window.TH = {

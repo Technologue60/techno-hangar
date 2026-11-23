@@ -6,11 +6,16 @@
 <meta name="theme-color" content="#09090b">
 <title>Ressource · Techno-Hangar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="assets/style.css?v=13">
-<link rel="stylesheet" href="assets/pass.css?v=7">
+<link rel="stylesheet" href="assets/pass.css?v=9">
 <link rel="stylesheet" href="assets/theme.css?v=7">
 <style>
+  .voir-charge { max-width: 420px; margin: 3rem auto; text-align: center; color: var(--muted); font-size: .9rem; }
+  .voir-charge i { display: block; height: 6px; margin-top: .6rem; border-radius: 6px; background: var(--border2); overflow: hidden; }
+  .voir-charge u { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3b8bff, #3fd6c6); transition: width .2s; }
   html, body { height: 100%; }
   body { display: flex; flex-direction: column; }
   body > footer { display: none; }
@@ -46,7 +51,7 @@
   <iframe id="cadre" title="Ressource" allow="fullscreen; clipboard-write" allowfullscreen hidden></iframe>
 </main>
 <script src="assets/config.js?v=5"></script>
-<script src="assets/th.js?v=3"></script>
+<script src="assets/th.js?v=4"></script>
 <script src="catalogue.js"></script>
 <script>
 window.TH_VOIR = async function (acces) {
@@ -82,6 +87,28 @@ window.TH_VOIR = async function (acces) {
   var cle = acces.cles && acces.cles[classe];
   if (!cle) return erreur("Cette ressource n'appartient pas à ta classe.");
 
+  /* Téléchargement lancé tout de suite (en parallèle des vérifications), avec la progression affichée */
+  var charge = document.createElement("div"); charge.className = "voir-charge";
+  charge.innerHTML = '<span>Téléchargement…</span><i><u></u></i>';
+  msg.appendChild(charge);
+  var telech = (async function () {
+    var rep = await fetch(classe + "/" + fichier + ".enc", { cache: "no-cache" });
+    if (!rep.ok) return null;
+    var total = Number(rep.headers.get("content-length")) || 0;
+    if (!rep.body || !total) return rep.arrayBuffer();
+    var lecteur = rep.body.getReader(), morceaux = [], recu = 0;
+    for (;;) {
+      var x = await lecteur.read(); if (x.done) break;
+      morceaux.push(x.value); recu += x.value.length;
+      var pc = Math.min(100, Math.round(recu / total * 100));
+      charge.firstChild.textContent = "Téléchargement… " + pc + " %"; charge.querySelector("u").style.width = pc + "%";
+    }
+    var tout = new Uint8Array(recu), pos = 0;
+    morceaux.forEach(function (m) { tout.set(m, pos); pos += m.length; });
+    return tout.buffer;
+  })();
+  telech.catch(function () {});
+
   /* Ouverture de l'activité et points (script Supabase 03 ; sans lui, tout reste ouvert) */
   var statut = null;
   function toast(html) {
@@ -112,11 +139,13 @@ window.TH_VOIR = async function (acces) {
   /* 1. Télécharger et déchiffrer */
   var clair;
   try {
-    var rep = await fetch(classe + "/" + fichier + ".enc", { cache: "no-cache" });
-    if (!rep.ok) return erreur("Le fichier n'est pas encore en ligne.");
-    var brut = await rep.arrayBuffer();
+    var brut = await telech;
+    if (!brut) return erreur("Le fichier n'est pas encore en ligne.");
+    charge.firstChild.textContent = "Ouverture…";
     clair = await TH.dechiffrer(brut, cle);
+    charge.remove();
   } catch (e) {
+    if (e && e.navigateur) return erreur("Ton navigateur est trop ancien pour ouvrir cette ressource. Mets-le à jour (ou utilise Chrome, Edge ou Firefox).");
     // Diagnostic pour le prof : avec quelle classe le fichier a-t-il été chiffré ?
     if (acces.role === "prof" && acces.cles && typeof brut !== "undefined") {
       for (var c in acces.cles) {
@@ -234,7 +263,7 @@ window.TH_VOIR = async function (acces) {
 };
 </script>
 <script src="assets/presence.js?v=2"></script>
-<script src="assets/pass.js?v=18"></script>
-<script src="assets/site.js?v=22"></script>
+<script src="assets/pass.js?v=21"></script>
+<script src="assets/site.js?v=23"></script>
 </body>
 </html>

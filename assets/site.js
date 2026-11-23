@@ -530,14 +530,16 @@
     dessinerOnglets(); afficher();
 
     // Progression de l'élève et statut des activités : chargés en parallèle, un seul affichage
-    var s = TH.session();
+    var s = TH.session(), CLE_C = "th-classe-" + classeCourante;
+    try { var cc = JSON.parse(sessionStorage.getItem(CLE_C) || "null"); if (cc) { (cc[0] || []).forEach(function (l) { progression[l.ressource] = l; }); statuts = cc[1] || {}; afficher(); } } catch (e) {}
     var r = await Promise.all([
       acces.role === "eleve" ? TH.rest("progression?select=ressource,avancement,score,termine&eleve=eq." + s.user.id).catch(function () { return []; }) : [],
       acces.role === "eleve" || acces.role === "prof" ? TH.rpc("mes_activites").catch(function () { return {}; }) : {}
     ]);
-    (r[0] || []).forEach(function (l) { progression[l.ressource] = l; });
+    progression = {}; (r[0] || []).forEach(function (l) { progression[l.ressource] = l; });
     statuts = r[1] || {};
     afficher();
+    try { sessionStorage.setItem(CLE_C, JSON.stringify(r)); } catch (e) {}
   }
 
   /* ---------- Démarrage ---------- */

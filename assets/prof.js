@@ -524,7 +524,8 @@ window.TH_PROF = function (acces) {
       $("c-etat").textContent = "Chiffrement de " + f.name + "…";
       var out = await TH.chiffrer(await f.arrayBuffer(), cle);
       var a = el("a", { class: "btn", href: URL.createObjectURL(new Blob([out])), download: f.name + ".enc", texte: "⬇ " + f.name + ".enc" });
-      zone.appendChild(el("p", {}, [a]));
+      var ko = function (n) { return Math.max(1, Math.round(n / 1024)).toLocaleString("fr-FR") + " Ko"; };
+      zone.appendChild(el("p", {}, [a, el("small", { class: "aide", texte: "  " + ko(f.size) + " → " + ko(out.length) })]));
       a.click();
     }
     $("c-etat").textContent = fichiers.length + " fichier(s) chiffré(s) pour " + nomClasse(classe) + ". Si un téléchargement n'est pas parti, clique sur son lien.";
