@@ -206,3 +206,4 @@ a.ps-act:hover { border-color: var(--border2); }
 @keyframes bq-flash { 30% { box-shadow: 0 0 0 3px rgba(245,183,74,.55), 0 0 30px -6px rgba(245,183,74,.8); } }
 .ps-bq .bq-vis { width: 100%; }
 .ps-bq .bq-vis .bn-mini { display: block; width: 100%; border-radius: 10px; }
+.bq-vide { margin: 0; padding: 1.1rem; border-radius: 12px; border: 1px dashed var(--border2); color: var(--muted); font-size: .85rem; text-align: center; }

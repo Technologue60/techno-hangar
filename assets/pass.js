@@ -156,13 +156,17 @@
   };
   function picto(n) { var s = el("span", { class: "hud-pic hud-" + n }); s.innerHTML = PICTO[n]; return s; }
   window.TH_HUD = function (header, acces) {
-    if (!header || !acces || acces.role !== "eleve" || !window.TH_PASS_ACTIF) return;
-    if (((window.TH_CONFIG && window.TH_CONFIG.passClasses) || []).indexOf(acces.classe) < 0) return;
-    var cfg = ((window.TH_CLASSES || []).filter(function (c) { return c.id === acces.classe; })[0] || {}).profil || {};
-    var bar = el("div", { class: "hud" }), inn = el("div", { class: "hud-in" });
+    if (!header || !acces || !window.TH_PASS_ACTIF) return;
+    // Prof : barre de l'élève consulté, seulement sur son profil (?eleve=…)
+    var vu = acces.role !== "eleve" && document.body.getAttribute("data-page") === "profil" ? new URLSearchParams(location.search).get("eleve") : null;
+    if (acces.role !== "eleve" && !vu) return;
+    if (!vu && ((window.TH_CONFIG && window.TH_CONFIG.passClasses) || []).indexOf(acces.classe) < 0) return;
+    var cfg = {};
+    var bar = el("div", { class: "hud" + (vu ? " hud-prof" : "") }), inn = el("div", { class: "hud-in" });
     bar.appendChild(inn); header.appendChild(bar); header.classList.add("avec-hud");
+    if (vu) bar.hidden = true;
     function puce(lien, cls, enfants, titre) {
-      var a = el("a", { class: "hud-p " + cls, href: lienProfil(lien), title: titre || "" }, enfants);
+      var a = el("a", { class: "hud-p " + cls, href: lienProfil(lien, vu), title: titre || "" }, enfants);
       a.onclick = function (e) { if (window.TH_PROFIL_OUVRIR) { e.preventDefault(); if (lien) window.TH_PROFIL_OUVRIR(lien); else window.scrollTo({ top: 0, behavior: "smooth" }); } };
       inn.appendChild(a); return a;
     }
@@ -171,6 +175,8 @@
       inn.innerHTML = "";
       if (!d) { bar.hidden = true; return; }
       bar.hidden = false;
+      cfg = ((window.TH_CLASSES || []).filter(function (c) { return c.id === (d.classe || acces.classe); })[0] || {}).profil || {};
+      if (vu) inn.appendChild(el("span", { class: "hud-qui" }, [el("small", { texte: "Élève" }), el("b", { texte: d.prenom || "" })]));
       puce("points", "hud-pts", [picto("pts"), el("b", { texte: nb(d.total) }), el("small", { texte: "pts" })], "Points du pass");
       if (cfg.rang !== false) {
         var se = [0].concat(d.seuils || [1000, 3000, 5000]), perf = Number(d.perf) || 0, ri = 0;
@@ -193,9 +199,9 @@
       }
     }
     var c = null;
-    try { c = JSON.parse(sessionStorage.getItem("th-hud") || "null"); if (c) dessiner(c); } catch (e) {}
+    if (!vu) try { c = JSON.parse(sessionStorage.getItem("th-hud") || "null"); if (c) dessiner(c); } catch (e) {}
     window.TH_HUD_MAJ = function () {
-      return TH.rpc("mon_hud").then(function (d) { if (d) { d._t = Date.now(); try { sessionStorage.setItem("th-hud", JSON.stringify(d)); } catch (e) {} } dessiner(d); })
+      return TH.rpc("mon_hud", vu ? { p_eleve: vu } : {}).then(function (d) { if (d && !vu) { d._t = Date.now(); try { sessionStorage.setItem("th-hud", JSON.stringify(d)); } catch (e) {} } dessiner(d); })
         .catch(function () { if (!c) dessiner(null); });
     };
     if (!(c && c._t && Date.now() - c._t < 2 * 60000)) window.TH_HUD_MAJ();
@@ -675,7 +681,7 @@
       if (NOUVEAU) D.profil = await TH.rpc("mon_profil", cible ? { p_eleve: cible } : {}).catch(function () { return D.profil; });
       D.boutique = await TH.rpc("ma_boutique", cible ? { p_eleve: cible } : {}).catch(function () { return D.boutique; });
       dessiner(); majBulle();
-      if (moiMeme && window.TH_HUD_MAJ) window.TH_HUD_MAJ();
+      if (window.TH_HUD_MAJ) window.TH_HUD_MAJ();
     }
 
     /* ----- Onglet Pass : piste verticale façon Brawl Stars ----- */
@@ -698,7 +704,7 @@
         el("small", { texte: moiMeme ? (j.dispo ? "Tu as " + j.dispo + " jeton" + (j.dispo > 1 ? "s" : "") + " à échanger." : "Gagne des jetons sur certains paliers du pass.") + " Tes points ne sont jamais dépensés."
           : j.dispo + " jeton" + (j.dispo > 1 ? "s" : "") + " disponible" + (j.dispo > 1 ? "s" : "") })]),
         el("span", { class: "bq-solde" + (j.dispo ? " on" : "") }, [el("b", { texte: j.dispo }), el("small", { texte: j.dispo > 1 ? "jetons" : "jeton" })])]));
-      if (!arts.length) { sec.appendChild(el("p", { class: "aide", texte: "La boutique est vide pour l'instant." })); return sec; }
+      if (!arts.length) { sec.appendChild(el("p", { class: "bq-vide", texte: "La boutique ouvre bientôt. Tes jetons se gagnent en avançant dans ton pass : garde-les, tu pourras les échanger dès l'arrivée des premiers articles." })); return sec; }
       var filtres = el("div", { class: "bq-filtres" }), grille = el("div", { class: "bq-grille" }), etat = el("p", { class: "ps-info bq-etat" });
       etat.hidden = true;
       function puces(titre, cle, liste) {
@@ -1169,7 +1175,7 @@
 
       // Boutique (jetons), directement dans le profil
       var BQ = D.boutique;
-      var avecBoutique = BQ && ((BQ.articles || []).length || (BQ.paliers_jeton || []).length);
+      var avecBoutique = !!BQ;
 
       // Liens secondaires
       var liens = el("div", { class: "ps-liens" });
@@ -1333,7 +1339,7 @@
     try {
       await toutCharger(); dessiner();
       var h0 = (location.hash || "").replace("#", "");
-      if (moiMeme) window.TH_PROFIL_OUVRIR = ouvrir;
+      window.TH_PROFIL_OUVRIR = ouvrir;
       var VUES_H = { pass: 1, collection: 1, activites: 1, points: 1, rang: 1, saison: 1, badges: 1, boutique: 1 };
       if (NOUVEAU && VUES_H[h0]) setTimeout(function () { ouvrir(h0); }, h0 === "boutique" ? 500 : 0);
       if (NOUVEAU) window.addEventListener("hashchange", function () { var h = location.hash.replace("#", ""); if (VUES_H[h]) ouvrir(h); });

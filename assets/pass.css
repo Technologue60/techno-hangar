@@ -510,3 +510,7 @@ button.bg-carte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgb
   .hud-pic { width: 15px; height: 15px; }
   .hud-rang .ps-emb { width: 22px; height: 22px; }
 }
+.hud-qui { flex: none; display: flex; flex-direction: column; line-height: 1.1; padding: 0 .6rem 0 .2rem; margin-right: .2rem; border-right: 1px solid var(--border2); }
+.hud-qui small { font-family: var(--mono); font-size: .6rem; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
+.hud-qui b { font-family: var(--titre, inherit); font-size: .9rem; }
+.hud-prof .hud-pastille { display: none; }
