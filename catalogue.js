@@ -96,6 +96,9 @@ window.CATALOGUE = [
     titre: "Séance 3 · Revue de projet n°1", fichier: "it-casque-seance3-eleve.html", type: "activite", icone: "casque", en_ligne: true,
     titre_consigne: "Séance 3 : revue de projet n°1",
     consigne: "Rappel de l'assemblage et captures, puis tes attendus (élève A ou B), puis le diaporama. Revue de projet : 5 min + 2 min de questions." },
+  /* ETLV */
+  { classe: "premiere-it", onglet: "etlv", sequence: "Séance 5",
+    titre: "Quiz Lab · Create your quiz, challenge the class", fichier: "quiz-lab.html", type: "activite", icone: "quiz", en_ligne: true },
 
   /* ---------------- SNT seconde ---------------- */
   { classe: "snt", sequence: "Thème 2 · Le Web",
