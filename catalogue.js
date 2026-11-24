@@ -92,6 +92,8 @@ window.CATALOGUE = [
     titre: "Séance 2 · Conception préliminaire du boîtier", fichier: "it-casque-seance2-eleve.html", type: "activite", icone: "casque", en_ligne: true,
     titre_consigne: "Séance 2 : conception préliminaire du boîtier",
     consigne: "4 parties. À la fin de chaque partie, appelle ton professeur : il valide avec toi, puis la partie suivante s'ouvre." },
+  { classe: "premiere-it", onglet: "etlv", sequence: "Séance 5",
+    titre: "Quiz Lab · Create your quiz, challenge the class", fichier: "quiz-lab.html", type: "activite", icone: "quiz", en_ligne: true },
 
   /* ---------------- SNT seconde ---------------- */
   { classe: "snt", sequence: "Thème 2 · Le Web",

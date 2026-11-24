@@ -10,12 +10,12 @@
   var CLASSES = [
     { id: "terminale-sti2d", nom: "Terminale STI2D", court: "Tle STI2D", code: "TLE", det: "2I2D · ITEC", couleur: "--c-sti2d",
       onglets: [
-        { id: "revision", nom: "Révision de 1re", sequences: [ "0 · Révision de 1re" ] },
-        { id: "2i2d", nom: "2I2D", defaut: true,
+        { id: "revision", nom: "Révision de 1re", icone: "o-revision", sequences: [ "0 · Révision de 1re" ] },
+        { id: "2i2d", nom: "2I2D", icone: "o-2i2d", defaut: true,
           sequences: [ "Thème 1 · Gérer la ville du futur", "Thème 2 · Comment sécuriser un bâtiment ?", "Thème 3 · Robotique", "Étude de système" ] },
-        { id: "itec", nom: "ITEC",
+        { id: "itec", nom: "ITEC", icone: "spe-itec", couleur: "--c-itec",
           sequences: [ "1 · Force, couple & torseur", "2 · Statique", "3 · RDM" ] },
-        { id: "tp", nom: "TP Étude système",
+        { id: "tp", nom: "TP Étude système", icone: "o-tp",
           sequences: [ "Épreuves pratiques" ] } ],
       /* Saison (1, 2, 3… dans l'ordre des dates des saisons) de chaque séquence, pour le profil et les badges */
       saisons: { "0 · Révision de 1re": 1, "1 · Force, couple & torseur": 1, "Thème 1 · Gérer la ville du futur": 1,
@@ -25,10 +25,10 @@
       /* Profil : un seul pass sur l'année, rang ; badges = pass + performance (pas de succès par activité) */
       profil: { annuel: true, badges: "pass-perf" },
       onglets: [
-        { id: "it", nom: "Innovation technologique", defaut: true,
+        { id: "it", nom: "Innovation technologique", icone: "casque", defaut: true,
           sequences: [ "Séquence 1 · Représentation du réel", "Séquence 2 · Support téléphone",
                        "Projet 1 · Le casque connecté", "Projet 2", "Projet final" ] },
-        { id: "etlv", nom: "ETLV",
+        { id: "etlv", nom: "ETLV · English", icone: "o-etlv", couleur: "--c-etlv",
           sequences: [ "Séance 1", "Séance 2", "Séance 3", "Séance 4 · Hydropower", "Séance 5" ] } ] },
     { id: "snt", nom: "SNT seconde", court: "SNT", code: "2DE", det: "Sciences numériques", couleur: "--c-snt", onglets: [],
       /* Profil : un seul pass sur l'année (par thème), pas de rang, badges « bientôt disponibles » */
@@ -49,6 +49,10 @@
     return '<path d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + 'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a - .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a - .45)).toFixed(1) +
       'M' + x2 + ' ' + y2 + 'L' + (x2 - l * Math.cos(a + .45)).toFixed(1) + ' ' + (y2 - l * Math.sin(a + .45)).toFixed(1) + '"/>'; };
   var ICONES = {
+    "o-revision": I('<path d="M38 24a14 14 0 1 1-4.1-9.9"/><path d="M35 6v9h-9"/><path d="M24 17v8l5 3"/>'),
+    "o-2i2d": I('<path d="M24 6l16 9v18l-16 9-16-9V15z"/><path d="M8 15l16 9 16-9M24 24v18"/>'),
+    "o-tp": I('<path d="M31 7a9 9 0 0 0-8 12L8 34a3.5 3.5 0 0 0 5 5l15-15a9 9 0 0 0 12-8l-6 6-5-1-1-5z"/>'),
+    "o-etlv": I('<path d="M7 9h34v22H23l-9 8v-8H7z"/><text x="24" y="25" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" stroke="none" font-family="system-ui,sans-serif">EN</text>'),
     defi: I('<path d="M16 8h16v10a8 8 0 0 1-16 0z"/><path d="M16 11h-5a5 5 0 0 0 5 7M32 11h5a5 5 0 0 1-5 7"/><path d="M24 26v6M17 40h14M19 40l1.5-8h7l1.5 8"/>'),
     "spe-itec": I('<circle cx="24" cy="24" r="5"/><circle cx="24" cy="24" r="11"/><path d="M24 7v6M24 35v6M7 24h6M35 24h6M12 12l4.2 4.2M31.8 31.8L36 36M12 36l4.2-4.2M31.8 16.2L36 12"/>'),
     "spe-sin": I('<rect x="14" y="14" width="20" height="20" rx="3"/><rect x="20" y="20" width="8" height="8" rx="1"/><path d="M19 8v6M24 8v6M29 8v6M19 34v6M24 34v6M29 34v6M8 19h6M8 24h6M8 29h6M34 19h6M34 24h6M34 29h6"/>'),
@@ -90,7 +94,7 @@
     if (attrs) for (var k in attrs) {
       if (k === "texte") n.textContent = attrs[k];
       else if (k === "html") n.innerHTML = attrs[k];
-      else n.setAttribute(k, attrs[k]);
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
     }
     (enfants || []).forEach(function (c) { if (c) n.appendChild(c); });
     return n;
@@ -372,8 +376,13 @@
       barre.innerHTML = "";
       if (!onglets.length) { barre.style.display = "none"; zone.style.marginTop = "2.4rem"; return; }
       onglets.forEach(function (o) {
+        var n = liste.filter(function (r) { return r.onglet === o.id; }).length;
         var b = el("button", { type: "button", class: "onglet" + (o.id === actif ? " actif" : ""),
-          role: "tab", "aria-selected": o.id === actif ? "true" : "false", texte: o.nom });
+          style: o.couleur ? "--oc: var(" + o.couleur + ")" : null,
+          role: "tab", "aria-selected": o.id === actif ? "true" : "false" });
+        if (o.icone && ICONES[o.icone]) { var ic = el("span", { class: "onglet-ic" }); ic.innerHTML = ICONES[o.icone]; b.appendChild(ic); }
+        b.appendChild(el("span", { texte: o.nom }));
+        if (n) b.appendChild(el("span", { class: "onglet-n", texte: n }));
         b.addEventListener("click", function () {
           actif = o.id;
           try { history.replaceState(null, "", "#" + o.id); } catch (e) { location.hash = o.id; }
@@ -408,6 +417,7 @@
       zone.innerHTML = "";
       var vis = liste.filter(function (r) { return !actif || r.onglet === actif; });
       var og = onglets.filter(function (o) { return o.id === actif; })[0];
+      if (og && og.couleur) zone.style.setProperty("--c", "var(" + og.couleur + ")"); else zone.style.removeProperty("--c");
       var ordre = collegue ? [] : ((og ? og.sequences : infos.sequences) || []).slice(), groupes = {};
       ordre.forEach(function (s) { groupes[s] = []; });
       vis.forEach(function (r) {

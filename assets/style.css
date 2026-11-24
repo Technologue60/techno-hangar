@@ -119,11 +119,20 @@ code { font-family: var(--mono); font-size: .85em; background: var(--surface2); 
 .fil b { color: var(--muted); font-weight: 400; }
 .classe-titre { display: flex; align-items: center; gap: .7rem; }
 .classe-titre h1 { margin: 0; }
-.onglets { display: flex; gap: 1.4rem; border-bottom: 1px solid var(--border); margin: 1.6rem 0 2rem; overflow-x: auto; }
-.onglet { font: inherit; font-size: .9rem; background: none; border: 0; color: var(--muted); padding: .7rem 0; cursor: pointer; position: relative; white-space: nowrap; }
-.onglet:hover { color: var(--text); }
-.onglet.actif { color: var(--text); }
-.onglet.actif:after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--c, var(--accent)); box-shadow: 0 0 12px var(--c, var(--accent)); }
+.onglets { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.6rem 0 2rem; }
+.onglet { --oc: var(--c, var(--accent)); font: inherit; font-size: .92rem; font-weight: 600; display: inline-flex; align-items: center; gap: .55rem;
+  padding: .6rem 1rem .6rem .7rem; border-radius: 12px; border: 1px solid var(--border2); background: var(--surface); color: var(--text);
+  cursor: pointer; white-space: nowrap; transition: border-color .2s, box-shadow .2s, background .2s, transform .15s; }
+.onglet:hover { border-color: color-mix(in srgb, var(--oc) 70%, var(--border2)); box-shadow: 0 0 16px -6px var(--oc); transform: translateY(-1px); }
+.onglet:active { transform: translateY(0) scale(.98); }
+.onglet-ic { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: var(--oc);
+  background: color-mix(in srgb, var(--oc) 14%, transparent); }
+.onglet-ic svg { width: 19px; height: 19px; }
+.onglet-n { font-family: var(--mono); font-size: .7rem; font-weight: 500; color: var(--muted); padding: .05rem .45rem; border-radius: 999px; border: 1px solid var(--border2); }
+.onglet.actif { border-color: var(--oc); background: color-mix(in srgb, var(--oc) 14%, var(--surface)); box-shadow: 0 0 0 1px var(--oc) inset, 0 0 22px -8px var(--oc); }
+.onglet.actif .onglet-ic { background: var(--oc); color: #0b0b0f; }
+.onglet.actif .onglet-n { color: var(--text); border-color: color-mix(in srgb, var(--oc) 60%, transparent); }
+@media (max-width: 600px) { .onglets { gap: .45rem; } .onglet { font-size: .84rem; padding: .5rem .75rem .5rem .55rem; } }
 .sequence { margin-bottom: 2.4rem; }
 .sequence h2 { font-size: .78rem; font-family: var(--mono); font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
   margin: 0 0 .9rem; display: flex; align-items: center; gap: .7rem; }
