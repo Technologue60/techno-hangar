@@ -38,7 +38,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 12
 .tb.primary{background:var(--acc);color:#fff}
 .tb.primary:hover{filter:brightness(1.08);background:var(--acc)}
 .tb:disabled{opacity:.4;cursor:default}
-.main{display:grid;grid-template-columns:240px minmax(0,1fr) 300px;min-height:0}
+.main{display:grid;grid-template-columns:260px minmax(0,1fr) 300px;min-height:0}
 aside{background:var(--panel);overflow:auto;min-height:0}
 aside.left{border-right:1px solid var(--line)}aside.right{border-left:1px solid var(--line)}
 .sec{padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -51,7 +51,7 @@ aside.left{border-right:1px solid var(--line)}aside.right{border-left:1px solid 
 .badge{white-space:nowrap}
 .tree li.part{padding-left:14px}
 .tree li.sel{background:var(--accbg)}
-.tree .nm{flex:1;text-align:left;background:none;border:0;padding:8px 6px;cursor:pointer;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree .nm{flex:1;text-align:left;background:none;border:0;padding:8px 4px;cursor:pointer;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tree .ic{width:34px;height:34px;border:0;background:none;border-radius:6px;cursor:pointer;color:var(--mute);display:grid;place-items:center}
 .tree .ic:hover{background:var(--panel2);color:var(--ink)}
 .tree .ic svg{width:16px;height:16px}
@@ -129,6 +129,7 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:30px}
 <div class="main">
  <aside class="left">
   <div class="sec"><h2>Arbre de création</h2><ul class="tree" id="tree"></ul>
+   <label class="chk" id="colorRow" hidden><input type="checkbox" id="colorParts"> Une couleur par pièce</label>
    <p class="note">Cliquez une pièce pour la sélectionner. L'œil la cache ou la montre, la cible l'isole.</p></div>
  </aside>
  <div class="vpw" id="vpw">
@@ -204,7 +205,8 @@ const mGroup = new THREE.Group(); scene.add(mGroup);
 const lblEl = document.createElement('div'); lblEl.className = 'mlabel'; lblEl.hidden = true; $('#vpw').appendChild(lblEl);
 
 // ---------- État
-const S = {docs:[], doc:null, sel:null, face:null, hover:null, edges:true, section:false, secAxis:'z', secPos:.5, secFlip:false, measure:false, picks:[], cdg:true, mat:LS.get('cao-mat') || {}};
+const PAL = [0x5b8cff,0xf5a524,0x30a46c,0xe5484d,0xb07cff,0x2fc4c4,0xd6409f,0x8a9a3b,0xff8a4c,0x7b8cab];
+const S = {colorParts:false, docs:[], doc:null, sel:null, face:null, hover:null, edges:true, section:false, secAxis:'z', secPos:.5, secFlip:false, measure:false, picks:[], cdg:true, mat:LS.get('cao-mat') || {}};
 let occt = null, uid = 0;
 
 // ---------- Lecture STEP
@@ -216,7 +218,7 @@ function readStep(name, bytes){
  if (!r || !r.success || !r.meshes.length) throw new Error('Le fichier n’a pas pu être lu comme un STEP valide.');
  const doc = {id:++uid, name:name.replace(/\.(step|stp)$/i,''), group:new THREE.Group(), parts:[], view:null};
  r.meshes.forEach((m, i) => doc.parts.push(makePart(doc, m, i)));
- doc.tree = (function walk(n){return {name:n.name, parts:(n.meshes||[]).map(i=>doc.parts[i]), kids:(n.children||[]).map(walk)}})(r.root);
+ doc.tree = (function walk(n){return {name:clean(n.name), parts:(n.meshes||[]).map(i=>doc.parts[i]), kids:(n.children||[]).map(walk)}})(r.root);
  if (!doc.tree.name) doc.tree.name = doc.name;
  doc.box = new THREE.Box3(); doc.parts.forEach(p => doc.box.union(p.box));
  return doc;
@@ -235,13 +237,14 @@ function makePart(doc, m, i){
  const edges = new THREE.LineSegments(boundaryEdges(g, faces), new THREE.LineBasicMaterial({color:0x14161c}));
  edges.renderOrder = 2;
  const sb = new THREE.Mesh(g, stBack), sf = new THREE.Mesh(g, stFront); sb.renderOrder = sf.renderOrder = 1; sb.visible = sf.visible = false;
- const name = (m.name || '').replace(/\.(ipt|sldprt)<\d+>$/i,'') || (doc.name + (i ? '-' + (i+1) : ''));
- const p = {id:++uid, doc, name, mesh, edges, sb, sf, geom:g, fot, faces, visible:true, transp:false, box:g.boundingBox.clone(), props:massProps(g)};
+ const name = clean(m.name) || (doc.name + (i ? '-' + (i+1) : ''));
+ const p = {id:++uid, doc, name, col0:col.clone(), mesh, edges, sb, sf, geom:g, fot, faces, visible:true, transp:false, box:g.boundingBox.clone(), props:massProps(g)};
  mesh.userData.part = p;
  const key = doc.name + '/' + name; p.key = key; p.mat = S.mat[key] || {id:'', rho:0};
  doc.group.add(mesh, edges, sb, sf);
  return p;
 }
+const clean = n => (n || '').replace(/<\d+>$/,'').replace(/\.(ipt|iam|sldprt|sldasm|prt|asm|step|stp)$/i,'').trim();
 // Arêtes réelles : bord de chaque face B-rep (couture des cylindres supprimée)
 function boundaryEdges(g, faces){
  const P = g.attributes.position.array, I = g.index.array, out = [];
@@ -563,6 +566,7 @@ function applyLook(){
  S.doc.parts.forEach(p => {
   p.mesh.visible = p.visible; p.edges.visible = p.visible && S.edges;
   const m = p.mesh.material; m.transparent = p.transp; m.opacity = p.transp ? .35 : 1; m.depthWrite = !p.transp;
+  if (S.colorParts && S.doc.parts.length > 1) m.color.setHex(PAL[S.doc.parts.indexOf(p) % PAL.length]); else m.color.copy(p.col0);
   m.emissive.set(S.sel === p ? 0x16244a : 0x000000);
  });
  updateSection();
@@ -613,7 +617,9 @@ function renderTree(){
   n.kids.forEach(k => walk(k, depth+1));
  })(doc.tree, 0);
  $('#tree').innerHTML = html;
+ $('#colorRow').hidden = doc.parts.length < 2; $('#colorParts').checked = S.colorParts;
 }
+const matOpts = (cur, withMixed) => (withMixed ? '<option value="*">Matériaux différents</option>' : '') + MATS.map(([id, n, r]) => `<option value="${id}"${cur === id ? ' selected' : ''}>${n}${r ? ' · ' + r.toLocaleString('fr-FR') + ' kg/m³' : ''}</option>`).join('');
 function matSelect(p){
  return `<label class="f" for="mat-${p.id}">Matériau${S.doc.parts.length > 1 ? ' · ' + esc(p.name) : ''}</label>
   <select id="mat-${p.id}" data-mat="${p.id}">${MATS.map(([id, n, r]) => `<option value="${id}"${p.mat.id === id ? ' selected' : ''}>${n}${r ? ' · ' + r.toLocaleString('fr-FR') + ' kg/m³' : ''}</option>`).join('')}</select>
@@ -651,7 +657,11 @@ function renderPanel(){
  });
  const Gc = mOk && m > 0 ? Gm.divideScalar(m) : Gv.divideScalar(V || 1); const sz = bb.getSize(new THREE.Vector3());
  h += `<div class="sec"><h2>Propriétés de masse · ${esc(S.sel ? S.sel.name : (parts.length === doc.parts.length ? doc.name : parts.length + ' pièces visibles'))}</h2>`;
- h += parts.map(matSelect).join('');
+ if (parts.length > 1){
+  const ids = [...new Set(parts.map(p => p.mat.id))], same = ids.length === 1 && ids[0] !== 'perso';
+  h += `<label class="f" for="matAll">Matériau de toutes les pièces</label><select id="matAll">${matOpts(same ? ids[0] : '*', !same)}</select>`;
+  h += `<details${same ? '' : ' open'}><summary class="f" style="cursor:pointer">Matériau pièce par pièce</summary>${parts.map(matSelect).join('')}</details>`;
+ } else h += parts.map(matSelect).join('');
  h += kv([
   ['Masse', mOk ? (m >= 1000 ? nf(m/1000, 3)+' kg' : nf(m)+' g') : '—', 1],
   ['Poids P = m·g', mOk ? nf(m*1e-3*G, 3)+' N' : '—'],
@@ -660,7 +670,7 @@ function renderPanel(){
   ['Centre de gravité X', nf(Gc.x)+' mm'], ['Centre de gravité Y', nf(Gc.y)+' mm'], ['Centre de gravité Z', nf(Gc.z)+' mm'],
   ['Encombrement', nf(sz.x,1)+' × '+nf(sz.y,1)+' × '+nf(sz.z,1)+' mm']]);
  if (!mOk) h += '<p class="note warn">Choisissez le matériau pour obtenir la masse. Le fichier STEP ne le transporte pas.</p>';
- h += '<p class="note">Coordonnées dans le repère de la pièce (origine SolidWorks). Calcul sur un maillage fin de la géométrie exacte.</p></div>';
+ h += `<p class="note">Coordonnées dans le repère ${doc.parts.length > 1 ? 'de l\u2019assemblage' : 'de la pièce'} (origine SolidWorks). Calcul sur un maillage fin de la géométrie exacte.</p></div>`;
  el.innerHTML = h;
  cdgSprite.position.copy(Gc); cdgSprite.visible = S.cdg && parts.length > 0 && V > 0;
 }
@@ -688,6 +698,7 @@ document.addEventListener('click', e => {
  else if (t.id === 'secFlip'){S.secFlip = !S.secFlip; renderAll()}
  else if (t.id === 'mReset'){clearMeasure(); renderAll()}
 });
+$('#colorParts').onchange = e => {S.colorParts = e.target.checked; renderAll()};
 $('#bOpen').onclick = () => $('#file').click();
 $('#file').onchange = e => {openFiles([...e.target.files]); e.target.value = ''};
 $('#bFit').onclick = () => {fit(); req()};
@@ -702,6 +713,7 @@ $('#panel').addEventListener('input', e => {
 });
 $('#panel').addEventListener('change', e => {
  const d = e.target.dataset;
+ if (e.target.id === 'matAll' && e.target.value !== '*'){S.doc.parts.filter(p => S.sel ? p === S.sel : p.visible).forEach(p => {p.mat = {id:e.target.value, rho:0}; S.mat[p.key] = p.mat}); LS.set('cao-mat', S.mat); renderAll(); return}
  if (d.mat){const p = findPart(d.mat); p.mat = {id:e.target.value, rho:p.mat.rho || 0}; saveMat(p); renderAll()}
  if (d.rho){const p = findPart(d.rho); p.mat.rho = Math.max(0, +e.target.value || 0); saveMat(p); renderAll()}
 });
