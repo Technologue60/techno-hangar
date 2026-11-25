@@ -342,12 +342,21 @@
     })])]));
   }
   /* Boutique à jetons */
+  function prixSel(b) {
+    var p = select([1, 2, 3, 4, 5, 6].map(function (n) { return [n, n + " jeton" + (n > 1 ? "s" : "")]; }), b.prix);
+    p.addEventListener("change", async function () {
+      try { await TH.rest("boutique?id=eq." + b.id, { method: "PATCH", body: { prix: +p.value }, headers: { "Prefer": "return=minimal" } }); p.classList.add("enr-ok"); }
+      catch (e) { alert(msg(e)); }
+    });
+    return p;
+  }
   async function chargerBoutique() {
     var z = $("p-boutique"); if (!z) return; vider(z);
     var c = classeChoisie(), s = $("p-saison").value;
     var l;
-    try { l = await TH.rest("boutique?select=id,classe,saison,recompense&order=ordre,id"); }
-    catch (e) { z.appendChild(el("p", { class: "aide", texte: "Lance d'abord le script 24-jetons-boutique.sql dans Supabase." })); return; }
+    try { l = await TH.rest("boutique?select=id,classe,saison,recompense,prix&order=ordre,id"); }
+    catch (e0) { try { l = await TH.rest("boutique?select=id,classe,saison,recompense&order=ordre,id"); } catch (e1) { l = null; } }
+    if (!l) { z.appendChild(el("p", { class: "aide", texte: "Lance d'abord le script 24-jetons-boutique.sql dans Supabase." })); return; }
     l = l.filter(function (b) { return (!b.classe || b.classe === c) && (!b.saison || String(b.saison) === String(s)); });
     var nomS = function (id) { var x = saisons.filter(function (q) { return String(q.id) === String(id); })[0]; return x ? x.nom.split("·")[0].trim() : ""; };
     var grille = el("div", { class: "pp-bq" });
@@ -356,17 +365,20 @@
       grille.appendChild(el("div", { class: "pp-bq-art r-" + r.rarete }, [
         el("b", { texte: r.nom }),
         el("small", { texte: ({ avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Ornement", banniere: "Bannière" })[r.type] + " · " + (b.saison ? nomS(b.saison) : "toute l'année") + (b.classe ? "" : " · toutes classes") }),
+        b.prix != null ? prixSel(b) : null,
         bouton("Retirer", "danger", async function () { await supprimer("boutique", "id=eq." + b.id); chargerBoutique(); })]));
     });
     if (!l.length) grille.appendChild(el("p", { class: "aide", texte: "Aucun article pour cette saison." }));
     z.appendChild(grille);
     var opts = optionsRecompenses().filter(function (o) { var r = recompenses.filter(function (x) { return x.id === o[0]; })[0]; return r && r.type !== "badge"; });
     var choix = select(opts, ""), annee = input({ type: "checkbox" });
-    z.appendChild(el("div", { class: "ligne-outils" }, [choix,
+    var prix = select([1, 2, 3, 4, 5, 6].map(function (n) { return [n, n + " jeton" + (n > 1 ? "s" : "")]; }), 1);
+    choix.addEventListener("change", function () { var r = recompenses.filter(function (x) { return String(x.id) === choix.value; })[0]; prix.value = r && r.type === "banniere" ? (r.rarete === "legendaire" ? 5 : r.rarete === "epique" ? 4 : 3) : 1; });
+    z.appendChild(el("div", { class: "ligne-outils" }, [choix, prix,
       el("label", { class: "case" }, [annee, document.createTextNode(" toute l'année")]),
       bouton("+ Ajouter à la boutique", "primary", async function () {
         if (!choix.value) return;
-        try { await TH.rest("boutique", { method: "POST", body: { classe: c, saison: annee.checked ? null : +s, recompense: +choix.value }, headers: { "Prefer": "return=minimal" } }); }
+        try { await TH.rest("boutique", { method: "POST", body: Object.assign({ classe: c, saison: annee.checked ? null : +s, recompense: +choix.value }, +prix.value > 1 ? { prix: +prix.value } : {}), headers: { "Prefer": "return=minimal" } }); }
         catch (e) { alert(/duplicate|unique/.test(msg(e)) ? "Déjà dans la boutique." : msg(e)); }
         chargerBoutique();
       })]));
@@ -379,7 +391,7 @@
       var neuf = !r.id;
       var type = select([["titre", "Titre"], ["avatar", "Avatar"], ["badge", "Badge"], ["ornement", "Ornement"], ["banniere", "Bannière"]], r.type || "titre");
       var STYLES = { ornement: [["bronze", "Bronze"], ["argent", "Argent"], ["or", "Or"], ["circuit", "Circuit"], ["givre", "Givre"], ["neon", "Néon"], ["flammes", "Flammes"], ["royal", "Royal"]],
-        banniere: [["atelier", "Atelier"], ["plan", "Plan technique"], ["foret", "Forêt"], ["ocean", "Océan"], ["volcan", "Volcan"], ["circuit", "Circuit"], ["galaxie", "Galaxie"], ["royal", "Trône royal"]] };
+        banniere: [["atelier", "Atelier"], ["plan", "Plan technique"], ["foret", "Forêt"], ["ocean", "Océan"], ["volcan", "Volcan"], ["circuit", "Circuit"], ["galaxie", "Galaxie"], ["royal", "Trône royal"], ["photo-pyrenees", "Photo · Aube sur les Pyrénées"], ["photo-cote", "Photo · Côte sauvage"], ["photo-eoliennes", "Photo · Champ d'éoliennes"], ["photo-barrage", "Photo · Barrage au crépuscule"], ["photo-solaire", "Photo · Ferme solaire"], ["photo-aurore", "Photo · Aurore boréale"], ["photo-hangar", "Photo · Hangar sous l'orage"], ["photo-neon", "Photo · Ville néon"], ["photo-glacier", "Photo · Glacier"], ["photo-voie-lactee", "Photo · Voie lactée"]] };
       var sty = el("select");
       var majStyles = function () { vider(sty); (STYLES[type.value] || []).forEach(function (o) { var x = el("option", { value: o[0], texte: o[1] }); if (o[0] === r.style) x.selected = true; sty.appendChild(x); }); };
       majStyles();

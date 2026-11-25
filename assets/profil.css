@@ -207,3 +207,7 @@ a.ps-act:hover { border-color: var(--border2); }
 .ps-bq .bq-vis { width: 100%; }
 .ps-bq .bq-vis .bn-mini { display: block; width: 100%; border-radius: 10px; }
 .bq-vide { margin: 0; padding: 1.1rem; border-radius: 12px; border: 1px dashed var(--border2); color: var(--muted); font-size: .85rem; text-align: center; }
+.bq-prix { position: absolute; top: 6px; right: 8px; display: inline-flex; align-items: center; gap: 2px; font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+.bq-prix.cher { color: #ffd27a; font-weight: 600; }
+.ps-bq .bq-art.bq-ban { grid-column: 1 / -1; }
+.ps-bq .bq-art.bq-ban .bq-vis .bn-mini { height: 84px !important; }

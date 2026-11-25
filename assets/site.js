@@ -75,7 +75,7 @@
   window.TH_ICONES = ICONES;
 
   var TYPES = { activite: "Activité", td: "TD", pdf: "PDF", video: "Vidéo", lien: "Lien", outil: "Outil" };
-  var LOGO = '<svg width="15" height="14" viewBox="0 0 34 30" fill="none" stroke="#ededf0" stroke-width="3" stroke-linejoin="round"><path d="M3 28V14a14 11 0 0 1 28 0v14"/><path d="M11 28V18h12v10"/></svg>';
+  var LOGO = '<svg width="15" height="14" viewBox="4 5 26 24" fill="none" stroke="#ededf0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 27V15L17 7l11 8v12"/><path d="M11.5 27V19h11v8"/><path d="M11.5 23h11"/></svg>';
   window.TH_LOGO = LOGO;
 
   var body = document.body;
@@ -349,6 +349,7 @@
     main.setAttribute("data-c", infos.couleur);
     var titre = document.getElementById("titre");
     titre.textContent = infos.nom;
+    if (window.TH_FX && !TH_FX.calme) TH_FX.split(titre, infos.nom, 80);
     titre.parentNode.insertBefore(el("div", { class: "fil" }, [
       el("a", { href: racine + "index.html", texte: "Techno-Hangar" }), el("b", { texte: " / " }), document.createTextNode(infos.nom)]), titre);
     var bloc = el("div", { class: "classe-titre" }, [el("span", { class: "pastille" }, [el("i")])]);
@@ -415,6 +416,7 @@
     }
     function afficher() {
       zone.innerHTML = "";
+      setTimeout(function () { if (window.TH_FX) TH_FX.entree(zone); }, 0);
       var vis = liste.filter(function (r) { return !actif || r.onglet === actif; });
       var og = onglets.filter(function (o) { return o.id === actif; })[0];
       if (og && og.couleur) zone.style.setProperty("--c", "var(" + og.couleur + ")"); else zone.style.removeProperty("--c");

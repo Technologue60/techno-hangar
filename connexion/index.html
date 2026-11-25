@@ -10,13 +10,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="../assets/style.css?v=14">
+<link rel="stylesheet" href="../assets/effets.css?v=1">
 <link rel="stylesheet" href="../assets/theme.css?v=8">
 </head>
 <body data-racine="../" data-page="connexion">
 <main>
   <section class="cx">
     <form id="form" novalidate>
-      <div class="logo-g"><svg width="22" height="20" viewBox="0 0 34 30" fill="none" stroke="#ededf0" stroke-width="2.6" stroke-linejoin="round"><path d="M3 28V14a14 11 0 0 1 28 0v14"/><path d="M11 28V18h12v10"/></svg></div>
+      <div class="logo-g"><svg width="22" height="20" viewBox="4 5 26 24" fill="none" stroke="#ededf0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 27V15L17 7l11 8v12"/><path d="M11.5 27V19h11v8"/><path d="M11.5 23h11"/></svg></div>
       <h1>Techno-Hangar</h1>
       <p>Connecte-toi avec l'identifiant donné par ton professeur.</p>
       <label for="id">Identifiant</label>
@@ -32,16 +33,18 @@
 <script src="../assets/config.js?v=5"></script>
 <script src="../assets/th.js?v=4"></script>
 <script src="../catalogue.js"></script>
-<script src="../assets/site.js?v=24"></script>
+<script src="../assets/effets.js?v=1"></script>
+<script src="../assets/site.js?v=25"></script>
 <script>
 (function () {
   var f = document.getElementById("form"), err = document.getElementById("err"), go = document.getElementById("go");
   var q = new URLSearchParams(location.search);
+  if (window.TH_FX) { TH_FX.grillePoints(document.body); if (!TH_FX.calme) TH_FX.split(document.querySelector(".cx h1"), "Techno-Hangar", 120); }
   if (q.get("erreur") === "compte") err.textContent = "Ce compte n'est pas (ou plus) actif. Vois avec ton professeur.";
   f.addEventListener("submit", async function (ev) {
     ev.preventDefault();
     var id = document.getElementById("id").value.trim(), mdp = document.getElementById("mdp").value;
-    if (!id || !mdp) { err.textContent = "Remplis l'identifiant et le mot de passe."; return; }
+    if (!id || !mdp) { err.textContent = "Remplis l'identifiant et le mot de passe."; if (window.TH_FX) TH_FX.secouer(f); return; }
     go.disabled = true; go.textContent = "Connexion…"; err.textContent = "";
     try {
       var a = await TH.connexion(id, mdp);
@@ -58,6 +61,7 @@
       else if (e && (e.status === 400 || e.code === "invalid_credentials")) err.textContent = "Identifiant ou mot de passe incorrect.";
       else if (e && e.status === 429) err.textContent = "Trop de tentatives. Attends une minute et réessaie.";
       else err.textContent = "Connexion impossible pour le moment. Vérifie ta connexion Internet.";
+      if (window.TH_FX) TH_FX.secouer(f);
     }
   });
 })();

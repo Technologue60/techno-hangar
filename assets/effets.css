@@ -1,0 +1,85 @@
+/* Techno-Hangar · effets visuels */
+
+/* SplitText */
+.fx-mot { display: inline-block; white-space: nowrap; }
+.fx-l { display: inline-block; opacity: 0; transform: translateY(.45em); filter: blur(6px); transition: opacity .45s, transform .55s cubic-bezier(.2, 1.4, .4, 1), filter .45s; }
+.fx-on .fx-l { opacity: 1; transform: none; filter: none; }
+
+/* ClickSpark */
+.fx-spark { position: fixed; width: 2px; height: 9px; border-radius: 2px; pointer-events: none; z-index: 2000;
+  transform: translate(-50%, -50%) rotate(var(--a)) translateY(-6px); animation: fx-spark .6s ease-out forwards; }
+@keyframes fx-spark { to { transform: translate(-50%, -50%) rotate(var(--a)) translateY(-34px) scaleY(.2); opacity: 0; } }
+
+/* Révélation d'une récompense */
+.fx-rev { --rc: #8b8b96; width: min(400px, 92vw); padding: 0; border: 1px solid color-mix(in srgb, var(--rc) 45%, transparent); border-radius: 20px;
+  background: #0b0b10; color: var(--text, #ededf0); overflow: hidden; box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--rc) 45%, transparent);
+  animation: fx-entre .35s cubic-bezier(.2, 1.2, .4, 1) both; }
+.fx-rev::backdrop { background: rgba(4, 4, 8, .72); backdrop-filter: blur(3px); animation: fx-fondu .3s both; }
+.fx-rev.fx-sort { animation: fx-sort .22s ease-in forwards; }
+@keyframes fx-entre { from { opacity: 0; transform: translateY(18px) scale(.94); } }
+@keyframes fx-sort { to { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes fx-fondu { from { opacity: 0; } }
+.fx-scene { position: relative; height: 210px; display: grid; place-items: center; overflow: hidden; }
+.fx-rayons { position: absolute; inset: -60%; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 30%, transparent) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0, transparent 55%); mask: radial-gradient(circle, #000 0, transparent 55%); animation: fx-tourne 24s linear infinite; opacity: .8; }
+.fx-halo { position: absolute; width: 190px; height: 190px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rc) 55%, transparent), transparent 68%);
+  animation: fx-pulse 2.6s ease-in-out infinite; }
+@keyframes fx-tourne { to { transform: rotate(360deg); } }
+@keyframes fx-pulse { 50% { transform: scale(1.12); opacity: .75; } }
+.fx-vis { position: relative; animation: fx-pop .7s .15s cubic-bezier(.2, 1.7, .4, 1) both; }
+@keyframes fx-pop { from { transform: scale(.3) rotate(-12deg); opacity: 0; } }
+.fx-vis .pa-avatar { --t: 112px !important; width: 112px !important; height: 112px !important; font-size: 56px !important; box-shadow: 0 0 0 3px var(--rc), 0 0 40px -6px var(--rc); }
+.fx-vis .jeton-ico { width: 104px !important; height: 104px !important; }
+.fx-vis .bn-mini { width: 300px !important; height: 96px !important; border-radius: 12px; box-shadow: 0 0 0 2px var(--rc), 0 0 40px -10px var(--rc); }
+.fx-plaque { display: grid; gap: .25rem; text-align: center; padding: .8rem 1.5rem; border-radius: 14px; border: 1px solid var(--rc); background: color-mix(in srgb, var(--rc) 12%, #0b0b10); box-shadow: 0 0 40px -12px var(--rc); }
+.fx-plaque b { font-family: "Chakra Petch", var(--font, sans-serif); font-size: 1.5rem; font-weight: 600; }
+.fx-plaque small { font-size: .8rem; color: var(--rc); letter-spacing: .03em; }
+.fx-braise { position: absolute; bottom: -8px; width: 3px; height: 3px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 6px #f5b74a; animation: fx-monte 3s linear infinite; opacity: 0; }
+@keyframes fx-monte { 10% { opacity: 1; } to { transform: translateY(-220px) translateX(14px); opacity: 0; } }
+.fx-txt { text-align: center; padding: .2rem 1.4rem 0; }
+.fx-sur { font-family: var(--mono, monospace); font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted, #a1a1aa); }
+.fx-nom { margin: .35rem 0 .3rem; font-family: "Chakra Petch", var(--font, sans-serif); font-size: 1.65rem; line-height: 1.15; }
+.fx-rar { display: inline-block; font-family: var(--mono, monospace); font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+  background: linear-gradient(100deg, var(--rc) 0 42%, #fff 50%, var(--rc) 58% 100%) 100% 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: fx-reflet 1.4s .9s ease-out both; }
+@keyframes fx-reflet { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.fx-sous { display: block; margin-top: .45rem; color: var(--muted, #a1a1aa); font-size: .82rem; }
+.fx-bas { display: flex; gap: .6rem; justify-content: center; padding: 1.1rem 1.2rem 1.3rem; }
+.fx-bas .btn { min-width: 120px; justify-content: center; }
+
+/* Bannières animées : repli fixe (et fond pendant le chargement) */
+[class*="bn-anim-"] { position: relative; overflow: hidden; }
+.fx-bn-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+[class*="bn-anim-"] > :not(.fx-bn-cv) { position: relative; }
+.bn-anim-aurore { background: radial-gradient(80% 120% at 30% 40%, rgba(40, 230, 170, .35), transparent 60%), radial-gradient(60% 100% at 75% 30%, rgba(120, 90, 255, .3), transparent 60%), #050b14; }
+.bn-anim-etoiles { background: radial-gradient(60% 100% at 25% 60%, rgba(120, 80, 255, .25), transparent 60%), radial-gradient(50% 90% at 70% 35%, rgba(40, 140, 255, .2), transparent 60%), #04050c; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rev, .fx-rev::backdrop, .fx-vis, .fx-rayons, .fx-halo, .fx-rar, .fx-braise { animation: none !important; }
+  .fx-rar { color: var(--rc); background: none; }
+  .fx-l { transition: none; opacity: 1; transform: none; filter: none; }
+}
+.fx-vis .jeton-ico { display: inline-grid; place-items: center; filter: drop-shadow(0 0 18px rgba(245, 183, 74, .6)); }
+.fx-vis .jeton-ico svg { width: 100%; height: 100%; }
+
+/* Secousse */
+.fx-secoue { animation: fx-secoue .42s cubic-bezier(.36, .07, .19, .97); }
+@keyframes fx-secoue { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(6px); } }
+
+/* Entrée en cascade */
+.fx-entree .carte, .fx-entree .seq-titre, .fx-entree h2, .fx-entree .spe-tag { animation: fx-monte-in .5s cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes fx-monte-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* Inclinaison des cartes (souris) */
+.carte.res, .carte.outil { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+.carte.res:hover, .carte.outil:hover { transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-2px); }
+.carte.res.off, .carte.res.off:hover { transform: none; }
+.carte .bas .btn { transition: background .2s, border-color .2s, padding .2s; }
+.carte:hover .bas .btn:not(.primary)::after { content: " →"; }
+
+/* Titre de page qui se dévoile */
+.classe-titre h1 .fx-l { transition-duration: .5s, .6s, .5s; }
+
+/* Connexion */
+.fx-points { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+body[data-page="connexion"] main { position: relative; z-index: 1; }

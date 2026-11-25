@@ -515,3 +515,15 @@ button.bg-carte:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgb
 .hud-qui b { font-family: var(--titre, inherit); font-size: .9rem; }
 .hud-prof .hud-pastille { display: none; }
 .sans-anim .pa-apparait, .sans-anim .pa-apparait * { animation: none !important; }
+
+/* Bannières photo (images dans assets/bannieres/, 1200 × 300, .webp) */
+.bn-photo-pyrenees { background: #10131c url(bannieres/pyrenees.webp) center / cover no-repeat; }
+.bn-photo-cote { background: #10131c url(bannieres/cote.webp) center / cover no-repeat; }
+.bn-photo-eoliennes { background: #10131c url(bannieres/eoliennes.webp) center / cover no-repeat; }
+.bn-photo-barrage { background: #10131c url(bannieres/barrage.webp) center / cover no-repeat; }
+.bn-photo-solaire { background: #10131c url(bannieres/solaire.webp) center / cover no-repeat; }
+.bn-photo-aurore { background: #10131c url(bannieres/aurore.webp) center / cover no-repeat; }
+.bn-photo-hangar { background: #10131c url(bannieres/hangar.webp) center / cover no-repeat; }
+.bn-photo-neon { background: #10131c url(bannieres/neon.webp) center / cover no-repeat; }
+.bn-photo-glacier { background: #10131c url(bannieres/glacier.webp) center / cover no-repeat; }
+.bn-photo-voie-lactee { background: #10131c url(bannieres/voie-lactee.webp) center / cover no-repeat; }

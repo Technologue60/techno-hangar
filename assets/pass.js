@@ -120,9 +120,22 @@
         '<g fill="' + m.s + '" opacity=".95">' + SYMB[m.sym] + '</g></svg>';
       return s;
     }
+    var JG = 0;
     function jetonIco(t) {
-      var s = el("span", { class: "jeton-ico", style: "width:" + t + "px;height:" + t + "px" });
-      s.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset=".55" stop-color="#f5b74a"/><stop offset="1" stop-color="#a8650f"/></linearGradient></defs><circle cx="24" cy="24" r="21" fill="url(#jg)" stroke="#7a4a10" stroke-width="2"/><circle cx="24" cy="24" r="15.5" fill="none" stroke="#7a4a10" stroke-width="1.5" stroke-dasharray="2 3"/><path d="M24 13l3.2 6.6 7.3 1-5.3 5.1 1.3 7.2L24 29.5l-6.5 3.4 1.3-7.2-5.3-5.1 7.3-1z" fill="#fff6d8" stroke="#7a4a10" stroke-width="1.2"/></svg>';
+      var s = el("span", { class: "jeton-ico", style: "width:" + t + "px;height:" + t + "px" }), k = "jt" + (++JG), grand = t >= 40;
+      var h = '<svg viewBox="0 0 48 48" aria-hidden="true"><defs>'
+        + '<linearGradient id="' + k + 'o" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe7a3"/><stop offset=".5" stop-color="#f2b443"/><stop offset="1" stop-color="#8a5210"/></linearGradient>'
+        + '<radialGradient id="' + k + 'f" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#2a2418"/><stop offset="1" stop-color="#0d0b08"/></radialGradient>'
+        + (grand ? '<path id="' + k + 'h" d="M5.7,24 a18.3,18.3 0 0 1 36.6,0"/><path id="' + k + 'b" d="M2.8,24 a21.2,21.2 0 0 0 42.4,0"/>' : '')
+        + '</defs><circle cx="24" cy="24" r="23.4" fill="url(#' + k + 'o)" stroke="#5e3608" stroke-width=".8"/>'
+        + '<circle cx="24" cy="24" r="22.1" fill="none" stroke="#fff3c9" stroke-width=".5" opacity=".6"/>'
+        + (grand ? '<g font-family="\'Chakra Petch\',Geist,sans-serif" font-weight="700" fill="#5a3307" text-anchor="middle">'
+          + '<text font-size="4.6" letter-spacing=".7"><textPath href="#' + k + 'h" startOffset="50%">TECHNO-HANGAR</textPath></text>'
+          + '<text font-size="3.4" letter-spacing="1"><textPath href="#' + k + 'b" startOffset="50%">★ JETON ★</textPath></text></g>' : '')
+        + '<circle cx="24" cy="24" r="' + (grand ? 16 : 18) + '" fill="url(#' + k + 'f)" stroke="#5e3608" stroke-width="1"/>'
+        + '<g fill="none" stroke="url(#' + k + 'o)" stroke-linecap="round" stroke-linejoin="round" stroke-width="' + (grand ? 2.8 : 3.4) + '" transform="translate(24 24) scale(' + (grand ? .72 : .86) + ') translate(-17 -17)">'
+        + '<path d="M6 27V15L17 7l11 8v12"/><path d="M11.5 27V19h11v8"/><path d="M11.5 23h11"/></g></svg>';
+      s.innerHTML = h;
       return s;
     }
 
@@ -238,6 +251,22 @@
     return obtenus.filter(function (r) { return vus.indexOf(r) < 0; });
   }
 
+  /* ---------- Révélation des paliers obtenus (effets.js) ---------- */
+  function revelerPaliers(p, s, nouveaux, lien) {
+    if (!window.TH_FX || !nouveaux.length) return false;
+    var TYPES = { avatar: "Avatar", titre: "Titre", badge: "Badge", ornement: "Cadre", banniere: "Bannière" };
+    var items = (s.paliers || []).filter(function (pl) { return nouveaux.indexOf(pl.rang) >= 0; }).map(function (pl) {
+      var r = pl.recompense ? trouver(p, pl.recompense) : null, sous = "Palier " + pl.rang + " · " + (s.nom || "").split("·")[0].trim();
+      if (!r) return { nom: "Jeton de boutique", type: "jeton", visuel: jetonIco(104), sous: sous };
+      var v = r.type === "avatar" ? avatar(r, 112) : r.type === "banniere" ? apercuBanniere(r.style, 96)
+        : r.type === "badge" ? badge(r, 104) : r.type === "ornement" ? cadre(null, 96, ((window.TH_ACCES || {}).prenom || "?"), r.style)
+        : el("span", { class: "fx-plaque" }, [el("b", { texte: ((window.TH_ACCES || {}).prenom || "Toi") }), el("small", { texte: r.nom })]);
+      return { nom: r.nom, rarete: r.rarete, type: r.type, typeNom: TYPES[r.type], visuel: v, sous: sous };
+    });
+    setTimeout(function () { window.TH_FX.reveler(items, { lien: lien, texteLien: lien ? "Voir mon pass" : null }); }, 600);
+    return true;
+  }
+
   function barreSaison(s) {
     var pct = s.objectif ? Math.min(100, s.points / s.objectif * 100) : 0;
     var i = el("i");
@@ -349,7 +378,7 @@
       r.type === "avatar" ? avatar(r, 30) : el("span", { class: "pa-titre-ico petit", texte: r.nom === "???" ? "?" : "“ ”" }),
       el("span", {}, [el("b", { texte: r.nom }), el("small", { texte: "encore " + nb(Math.max(0, prochain.seuil - s.points)) + " pts" })])]));
     zone.appendChild(el("span", { class: "pb-fleche", texte: "→" }));
-    if (nouveaux.length) { zone.classList.add("nouveau"); setTimeout(function () { confettis(zone); }, 700);
+    if (nouveaux.length) { zone.classList.add("nouveau"); if (!revelerPaliers(p, s, nouveaux, lienProfil("pass"))) setTimeout(function () { confettis(zone); }, 700);
       zone.title = (nouveaux.length > 1 ? nouveaux.length + " nouveaux paliers" : "Nouveau palier") + " débloqué !"; }
     zone.hidden = false;
   }
@@ -736,23 +765,27 @@
         l.sort(function (x, y) { return (x.possede ? 1 : 0) - (y.possede ? 1 : 0); });
         if (!l.length) grille.appendChild(el("p", { class: "aide", texte: "Aucun article." }));
         l.forEach(function (a) {
-          var r = a.recompense, b = null;
+          var r = a.recompense, b = null, prix = a.prix || 1, ban = r.type === "banniere";
+          var bloqueBan = ban && B.banniere_saison && !a.possede;
           if (moiMeme) {
-            b = el("button", { class: "btn" + (a.possede || j.dispo < 1 ? "" : " primary"), type: "button" });
+            var peut = !a.possede && !bloqueBan && j.dispo >= prix;
+            b = el("button", { class: "btn" + (peut ? " primary" : ""), type: "button" });
             if (a.possede) b.textContent = "Déjà à toi";
-            else { b.appendChild(jetonIco(16)); b.appendChild(document.createTextNode(" 1 · Échanger")); }
-            b.disabled = a.possede || j.dispo < 1;
+            else if (bloqueBan) b.textContent = "1 bannière par saison";
+            else { b.appendChild(jetonIco(16)); b.appendChild(document.createTextNode(" " + prix + " · " + (j.dispo >= prix ? "Échanger" : "Il en faut " + prix))); }
+            b.disabled = !peut;
             b.onclick = async function () {
-              if (!confirm("Échanger 1 jeton contre « " + r.nom + " » ?")) return;
+              if (!confirm("Échanger " + prix + " jeton" + (prix > 1 ? "s" : "") + " contre « " + r.nom + " » ?" + (ban ? "\nUne seule bannière par saison." : ""))) return;
               b.disabled = true;
               try { D.boutique = await TH.rpc("echanger_jeton", { p_article: a.id }); await recharger(); var e2 = document.querySelector(".bq-etat"); if (e2) { e2.hidden = false; e2.textContent = "« " + r.nom + " » est à toi ! Équipe-le dans Personnaliser."; } }
               catch (e) { etat.hidden = false; etat.textContent = (e && e.message) || "Échange impossible."; b.disabled = false; }
             };
           } else if (a.possede) b = el("span", { class: "bq-possede", texte: "Possédé" });
-          grille.appendChild(el("div", { class: "bq-art r-" + r.rarete + (a.possede ? " possede" : "") }, [
-            el("span", { class: "bq-rar" }, [document.createTextNode(RARETES[r.rarete] || "")]),
-            el("span", { class: "bq-vis" }, [visuelRec(r, 60)]), el("b", { texte: r.nom }),
-            el("small", { texte: TYPE_1[r.type] || "" }), b]));
+          var prixEl = el("span", { class: "bq-prix" + (prix > 1 ? " cher" : "") }, [jetonIco(14), document.createTextNode(" " + prix)]);
+          grille.appendChild(el("div", { class: "bq-art r-" + r.rarete + (a.possede ? " possede" : "") + (ban ? " bq-ban" : "") }, [
+            el("span", { class: "bq-rar" }, [document.createTextNode(RARETES[r.rarete] || "")]), prixEl,
+            el("span", { class: "bq-vis" }, [ban ? apercuBanniere(r.style, 84) : visuelRec(r, 60)]), el("b", { texte: r.nom }),
+            el("small", { texte: (TYPE_1[r.type] || "") + (ban ? " · 1 par saison" : "") }), b]));
         });
       }
       remplir();
@@ -824,7 +857,7 @@
       cascade(piste);
       var ici = piste.querySelector(".vp-ici");
       if (ici && moiMeme) setTimeout(function () { var r = ici.getBoundingClientRect(); if (r.top > innerHeight * .7) ici.scrollIntoView({ behavior: CALME ? "auto" : "smooth", block: "center" }); }, 900);
-      if (nouveaux.length) setTimeout(function () { confettis(piste.querySelector(".nouveau")); }, 700);
+      if (nouveaux.length && !revelerPaliers(p, sv, nouveaux)) setTimeout(function () { confettis(piste.querySelector(".nouveau")); }, 700);
       corps.appendChild(el("p", { class: "aide pa-jour", texte: "Entraînement et jeux aujourd'hui : " + nb(p.entrainement_jour) + " / " + nb(p.plafond_jour) + " pts." }));
     }
 
