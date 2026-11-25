@@ -373,12 +373,13 @@
     var opts = optionsRecompenses().filter(function (o) { var r = recompenses.filter(function (x) { return x.id === o[0]; })[0]; return r && r.type !== "badge"; });
     var choix = select(opts, ""), annee = input({ type: "checkbox" });
     var prix = select([1, 2, 3, 4, 5, 6].map(function (n) { return [n, n + " jeton" + (n > 1 ? "s" : "")]; }), 1);
-    choix.addEventListener("change", function () { var r = recompenses.filter(function (x) { return String(x.id) === choix.value; })[0]; prix.value = r && r.type === "banniere" ? (r.rarete === "legendaire" ? 5 : r.rarete === "epique" ? 4 : 3) : 1; });
+    choix.addEventListener("change", function () { var r = recompenses.filter(function (x) { return String(x.id) === choix.value; })[0]; var J = c === "terminale-sti2d" ? 4 : 5, q = r ? r.rarete : "commun";
+      prix.value = r && r.type === "banniere" ? (q === "rare" || q === "commun" ? 3 : J) : (q === "legendaire" ? J : q === "epique" ? 3 : q === "rare" ? 2 : 1); });
     z.appendChild(el("div", { class: "ligne-outils" }, [choix, prix,
       el("label", { class: "case" }, [annee, document.createTextNode(" toute l'année")]),
       bouton("+ Ajouter à la boutique", "primary", async function () {
         if (!choix.value) return;
-        try { await TH.rest("boutique", { method: "POST", body: Object.assign({ classe: c, saison: annee.checked ? null : +s, recompense: +choix.value }, +prix.value > 1 ? { prix: +prix.value } : {}), headers: { "Prefer": "return=minimal" } }); }
+        try { await TH.rest("boutique", { method: "POST", body: Object.assign({ classe: c, saison: annee.checked ? null : +s, recompense: +choix.value }, { prix: +prix.value }), headers: { "Prefer": "return=minimal" } }); }
         catch (e) { alert(/duplicate|unique/.test(msg(e)) ? "Déjà dans la boutique." : msg(e)); }
         chargerBoutique();
       })]));
