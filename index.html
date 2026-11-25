@@ -3,47 +3,742 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#09090b">
-<title>Techno-Hangar</title>
+<title>Visionneuse CAO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Chakra+Petch:wght@500;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="assets/style.css?v=14">
-<link rel="stylesheet" href="assets/quiz.css?v=7">
-<link rel="stylesheet" href="assets/pass.css?v=10">
-<link rel="stylesheet" href="assets/effets.css?v=1">
-<link rel="stylesheet" href="assets/theme.css?v=8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* VOICE  : outil d'atelier, précis et calme, vocabulaire SolidWorks.
+   IDEA   : la fenêtre d'un logiciel de CAO, réduite à l'essentiel : arbre, zone 3D, propriétés.
+   PICTURE: la pièce elle-même, au centre, sur un fond dégradé de logiciel de CAO.
+   COLOUR and TYPE : identité Techno-Hangar « Tech sombre », bleu STI2D #5b8cff ; Geist + Geist Mono pour les valeurs.
+   LAYOUT : barre d'outils en haut, arbre à gauche, zone 3D, panneau de propriétés à droite ; empilé sur téléphone. */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef0f4,#09090b);--panel:light-dark(#ffffff,#111114);--panel2:light-dark(#f5f6f9,#17171b);
+--line:light-dark(#dcdfe6,#26262c);--ink:light-dark(#15161a,#e9e9ef);--mute:light-dark(#5d6170,#9a9aa6);
+--acc:light-dark(#3d6cf0,#5b8cff);--accbg:light-dark(#e6edff,#1a2340);--warn:light-dark(#b25b00,#f5b74a);
+--vp1:light-dark(#fbfcfe,#20232c);--vp2:light-dark(#c9d2e3,#0b0c10)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Geist,system-ui,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:15px;margin-right:6px;white-space:nowrap}
+.brand small{font-weight:500;color:var(--mute);margin-left:6px}
+.grp{display:flex;align-items:center;gap:0;padding-right:8px;border-right:1px solid var(--line)}
+.grp:last-child{border:0}
+.grp>span{font-size:12px;color:var(--mute);margin-right:6px}
+.tb{min-height:36px;min-width:36px;padding:0 8px;border:1px solid transparent;border-radius:7px;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tb:hover{background:var(--panel2);border-color:var(--line)}
+.tb[aria-pressed=true]{background:var(--accbg);border-color:var(--acc);color:var(--acc)}
+.tb:focus-visible,.tree button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.tb svg{width:18px;height:18px;flex:none}
+.tb.primary{background:var(--acc);color:#fff}
+.tb.primary:hover{filter:brightness(1.08);background:var(--acc)}
+.tb:disabled{opacity:.4;cursor:default}
+.main{display:grid;grid-template-columns:260px minmax(0,1fr) 300px;min-height:0}
+aside{background:var(--panel);overflow:auto;min-height:0}
+aside.left{border-right:1px solid var(--line)}aside.right{border-left:1px solid var(--line)}
+.sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+.sec h2{margin:0 0 8px;font-size:13px;font-weight:600}
+.sec p{margin:4px 0;color:var(--mute);font-size:13px}
+.tree{list-style:none;margin:0;padding:0}
+.tree li{display:flex;align-items:center;gap:2px;border-radius:6px}
+.tree li.doc{font-weight:600;padding:4px 6px;gap:6px}
+.tree li.doc svg{width:16px;height:16px;flex:none}
+.badge{white-space:nowrap}
+.tree li.part{padding-left:14px}
+.tree li.sel{background:var(--accbg)}
+.tree .nm{flex:1;text-align:left;background:none;border:0;padding:8px 4px;cursor:pointer;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree .ic{width:34px;height:34px;border:0;background:none;border-radius:6px;cursor:pointer;color:var(--mute);display:grid;place-items:center}
+.tree .ic:hover{background:var(--panel2);color:var(--ink)}
+.tree .ic svg{width:16px;height:16px}
+.tree li.hid .nm{color:var(--mute);text-decoration:line-through}
+.vpw{position:relative;min-height:0;background:radial-gradient(ellipse at 50% 30%,var(--vp1),var(--vp2) 85%)}
+.tabs{position:absolute;top:0;left:0;right:0;display:flex;gap:2px;padding:6px 8px 0;z-index:2;overflow-x:auto}
+.tab{display:flex;align-items:center;background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;font-size:13px}
+.tab button{background:none;border:0;cursor:pointer;padding:7px 10px;min-height:34px;white-space:nowrap}
+.tab .x{padding:7px 8px;color:var(--mute)}
+.tab.on{background:var(--panel);color:var(--acc);font-weight:600}
+#vp{position:absolute;inset:0;touch-action:none;outline:none}
+#vp canvas{display:block;width:100%;height:100%}
+.hint{position:absolute;right:10px;bottom:8px;font-size:12px;color:var(--mute);text-align:right;pointer-events:none;max-width:60%}
+.status{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:3}
+.status div{background:var(--panel);border:1px solid var(--line);padding:14px 18px;border-radius:10px;box-shadow:0 8px 30px #0003;display:flex;gap:10px;align-items:center}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.drop{position:absolute;inset:10px;border:2px dashed var(--acc);border-radius:12px;background:color-mix(in srgb,var(--acc) 12%,transparent);display:none;place-items:center;font-weight:600;color:var(--acc);z-index:4;pointer-events:none}
+.drop.on{display:grid}
+.mlabel{position:absolute;transform:translate(-50%,-130%);background:var(--panel);border:1px solid var(--acc);color:var(--ink);font:500 12px "Geist Mono",monospace;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:2}
+dl.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:6px 0 0}
+dl.kv dt{color:var(--mute);font-size:13px}
+dl.kv dd{margin:0;text-align:right;font:500 13px "Geist Mono",monospace;white-space:nowrap}
+dl.kv dd.big{font-size:17px;color:var(--acc)}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--accbg);color:var(--acc)}
+label.f{display:block;font-size:13px;color:var(--mute);margin:8px 0 4px}
+select,input[type=number]{width:100%;min-height:38px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:16px}
+input[type=range]{width:100%;accent-color:var(--acc);min-height:30px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row .tb{border-color:var(--line)}
+.chk{display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;font-size:13px}
+.chk input{width:18px;height:18px;accent-color:var(--acc)}
+.note{font-size:12px;color:var(--mute);margin-top:8px}
+.warn{color:var(--warn)}
+@media (max-width:1500px){.grp>span{display:none}}
+@media (max-width:1360px){.tb .lb{display:none}}
+@media (max-width:900px){
+ body{overflow:auto}
+ .app{height:auto;min-height:100%}
+ .main{grid-template-columns:minmax(0,1fr)}
+ .vpw{height:62vh;min-height:340px;order:1}
+ aside.left{order:2;border-right:0;border-top:1px solid var(--line)}
+ aside.right{order:3;border-left:0}
+ .grp{border:0;padding-right:4px}
+ .grp>span{display:none}
+ .tb .lb{display:none}
+ .hint{display:none}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js"}}</script>
 </head>
-<body data-racine="./" data-page="accueil">
-<main>
-  <section class="accueil">
-    <span class="eyebrow"><i></i><span id="salut">Année 2026–2027</span></span>
-    <h1>Tes cours, au même endroit.</h1>
-    <p class="lead">Activités, TD et documents de chaque séquence. Ta progression est enregistrée automatiquement.</p>
-  </section>
-  <section class="accueil-grille" id="grille">
-    <div class="niveaux" id="classes"></div>
-    <div class="col-droite" id="droite">
-      <div class="quiz" id="quiz"></div>
-    </div>
-  </section>
-</main>
-<script src="assets/config.js?v=5"></script>
-<script src="assets/th.js?v=4"></script>
-<script src="catalogue.js"></script>
-<script src="assets/quiz.js?v=9"></script>
-<script src="assets/presence.js?v=2"></script>
-<script src="assets/effets.js?v=1"></script>
-<script src="assets/pass.js?v=22"></script>
-<script src="assets/site.js?v=25"></script>
-<script>
-/* Si la carte reste vide, on le dit au lieu de ne rien afficher */
-setTimeout(function () {
-  var q = document.getElementById("quiz");
-  if (q && !q.children.length && document.documentElement.classList.contains("th-ok"))
-    q.innerHTML = '<p style="padding:1.2rem;color:#ff9a3d;font-size:.9rem">La question du jour n\'a pas pu se charger. Fais Ctrl+F5, puis vérifie que le dossier assets (quiz.js, quiz.css, quiz-scene.jpg, site.js) est bien à jour sur GitHub.</p>';
-}, 5000);
+<body>
+<div class="app">
+<header>
+ <div class="brand">Visionneuse CAO<small>STEP</small></div>
+ <div class="grp">
+  <button class="tb primary" id="bOpen" title="Ouvrir un fichier STEP (.step, .stp)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg><span class="lb">Ouvrir</span></button>
+  <input type="file" id="file" accept=".step,.stp,.STEP,.STP" multiple hidden>
+ </div>
+ <div class="grp" id="gViews"><span>Vues</span></div>
+ <div class="grp">
+  <span>Affichage</span>
+  <button class="tb" id="bFit" title="Zoom au mieux (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="lb">Ajuster</span></button>
+  <button class="tb" id="bEdges" aria-pressed="true" title="Ombré avec arêtes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span class="lb">Arêtes</span></button>
+  <button class="tb" id="bTransp" aria-pressed="false" title="Transparence de la pièce sélectionnée (ou de toutes)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg><span class="lb">Transparence</span></button>
+ </div>
+ <div class="grp">
+  <span>Outils</span>
+  <button class="tb" id="bSection" aria-pressed="false" title="Vue en coupe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20L20 4M8 20l12-12M14 20l6-6M4 14L14 4M4 8l4-4"/></svg><span class="lb">Coupe</span></button>
+  <button class="tb" id="bMeasure" aria-pressed="false" title="Mesurer : cliquez une ou deux faces"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17L17 3l4 4L7 21z M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span class="lb">Mesurer</span></button>
+  <button class="tb" id="bCdg" aria-pressed="true" title="Afficher le centre de gravité"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 8 8h-8zM12 20a8 8 0 0 1-8-8h8z" fill="currentColor"/></svg><span class="lb">Gravité</span></button>
+ </div>
+</header>
+<div class="main">
+ <aside class="left">
+  <div class="sec"><h2>Arbre de création</h2><ul class="tree" id="tree"></ul>
+   <label class="chk" id="colorRow" hidden><input type="checkbox" id="colorParts"> Une couleur par pièce</label>
+   <p class="note">Cliquez une pièce pour la sélectionner. L'œil la cache ou la montre, la cible l'isole.</p></div>
+ </aside>
+ <div class="vpw" id="vpw">
+  <div class="tabs" id="tabs"></div>
+  <div id="vp" tabindex="0" aria-label="Zone 3D"></div>
+  <div class="hint">Molette : zoom · Clic molette : tourner · Ctrl + clic molette : déplacer<br>Clic gauche glissé : tourner · Clic droit glissé : déplacer · Touches 1 à 8 : vues</div>
+  <div class="drop" id="drop">Déposez vos fichiers STEP ici</div>
+  <div class="status" id="status"><div><span class="spin"></span><span id="statusTxt">Chargement du noyau OpenCascade…</span></div></div>
+ </div>
+ <aside class="right" id="panel"></aside>
+</div>
+</div>
+<script src="occt-import-js.js"></script>
+<script type="module">
+import * as THREE from 'three';
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString('fr-FR', {minimumFractionDigits:d, maximumFractionDigits:d}) : '—';
+const LS = {get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+// ---------- Matériaux (masse volumique en kg/m³)
+const MATS = [
+ ['', 'Non défini', 0], ['acier', 'Acier (S235)', 7850], ['inox', 'Acier inoxydable', 7900], ['fonte', 'Fonte', 7200],
+ ['alu', 'Alliage d’aluminium', 2700], ['laiton', 'Laiton', 8500], ['cuivre', 'Cuivre', 8960], ['titane', 'Titane', 4430],
+ ['abs', 'ABS', 1050], ['pla', 'PLA (impression 3D)', 1240], ['petg', 'PETG', 1270], ['pa', 'Polyamide (nylon)', 1140],
+ ['pom', 'POM (Delrin)', 1410], ['bois', 'Bois (chêne)', 700], ['perso', 'Personnalisé…', 0]];
+const G = 9.81;
+
+// ---------- Scène
+const vp = $('#vp');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, stencil:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+renderer.autoClear = false;
+vp.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+camera.position.set(1, 1, 1);
+const target = new THREE.Vector3();
+let frust = 50;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8890a0, 1.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); camera.add(key); key.position.set(-0.6, 1, 1.2);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5); camera.add(fill); fill.position.set(1, -0.4, 0.6);
+scene.add(camera);
+
+// Trièdre en bas à gauche
+const triScene = new THREE.Scene(), triCam = new THREE.OrthographicCamera(-1.6, 1.6, 1.6, -1.6, 0.1, 10);
+function label(t, col){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.font='bold 44px Geist,sans-serif';x.fillStyle=col;x.textAlign='center';x.textBaseline='middle';x.fillText(t,32,34);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));s.scale.set(.55,.55,1);return s}
+[[1,0,0,0xe5484d,'X'],[0,1,0,0x30a46c,'Y'],[0,0,1,0x3e63dd,'Z']].forEach(([x,y,z,c,t])=>{const d=new THREE.Vector3(x,y,z);triScene.add(new THREE.ArrowHelper(d,new THREE.Vector3(),1,c,.28,.16));const l=label(t,'#'+c.toString(16).padStart(6,'0'));l.position.copy(d).multiplyScalar(1.35);triScene.add(l)});
+
+// Plan de coupe et chapeaux hachurés
+const clip = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+const hatch = (() => {const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');x.fillStyle='#d9dde6';x.fillRect(0,0,32,32);x.strokeStyle='#3a4256';x.lineWidth=2.2;x.beginPath();for(let i=-32;i<=64;i+=16){x.moveTo(i,32);x.lineTo(i+32,0)}x.stroke();const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t})();
+const capMat = new THREE.MeshBasicMaterial({map:hatch, side:THREE.DoubleSide, stencilWrite:true, stencilRef:0, stencilFunc:THREE.NotEqualStencilFunc, stencilFail:THREE.ReplaceStencilOp, stencilZFail:THREE.ReplaceStencilOp, stencilZPass:THREE.ReplaceStencilOp});
+const cap = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), capMat);
+cap.renderOrder = 1.1; cap.visible = false;
+cap.onAfterRender = r => r.clearStencil();
+scene.add(cap);
+const stBase = {depthWrite:false, depthTest:false, colorWrite:false, stencilWrite:true, stencilFunc:THREE.AlwaysStencilFunc, clippingPlanes:[clip]};
+const stBack = new THREE.MeshBasicMaterial({...stBase, side:THREE.BackSide, stencilFail:THREE.IncrementWrapStencilOp, stencilZFail:THREE.IncrementWrapStencilOp, stencilZPass:THREE.IncrementWrapStencilOp});
+const stFront = new THREE.MeshBasicMaterial({...stBase, side:THREE.FrontSide, stencilFail:THREE.DecrementWrapStencilOp, stencilZFail:THREE.DecrementWrapStencilOp, stencilZPass:THREE.DecrementWrapStencilOp});
+
+// Symbole du centre de gravité
+const cdgSprite = (() => {const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.beginPath();x.arc(32,32,26,0,7);x.fillStyle='#fff';x.fill();x.fillStyle='#111';x.beginPath();x.moveTo(32,32);x.arc(32,32,26,-Math.PI/2,0);x.fill();x.beginPath();x.moveTo(32,32);x.arc(32,32,26,Math.PI/2,Math.PI);x.fill();x.lineWidth=4;x.strokeStyle='#111';x.beginPath();x.arc(32,32,26,0,7);x.stroke();
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,sizeAttenuation:false}));s.scale.set(.045,.045,1);s.renderOrder=10;s.visible=false;return s})();
+scene.add(cdgSprite);
+
+// Sélection, survol, mesure
+const hlMat = new THREE.MeshBasicMaterial({color:0x5b8cff, transparent:true, opacity:.55, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+const hvMat = new THREE.MeshBasicMaterial({color:0xf5a524, transparent:true, opacity:.35, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2});
+const mGroup = new THREE.Group(); scene.add(mGroup);
+const lblEl = document.createElement('div'); lblEl.className = 'mlabel'; lblEl.hidden = true; $('#vpw').appendChild(lblEl);
+
+// ---------- État
+const PAL = [0x5b8cff,0xf5a524,0x30a46c,0xe5484d,0xb07cff,0x2fc4c4,0xd6409f,0x8a9a3b,0xff8a4c,0x7b8cab];
+const S = {colorParts:false, docs:[], doc:null, sel:null, face:null, hover:null, edges:true, section:false, secAxis:'z', secPos:.5, secFlip:false, measure:false, picks:[], cdg:true, mat:LS.get('cao-mat') || {}};
+let occt = null, uid = 0;
+
+// ---------- Lecture STEP
+async function initKernel(){
+ occt = await occtimportjs({locateFile: f => f});
+}
+function readStep(name, bytes){
+ const r = occt.ReadStepFile(new Uint8Array(bytes), {linearUnit:'millimeter', linearDeflectionType:'absolute_value', linearDeflection:0.005, angularDeflection:0.1});
+ if (!r || !r.success || !r.meshes.length) throw new Error('Le fichier n’a pas pu être lu comme un STEP valide.');
+ const doc = {id:++uid, name:name.replace(/\.(step|stp)$/i,''), group:new THREE.Group(), parts:[], view:null};
+ r.meshes.forEach((m, i) => doc.parts.push(makePart(doc, m, i)));
+ doc.tree = (function walk(n){return {name:clean(n.name), parts:(n.meshes||[]).map(i=>doc.parts[i]), kids:(n.children||[]).map(walk)}})(r.root);
+ if (!doc.tree.name) doc.tree.name = doc.name;
+ doc.box = new THREE.Box3(); doc.parts.forEach(p => doc.box.union(p.box));
+ return doc;
+}
+function makePart(doc, m, i){
+ const g = new THREE.BufferGeometry();
+ g.setAttribute('position', new THREE.Float32BufferAttribute(m.attributes.position.array, 3));
+ if (m.attributes.normal) g.setAttribute('normal', new THREE.Float32BufferAttribute(m.attributes.normal.array, 3)); else g.computeVertexNormals();
+ g.setIndex(new THREE.Uint32BufferAttribute(Uint32Array.from(m.index.array), 1));
+ g.computeBoundingBox(); g.computeBoundingSphere();
+ const ntri = m.index.array.length / 3, fot = new Int32Array(ntri).fill(-1);
+ const faces = (m.brep_faces || []).map((f, k) => {for (let t = f.first; t <= f.last; t++) fot[t] = k; return {first:f.first, last:f.last}});
+ const col = new THREE.Color(); if (m.color) col.setRGB(m.color[0], m.color[1], m.color[2], THREE.LinearSRGBColorSpace); else col.set(0xb8c2d6);
+ const mat = new THREE.MeshStandardMaterial({color:col, metalness:.15, roughness:.55, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1, side:THREE.DoubleSide});
+ const mesh = new THREE.Mesh(g, mat); mesh.renderOrder = 2;
+ const edges = new THREE.LineSegments(boundaryEdges(g, faces), new THREE.LineBasicMaterial({color:0x14161c}));
+ edges.renderOrder = 2;
+ const sb = new THREE.Mesh(g, stBack), sf = new THREE.Mesh(g, stFront); sb.renderOrder = sf.renderOrder = 1; sb.visible = sf.visible = false;
+ const name = clean(m.name) || (doc.name + (i ? '-' + (i+1) : ''));
+ const p = {id:++uid, doc, name, col0:col.clone(), mesh, edges, sb, sf, geom:g, fot, faces, visible:true, transp:false, box:g.boundingBox.clone(), props:massProps(g)};
+ mesh.userData.part = p;
+ const key = doc.name + '/' + name; p.key = key; p.mat = S.mat[key] || {id:'', rho:0};
+ doc.group.add(mesh, edges, sb, sf);
+ return p;
+}
+const clean = n => (n || '').replace(/<\d+>$/,'').replace(/\.(ipt|iam|sldprt|sldasm|prt|asm|step|stp)$/i,'').trim();
+// Arêtes réelles : bord de chaque face B-rep (couture des cylindres supprimée)
+function boundaryEdges(g, faces){
+ const P = g.attributes.position.array, I = g.index.array, out = [];
+ const q = v => Math.round(v * 1e4);
+ for (const f of faces){
+  const cnt = new Map();
+  for (let t = f.first; t <= f.last; t++) for (let e = 0; e < 3; e++){
+   const a = I[t*3+e], b = I[t*3+(e+1)%3];
+   const ka = q(P[a*3])+','+q(P[a*3+1])+','+q(P[a*3+2]), kb = q(P[b*3])+','+q(P[b*3+1])+','+q(P[b*3+2]);
+   if (ka === kb) continue;
+   const k = ka < kb ? ka+'|'+kb : kb+'|'+ka;
+   const c = cnt.get(k); if (c) c.n++; else cnt.set(k, {n:1, a, b});
+  }
+  for (const c of cnt.values()) if (c.n === 1) out.push(P[c.a*3],P[c.a*3+1],P[c.a*3+2],P[c.b*3],P[c.b*3+1],P[c.b*3+2]);
+ }
+ const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return eg;
+}
+// Volume, aire, centre de gravité par le théorème de la divergence sur le maillage fermé
+function massProps(g){
+ const p = g.attributes.position.array, ix = g.index.array; let V=0, A=0, cx=0, cy=0, cz=0;
+ for (let i = 0; i < ix.length; i += 3){
+  const a=ix[i]*3, b=ix[i+1]*3, c=ix[i+2]*3;
+  const ax=p[a],ay=p[a+1],az=p[a+2],bx=p[b],by=p[b+1],bz=p[b+2],qx=p[c],qy=p[c+1],qz=p[c+2];
+  const v = (ax*(by*qz-bz*qy) - ay*(bx*qz-bz*qx) + az*(bx*qy-by*qx)) / 6;
+  V += v; cx += v*(ax+bx+qx)/4; cy += v*(ay+by+qy)/4; cz += v*(az+bz+qz)/4;
+  const ux=bx-ax,uy=by-ay,uz=bz-az,wx=qx-ax,wy=qy-ay,wz=qz-az;
+  A += Math.hypot(uy*wz-uz*wy, uz*wx-ux*wz, ux*wy-uy*wx) / 2;
+ }
+ const s = V < 0 ? -1 : 1;
+ return {V:Math.abs(V), A, G:new THREE.Vector3(cx/V, cy/V, cz/V), closed:Math.abs(V) > 1e-9, flip:s < 0};
+}
+
+// ---------- Analyse d'une face (plan, cylindre, autre)
+// SolidWorks exporte un perçage en deux demi-cylindres : on regroupe les faces coaxiales de même rayon.
+function faceInfo(p, k){
+ p.fdc = p.fdc || [];
+ const base = p.fdc[k] || (p.fdc[k] = faceData(p, k));
+ if (base.type !== 'cyl' || base.merged) return base.merged || base;
+ const g = [base];
+ p.faces.forEach((f, j) => {
+  if (j === k) return; const o = p.fdc[j] || (p.fdc[j] = faceData(p, j));
+  if (o.type !== 'cyl' || Math.abs(o.r - base.r) > 1e-3 || Math.abs(o.axis.dot(base.axis)) < 0.9999 || o.hole !== base.hole) return;
+  const w = o.ctr.clone().sub(base.ctr); if (w.clone().sub(base.axis.clone().multiplyScalar(w.dot(base.axis))).length() > 1e-3) return;
+  if (Math.abs(w.dot(base.axis)) > (o.len + base.len)/2 - 1e-3) return;
+  g.push(o);
+ });
+ if (g.length === 1) return base;
+ const span = Math.min(2*Math.PI, g.reduce((s, x) => s + x.span, 0));
+ base.merged = Object.assign({}, base, {span, full:span > 6.1, area:g.reduce((s, x) => s + x.area, 0), tri:g.flatMap(x => x.tri), len:Math.max(...g.map(x => x.len)), n:g.length});
+ return base.merged;
+}
+function faceData(p, k){
+ const f = p.faces[k], P = p.geom.attributes.position.array, N = p.geom.attributes.normal.array, I = p.geom.index.array;
+ const vs = new Set(); let area = 0; const tri = [];
+ const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+ for (let t = f.first; t <= f.last; t++){
+  const a=I[t*3], b=I[t*3+1], c=I[t*3+2]; vs.add(a); vs.add(b); vs.add(c); tri.push(a,b,c);
+  A.fromArray(P,a*3); B.fromArray(P,b*3).sub(A); C.fromArray(P,c*3).sub(A); area += B.cross(C).length()/2;
+ }
+ const pts = [], nrm = [];
+ for (const v of vs){pts.push(new THREE.Vector3().fromArray(P, v*3)); nrm.push(new THREE.Vector3().fromArray(N, v*3).normalize())}
+ if (p.props.flip) nrm.forEach(n => n.negate());
+ const res = {part:p, k, area, tri, type:'autre'};
+ const m = nrm.reduce((s, n) => s.add(n), new THREE.Vector3()).normalize();
+ if (nrm.every(n => n.dot(m) > 0.9995)){
+  res.type = 'plan'; res.n = m; res.d = pts.reduce((s, q) => s + q.dot(m), 0) / pts.length; return res;
+ }
+ let axis = null, best = 0;
+ for (let i = 1; i < nrm.length; i++){const c = new THREE.Vector3().crossVectors(nrm[0], nrm[i]); const l = c.length(); if (l > best){best = l; axis = c}}
+ if (axis && best > 0.05){
+  axis.normalize();
+  if (nrm.every(n => Math.abs(n.dot(axis)) < 0.02)){
+   const u = new THREE.Vector3(1,0,0); if (Math.abs(u.dot(axis)) > .9) u.set(0,1,0); u.sub(axis.clone().multiplyScalar(u.dot(axis))).normalize();
+   const v = new THREE.Vector3().crossVectors(axis, u);
+   let sxx=0,sxy=0,syy=0,sx=0,sy=0,sxz=0,syz=0,sz=0; const n = pts.length; const xy = [];
+   let hmin = Infinity, hmax = -Infinity;
+   for (const q of pts){const x=q.dot(u), y=q.dot(v), z=-(x*x+y*y); xy.push([x,y]); sxx+=x*x; sxy+=x*y; syy+=y*y; sx+=x; sy+=y; sxz+=x*z; syz+=y*z; sz+=z; const h=q.dot(axis); hmin=Math.min(hmin,h); hmax=Math.max(hmax,h)}
+   const M = [[sxx,sxy,sx],[sxy,syy,sy],[sx,sy,n]], rhs = [sxz,syz,sz];
+   const sol = solve3(M, rhs);
+   if (sol){
+    const cx = -sol[0]/2, cy = -sol[1]/2, r = Math.sqrt(Math.max(0, cx*cx + cy*cy - sol[2]));
+    const err = Math.max(...xy.map(([x,y]) => Math.abs(Math.hypot(x-cx, y-cy) - r)));
+    if (r > 0 && err < Math.max(0.01, r*0.01)){
+     const ang = xy.map(([x,y]) => Math.atan2(y-cy, x-cx)).sort((a,b) => a-b);
+     let gap = ang[0] + 2*Math.PI - ang[ang.length-1]; for (let i = 1; i < ang.length; i++) gap = Math.max(gap, ang[i]-ang[i-1]);
+     const span = 2*Math.PI - gap;
+     const ctr = u.clone().multiplyScalar(cx).addScaledVector(v, cy).addScaledVector(axis, (hmin+hmax)/2);
+     let inw = 0; pts.forEach((q, i) => {const rad = q.clone().sub(ctr); rad.sub(axis.clone().multiplyScalar(rad.dot(axis))); if (rad.dot(nrm[i]) < 0) inw++});
+     Object.assign(res, {type:'cyl', axis, ctr, r, span, full:span > 6.1, hole:inw > pts.length/2, len:hmax-hmin});
+    }
+   }
+  }
+ }
+ return res;
+}
+function solve3(M, b){
+ const a = M.map((r, i) => [...r, b[i]]);
+ for (let c = 0; c < 3; c++){
+  let p = c; for (let r = c+1; r < 3; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+  if (Math.abs(a[p][c]) < 1e-12) return null; [a[c], a[p]] = [a[p], a[c]];
+  for (let r = 0; r < 3; r++) if (r !== c){const f = a[r][c]/a[c][c]; for (let k = c; k < 4; k++) a[r][k] -= f*a[c][k]}
+ }
+ return [a[0][3]/a[0][0], a[1][3]/a[1][1], a[2][3]/a[2][2]];
+}
+function faceText(fd){
+ if (fd.type === 'plan') return {t:'Face plane', rows:[['Aire', nf(fd.area)+' mm²'], ['Normale', vec(fd.n, 3)]]};
+ if (fd.type === 'cyl'){
+  const deg = fd.span*180/Math.PI;
+  if (fd.full) return {t: fd.hole ? 'Alésage ou perçage' : 'Cylindre (arbre)', rows:[['Diamètre', 'Ø '+nf(2*fd.r)+' mm', 1], ['Longueur', nf(fd.len)+' mm'], ['Axe', vec(fd.axis, 3)], ['Aire', nf(fd.area)+' mm²']]};
+  return {t: fd.hole ? 'Portion de cylindre creuse' + (deg < 181 ? ' (congé ?)' : '') : 'Portion de cylindre' + (deg < 181 ? ' (arrondi ?)' : ''), rows:[['Rayon', 'R '+nf(fd.r)+' mm', 1], ['Angle', nf(deg,0)+'°'], ['Longueur', nf(fd.len)+' mm'], ['Aire', nf(fd.area)+' mm²']]};
+ }
+ return {t:'Surface courbe', rows:[['Aire', nf(fd.area)+' mm²']]};
+}
+const vec = (v, d = 2) => '(' + [v.x, v.y, v.z].map(x => nf(Math.abs(x) < 5e-7 ? 0 : x, d)).join(' ; ') + ')';
+
+// ---------- Mesure entre deux sélections
+function measure2(a, b){
+ const rows = [], D = b.pt.clone().sub(a.pt);
+ const fa = a.fd, fb = b.fd; let main = null;
+ if (fa && fb){
+  if (fa.type === 'plan' && fb.type === 'plan' && Math.abs(fa.n.dot(fb.n)) > 0.9999){
+   main = ['Distance entre les faces', Math.abs(b.pt.clone().sub(a.pt).dot(fa.n))];
+  } else if (fa.type === 'cyl' && fb.type === 'cyl' && Math.abs(fa.axis.dot(fb.axis)) > 0.9999){
+   const w = fb.ctr.clone().sub(fa.ctr); w.sub(fa.axis.clone().multiplyScalar(w.dot(fa.axis)));
+   main = [w.length() < 1e-4 ? 'Axes confondus (coaxiaux)' : 'Entraxe', w.length()];
+  } else if ((fa.type === 'cyl' && fb.type === 'plan') || (fa.type === 'plan' && fb.type === 'cyl')){
+   const c = fa.type === 'cyl' ? fa : fb, pl = fa.type === 'plan' ? fa : fb;
+   if (Math.abs(c.axis.dot(pl.n)) < 1e-4) main = ['Distance axe – face', Math.abs(c.ctr.dot(pl.n) - pl.d)];
+  }
+ }
+ if (main) rows.push([main[0], nf(main[1])+' mm', 1]);
+ rows.push(['Distance entre les points', nf(D.length())+' mm', main ? 0 : 1], ['ΔX', nf(D.x)+' mm'], ['ΔY', nf(D.y)+' mm'], ['ΔZ', nf(D.z)+' mm']);
+ return {rows, label: main ? nf(main[1])+' mm' : nf(D.length())+' mm'};
+}
+
+// ---------- Documents
+function addDoc(doc){
+ S.docs.push(doc); scene.add(doc.group); setDoc(doc);
+}
+function setDoc(doc){
+ S.docs.forEach(d => d.group.visible = d === doc);
+ if (S.doc && S.doc !== doc) S.doc.view = {pos:camera.position.clone(), up:camera.up.clone(), target:target.clone(), zoom:camera.zoom, frust};
+ S.doc = doc; S.sel = null; clearFace(); clearMeasure();
+ if (doc && doc.view){camera.position.copy(doc.view.pos); camera.up.copy(doc.view.up); target.copy(doc.view.target); camera.zoom = doc.view.zoom; frust = doc.view.frust; camera.lookAt(target); resize()}
+ else if (doc) view('iso');
+ updateSection(); renderAll();
+}
+function closeDoc(doc){
+ const i = S.docs.indexOf(doc); if (i < 0) return;
+ scene.remove(doc.group); doc.parts.forEach(p => {p.geom.dispose(); p.edges.geometry.dispose(); p.mesh.material.dispose()});
+ S.docs.splice(i, 1);
+ setDoc(S.docs[Math.min(i, S.docs.length-1)] || null);
+}
+async function openFiles(files){
+ for (const f of files){
+  status('Lecture de ' + f.name + '…');
+  await new Promise(r => setTimeout(r, 30));
+  try {addDoc(readStep(f.name, await f.arrayBuffer()))}
+  catch(e){status(null); showError(f.name + ' : ' + (e.message || e)); return}
+ }
+ status(null);
+}
+
+// ---------- Vues
+const VIEWS = {
+ face:['Face','1',[0,0,1],[0,1,0]], arriere:['Arrière','2',[0,0,-1],[0,1,0]], gauche:['Gauche','3',[-1,0,0],[0,1,0]], droite:['Droite','4',[1,0,0],[0,1,0]],
+ dessus:['Dessus','5',[0,1,0],[0,0,-1]], dessous:['Dessous','6',[0,-1,0],[0,0,1]], iso:['Iso','7',[1,1,1],[0,1,0]]};
+const VIEW_BTNS = ['face','dessus','droite','iso'];
+const viewIcon = {face:'<path d="M5 5h14v14H5z"/>', dessus:'<path d="M3 9l9-5 9 5-9 5z"/><path d="M3 9v6l9 5 9-5V9" stroke-dasharray="2 2"/>', droite:'<path d="M9 3l10 4v14L9 17z"/>', iso:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5M12 12v9M12 12L4 7.5"/>'};
+$('#gViews').insertAdjacentHTML('beforeend', VIEW_BTNS.map(k => `<button class="tb" data-view="${k}" title="${VIEWS[k][0]} (${VIEWS[k][1]})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${viewIcon[k]}</svg><span class="lb">${VIEWS[k][0]}</span></button>`).join('') +
+ `<button class="tb" id="bNormal" title="Normal à la face sélectionnée (8)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18h16M12 18V4M8 8l4-4 4 4"/></svg><span class="lb">Normal à</span></button>`);
+function visBox(){
+ const b = new THREE.Box3(); if (!S.doc) return b.set(new THREE.Vector3(-50,-50,-50), new THREE.Vector3(50,50,50));
+ S.doc.parts.forEach(p => {if (p.visible) b.union(p.box)}); if (b.isEmpty()) b.copy(S.doc.box); return b;
+}
+function view(k, dirV, upV){
+ const dir = dirV || new THREE.Vector3(...VIEWS[k][2]).normalize(), up = upV || new THREE.Vector3(...VIEWS[k][3]);
+ const b = visBox(), c = b.getCenter(new THREE.Vector3()), r = b.getBoundingSphere(new THREE.Sphere()).radius || 10;
+ target.copy(c); camera.up.copy(up); camera.position.copy(c).addScaledVector(dir, r*6); camera.lookAt(c);
+ camera.near = 0.01*r; camera.far = r*14; frust = r*1.15; camera.zoom = 1; resize();
+}
+function fit(){const d = camera.position.clone().sub(target).normalize(); view(null, d, camera.up.clone())}
+function normalTo(){
+ const fd = S.face; if (!fd || fd.type !== 'plan') return;
+ const n = fd.n.clone(); let up = new THREE.Vector3(0,1,0); if (Math.abs(n.dot(up)) > .99) up.set(0,0,-Math.sign(n.y)); up.sub(n.clone().multiplyScalar(up.dot(n))).normalize();
+ view(null, n, up);
+}
+
+// ---------- Navigation façon SolidWorks
+const ptrs = new Map(); let drag = null, pinch = null;
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function toNdc(e){const r = vp.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1); return ndc}
+function rotate(dx, dy){
+ const off = camera.position.clone().sub(target);
+ const right = new THREE.Vector3().crossVectors(camera.up, off).normalize();
+ const q = new THREE.Quaternion().setFromAxisAngle(camera.up.clone().normalize(), -dx*0.008).multiply(new THREE.Quaternion().setFromAxisAngle(right, -dy*0.008));
+ off.applyQuaternion(q); camera.up.applyQuaternion(q); camera.position.copy(target).add(off); camera.lookAt(target);
+}
+function pan(dx, dy){
+ const h = vp.clientHeight || 1, wpp = (2*frust/camera.zoom)/h;
+ const off = camera.position.clone().sub(target), right = new THREE.Vector3().crossVectors(camera.up, off).normalize(), up = camera.up.clone().normalize();
+ const mv = right.multiplyScalar(-dx*wpp).addScaledVector(up, dy*wpp);
+ camera.position.add(mv); target.add(mv);
+}
+function zoomAt(e, f){
+ toNdc(e); const before = new THREE.Vector3(ndc.x, ndc.y, 0).unproject(camera);
+ camera.zoom = THREE.MathUtils.clamp(camera.zoom*f, 0.05, 400); camera.updateProjectionMatrix();
+ const after = new THREE.Vector3(ndc.x, ndc.y, 0).unproject(camera); const d = before.sub(after);
+ camera.position.add(d); target.add(d);
+}
+vp.addEventListener('contextmenu', e => e.preventDefault());
+vp.addEventListener('pointerdown', e => {
+ vp.focus({preventScroll:true}); vp.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+ if (ptrs.size === 2){const [a,b] = [...ptrs.values()]; pinch = {d:Math.hypot(a.x-b.x, a.y-b.y), x:(a.x+b.x)/2, y:(a.y+b.y)/2}; drag = null; return}
+ const mode = e.button === 1 ? (e.ctrlKey || e.metaKey ? 'pan' : e.shiftKey ? 'zoom' : 'rot') : e.button === 2 ? 'pan' : 'rot';
+ if (e.button === 1) e.preventDefault();
+ drag = {mode, x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, btn:e.button};
+});
+vp.addEventListener('pointermove', e => {
+ const pt = ptrs.get(e.pointerId); if (pt){pt.x = e.clientX; pt.y = e.clientY}
+ if (pinch && ptrs.size === 2){
+  const [a,b] = [...ptrs.values()], d = Math.hypot(a.x-b.x, a.y-b.y), mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+  zoomAt({clientX:mx, clientY:my}, d/pinch.d); pan(mx-pinch.x, my-pinch.y); pinch = {d, x:mx, y:my}; req(); return;
+ }
+ if (drag){
+  const dx = e.clientX-drag.x, dy = e.clientY-drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  if (!drag.moved && Math.hypot(e.clientX-drag.x0, e.clientY-drag.y0) < 4) return;
+  drag.moved = true;
+  if (drag.mode === 'rot') rotate(dx, dy); else if (drag.mode === 'pan') pan(dx, dy); else zoomAt({clientX:drag.x0, clientY:drag.y0}, Math.exp(-dy*0.01));
+  req(); return;
+ }
+ if (e.pointerType === 'mouse') hover(e);
+});
+function endPtr(e){
+ ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
+ if (drag && !drag.moved && drag.btn === 0 && e.type === 'pointerup') click(e);
+ if (ptrs.size === 0) drag = null;
+}
+vp.addEventListener('pointerup', endPtr); vp.addEventListener('pointercancel', endPtr);
+vp.addEventListener('wheel', e => {e.preventDefault(); zoomAt(e, Math.exp(-e.deltaY*0.0015)); req()}, {passive:false});
+vp.addEventListener('pointerleave', () => {if (S.hover){S.hover = null; setHover(null)}});
+addEventListener('keydown', e => {
+ if (e.target.closest && e.target.closest('input,select,textarea')) return;
+ if (e.ctrlKey || e.metaKey || e.altKey) return;
+ const k = Object.keys(VIEWS).find(v => VIEWS[v][1] === e.key);
+ if (k){view(k); req()} else if (e.key === '8'){normalTo(); req()} else if (e.key === 'f' || e.key === 'F'){fit(); req()} else if (e.key === 'Escape'){S.sel = null; clearFace(); clearMeasure(); renderAll()}
+});
+
+// ---------- Sélection
+function pickAt(e){
+ if (!S.doc) return null;
+ ray.setFromCamera(toNdc(e), camera);
+ const hits = ray.intersectObjects(S.doc.parts.filter(p => p.visible).map(p => p.mesh), false);
+ for (const h of hits){
+  if (S.section && clip.distanceToPoint(h.point) < 0) continue;
+  const p = h.object.userData.part, k = p.fot[h.faceIndex];
+  return {part:p, k, pt:h.point.clone()};
+ }
+ return null;
+}
+let hvMesh = null, hlMesh = null, hvT = 0;
+function faceMesh(fd, mat){const g = new THREE.BufferGeometry(); g.setAttribute('position', fd.part.geom.attributes.position); g.setIndex(fd.tri); const m = new THREE.Mesh(g, mat); m.renderOrder = 3; return m}
+function setHover(h){
+ if (hvMesh){scene.remove(hvMesh); hvMesh.geometry.dispose(); hvMesh = null}
+ if (h && h.k >= 0){hvMesh = faceMesh(faceInfo(h.part, h.k), hvMat); applyClip(hvMat); scene.add(hvMesh)}
+ req();
+}
+function hover(e){
+ const now = performance.now(); if (now - hvT < 40) return; hvT = now;
+ const h = pickAt(e); const key = h ? h.part.id + ':' + h.k : null;
+ if (key !== S.hover){S.hover = key; setHover(h)}
+ vp.style.cursor = h ? 'pointer' : 'default';
+}
+function clearFace(){S.face = null; if (hlMesh){scene.remove(hlMesh); hlMesh.geometry.dispose(); hlMesh = null}}
+function click(e){
+ const h = pickAt(e);
+ if (!h || h.k < 0){
+  if (!S.measure){S.sel = null; clearFace()}
+  renderAll(); return;
+ }
+ const fd = faceInfo(h.part, h.k);
+ if (S.measure){
+  if (S.picks.length >= 2) clearMeasure();
+  S.picks.push({pt:h.pt, fd}); drawMeasure();
+ }
+ S.sel = h.part; clearFace(); S.face = fd; hlMesh = faceMesh(fd, hlMat); applyClip(hlMat); scene.add(hlMesh);
+ renderAll();
+}
+function clearMeasure(){S.picks = []; mGroup.clear(); lblEl.hidden = true}
+function drawMeasure(){
+ mGroup.clear(); const pts = S.picks.map(p => p.pt);
+ const dots = new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts), new THREE.PointsMaterial({color:0xf5a524, size:9, sizeAttenuation:false, depthTest:false}));
+ dots.renderOrder = 9; mGroup.add(dots);
+ if (pts.length === 2){const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xf5a524, depthTest:false})); l.renderOrder = 9; mGroup.add(l)}
+}
+
+// ---------- Coupe
+function applyClip(m){m.clippingPlanes = S.section ? [clip] : []; m.needsUpdate = true}
+function updateSection(){
+ const doc = S.doc, on = S.section && !!doc;
+ cap.visible = on;
+ if (doc){
+  const b = doc.box, ax = S.secAxis, n = new THREE.Vector3(ax==='x'?1:0, ax==='y'?1:0, ax==='z'?1:0);
+  const lo = b.min[ax], hi = b.max[ax], pos = lo + (hi-lo)*S.secPos;
+  if (!S.secFlip) n.negate();
+  clip.normal.copy(n); clip.constant = -n.dot(new THREE.Vector3(ax==='x'?pos:0, ax==='y'?pos:0, ax==='z'?pos:0));
+  const size = b.getSize(new THREE.Vector3()).length()*1.6 || 100;
+  const c = b.getCenter(new THREE.Vector3()); c[ax] = pos;
+  cap.position.copy(c); cap.lookAt(c.clone().add(n)); cap.scale.set(size, size, 1);
+  hatch.repeat.set(size/Math.max(1.2, size/70), size/Math.max(1.2, size/70));
+  doc.parts.forEach(p => {p.sb.visible = p.sf.visible = on && p.visible; applyClip(p.mesh.material); applyClip(p.edges.material)});
+ }
+ applyClip(hlMat); applyClip(hvMat);
+}
+
+// ---------- Affichage des pièces
+function applyLook(){
+ if (!S.doc) return;
+ S.doc.parts.forEach(p => {
+  p.mesh.visible = p.visible; p.edges.visible = p.visible && S.edges;
+  const m = p.mesh.material; m.transparent = p.transp; m.opacity = p.transp ? .35 : 1; m.depthWrite = !p.transp;
+  if (S.colorParts && S.doc.parts.length > 1) m.color.setHex(PAL[S.doc.parts.indexOf(p) % PAL.length]); else m.color.copy(p.col0);
+  m.emissive.set(S.sel === p ? 0x16244a : 0x000000);
+ });
+ updateSection();
+}
+
+// ---------- Rendu
+let pending = false;
+function req(){if (!pending){pending = true; requestAnimationFrame(render)}}
+function resize(){
+ const w = vp.clientWidth || 1, h = vp.clientHeight || 1; renderer.setSize(w, h, false);
+ const a = w/h; camera.left = -frust*a; camera.right = frust*a; camera.top = frust; camera.bottom = -frust; camera.updateProjectionMatrix(); req();
+}
+new ResizeObserver(resize).observe(vp);
+function render(){
+ pending = false;
+ const w = vp.clientWidth, h = vp.clientHeight;
+ renderer.setViewport(0, 0, w, h); renderer.setScissorTest(false); renderer.clear(true, true, true);
+ const wpp = (2*frust/camera.zoom)/(h || 1); cdgSprite.scale.set(wpp*22, wpp*22, 1);
+ renderer.render(scene, camera);
+ const s = Math.min(96, w*0.22);
+ triCam.position.copy(camera.position.clone().sub(target).normalize().multiplyScalar(4)); triCam.up.copy(camera.up); triCam.lookAt(0,0,0);
+ renderer.setViewport(6, 6, s, s); renderer.setScissor(6, 6, s, s); renderer.setScissorTest(true); renderer.clearDepth(); renderer.render(triScene, triCam); renderer.setScissorTest(false);
+ if (S.picks.length === 2){
+  const m = S.picks[0].pt.clone().add(S.picks[1].pt).multiplyScalar(.5).project(camera);
+  lblEl.style.left = ((m.x+1)/2*w) + 'px'; lblEl.style.top = ((1-m.y)/2*h + 40) + 'px'; lblEl.hidden = false;
+ }
+}
+
+// ---------- Interface : onglets, arbre, panneau
+const IC = {
+ eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7c1.6 0 3-.4 4.3-1"/></svg>',
+ iso:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>',
+ part:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg>'};
+function renderTabs(){
+ $('#tabs').innerHTML = S.docs.map(d => `<div class="tab${d === S.doc ? ' on' : ''}"><button data-doc="${d.id}">${esc(d.name)}</button><button class="x" data-close="${d.id}" aria-label="Fermer ${esc(d.name)}">×</button></div>`).join('');
+}
+function renderTree(){
+ const doc = S.doc; if (!doc){$('#tree').innerHTML = '<li><p>Aucun document ouvert.</p></li>'; return}
+ const iso = doc.parts.filter(p => p.visible).length === 1 && doc.parts.length > 1;
+ let html = `<li class="doc">${IC.part}&nbsp;${esc(doc.name)} <span class="badge" style="margin-left:auto">${doc.parts.length} pièce${doc.parts.length > 1 ? 's' : ''}</span></li>`;
+ (function walk(n, depth){
+  if (depth > 0 && n.name && (n.kids.length || n.parts.length > 1)) html += `<li class="part" style="padding-left:${14*depth}px;color:var(--mute)">${esc(n.name)}</li>`;
+  n.parts.forEach(p => html += `<li class="part${S.sel === p ? ' sel' : ''}${p.visible ? '' : ' hid'}" style="padding-left:${14*(depth+1)}px">
+   <button class="nm" data-sel="${p.id}">${esc(p.name)}</button>
+   <button class="ic" data-vis="${p.id}" aria-label="${p.visible ? 'Cacher' : 'Montrer'} ${esc(p.name)}" title="${p.visible ? 'Cacher' : 'Montrer'}">${p.visible ? IC.eye : IC.eyeOff}</button>
+   ${doc.parts.length > 1 ? `<button class="ic" data-iso="${p.id}" aria-label="Isoler ${esc(p.name)}" title="${iso && p.visible ? 'Tout montrer' : 'Isoler'}">${IC.iso}</button>` : ''}</li>`);
+  n.kids.forEach(k => walk(k, depth+1));
+ })(doc.tree, 0);
+ $('#tree').innerHTML = html;
+ $('#colorRow').hidden = doc.parts.length < 2; $('#colorParts').checked = S.colorParts;
+}
+const matOpts = (cur, withMixed) => (withMixed ? '<option value="*">Matériaux différents</option>' : '') + MATS.map(([id, n, r]) => `<option value="${id}"${cur === id ? ' selected' : ''}>${n}${r ? ' · ' + r.toLocaleString('fr-FR') + ' kg/m³' : ''}</option>`).join('');
+function matSelect(p){
+ return `<label class="f" for="mat-${p.id}">Matériau${S.doc.parts.length > 1 ? ' · ' + esc(p.name) : ''}</label>
+  <select id="mat-${p.id}" data-mat="${p.id}">${MATS.map(([id, n, r]) => `<option value="${id}"${p.mat.id === id ? ' selected' : ''}>${n}${r ? ' · ' + r.toLocaleString('fr-FR') + ' kg/m³' : ''}</option>`).join('')}</select>
+  ${p.mat.id === 'perso' ? `<label class="f" for="rho-${p.id}">Masse volumique (kg/m³)</label><input type="number" id="rho-${p.id}" data-rho="${p.id}" min="1" step="1" value="${p.mat.rho || ''}" inputmode="decimal">` : ''}`;
+}
+function renderPanel(){
+ const doc = S.doc, el = $('#panel');
+ if (!doc){el.innerHTML = '<div class="sec"><h2>Bienvenue</h2><p>Ouvrez un fichier STEP exporté depuis SolidWorks (AP214 conseillé), ou déposez-le sur la zone 3D.</p></div>'; return}
+ let h = '';
+ if (S.section){
+  h += `<div class="sec"><h2>Vue en coupe</h2>
+   <div class="row" role="group" aria-label="Plan de coupe">${[['z','Plan de face'],['y','Plan de dessus'],['x','Plan de droite']].map(([a,n]) => `<button class="tb" data-axis="${a}" aria-pressed="${S.secAxis === a}">${n}</button>`).join('')}</div>
+   <label class="f" for="secPos">Position du plan : ${nf(doc.box.min[S.secAxis] + (doc.box.max[S.secAxis]-doc.box.min[S.secAxis])*S.secPos)} mm</label>
+   <input type="range" id="secPos" min="0" max="1" step="0.002" value="${S.secPos}">
+   <div class="row"><button class="tb" id="secFlip">Inverser le côté</button></div></div>`;
+ }
+ if (S.measure){
+  h += `<div class="sec"><h2>Mesurer</h2>`;
+  if (!S.picks.length) h += '<p>Cliquez une face, puis une deuxième. Deux faces planes parallèles donnent leur distance ; deux perçages, leur entraxe.</p>';
+  else if (S.picks.length === 1) h += '<p>Première sélection faite. Cliquez une deuxième face.</p>';
+  else {const m = measure2(S.picks[0], S.picks[1]); h += kv(m.rows) + '<div class="row"><button class="tb" id="mReset">Nouvelle mesure</button></div>'}
+  h += '</div>';
+ }
+ if (S.face){
+  const ft = faceText(S.face);
+  h += `<div class="sec"><h2>Face sélectionnée</h2><span class="badge">${esc(ft.t)}</span>${kv(ft.rows)}<p class="note">Pièce : ${esc(S.face.part.name)}</p></div>`;
+ }
+ // Propriétés de masse
+ const parts = S.sel ? [S.sel] : doc.parts.filter(p => p.visible);
+ let V = 0, A = 0, m = 0, mOk = true; const Gm = new THREE.Vector3(), Gv = new THREE.Vector3(), bb = new THREE.Box3();
+ parts.forEach(p => {
+  const rho = p.mat.id === 'perso' ? (p.mat.rho || 0) : (MATS.find(x => x[0] === p.mat.id) || [0,0,0])[2];
+  V += p.props.V; A += p.props.A; bb.union(p.box);
+  if (!rho) mOk = false; const mp = rho*p.props.V*1e-6; m += mp; Gm.addScaledVector(p.props.G, mp); Gv.addScaledVector(p.props.G, p.props.V);
+ });
+ const Gc = mOk && m > 0 ? Gm.divideScalar(m) : Gv.divideScalar(V || 1); const sz = bb.getSize(new THREE.Vector3());
+ h += `<div class="sec"><h2>Propriétés de masse · ${esc(S.sel ? S.sel.name : (parts.length === doc.parts.length ? doc.name : parts.length + ' pièces visibles'))}</h2>`;
+ if (parts.length > 1){
+  const ids = [...new Set(parts.map(p => p.mat.id))], same = ids.length === 1 && ids[0] !== 'perso';
+  h += `<label class="f" for="matAll">Matériau de toutes les pièces</label><select id="matAll">${matOpts(same ? ids[0] : '*', !same)}</select>`;
+  h += `<details${same ? '' : ' open'}><summary class="f" style="cursor:pointer">Matériau pièce par pièce</summary>${parts.map(matSelect).join('')}</details>`;
+ } else h += parts.map(matSelect).join('');
+ h += kv([
+  ['Masse', mOk ? (m >= 1000 ? nf(m/1000, 3)+' kg' : nf(m)+' g') : '—', 1],
+  ['Poids P = m·g', mOk ? nf(m*1e-3*G, 3)+' N' : '—'],
+  ['Volume', nf(V)+' mm³'], ['', nf(V/1000, 3)+' cm³'],
+  ['Aire des surfaces', nf(A)+' mm²'],
+  ['Centre de gravité X', nf(Gc.x)+' mm'], ['Centre de gravité Y', nf(Gc.y)+' mm'], ['Centre de gravité Z', nf(Gc.z)+' mm'],
+  ['Encombrement', nf(sz.x,1)+' × '+nf(sz.y,1)+' × '+nf(sz.z,1)+' mm']]);
+ if (!mOk) h += '<p class="note warn">Choisissez le matériau pour obtenir la masse. Le fichier STEP ne le transporte pas.</p>';
+ h += `<p class="note">Coordonnées dans le repère ${doc.parts.length > 1 ? 'de l\u2019assemblage' : 'de la pièce'} (origine SolidWorks). Calcul sur un maillage fin de la géométrie exacte.</p></div>`;
+ el.innerHTML = h;
+ cdgSprite.position.copy(Gc); cdgSprite.visible = S.cdg && parts.length > 0 && V > 0;
+}
+function kv(rows){return '<dl class="kv">' + rows.map(([k, v, big]) => `<dt>${esc(k)}</dt><dd${big ? ' class="big"' : ''}>${esc(v)}</dd>`).join('') + '</dl>'}
+function renderAll(){
+ applyLook(); renderTabs(); renderTree(); renderPanel();
+ $('#bNormal').disabled = !(S.face && S.face.type === 'plan');
+ [['#bEdges', S.edges], ['#bSection', S.section], ['#bMeasure', S.measure], ['#bCdg', S.cdg], ['#bTransp', !!S.doc && S.doc.parts.some(p => p.transp)]].forEach(([s, v]) => $(s).setAttribute('aria-pressed', v));
+ if (S.picks.length < 2) lblEl.hidden = true; else lblEl.textContent = measure2(S.picks[0], S.picks[1]).label;
+ req();
+}
+const findPart = id => S.doc && S.doc.parts.find(p => p.id === +id);
+
+// ---------- Événements de l'interface
+document.addEventListener('click', e => {
+ const t = e.target.closest('button'); if (!t) return;
+ const d = t.dataset;
+ if (d.view){view(d.view); req()}
+ else if (d.doc) setDoc(S.docs.find(x => x.id === +d.doc));
+ else if (d.close) closeDoc(S.docs.find(x => x.id === +d.close));
+ else if (d.sel){const p = findPart(d.sel); S.sel = S.sel === p ? null : p; clearFace(); renderAll()}
+ else if (d.vis){const p = findPart(d.vis); p.visible = !p.visible; if (!p.visible && S.sel === p){S.sel = null; clearFace()} renderAll()}
+ else if (d.iso){const p = findPart(d.iso); const only = S.doc.parts.every(q => q.visible === (q === p)); S.doc.parts.forEach(q => q.visible = only || q === p); renderAll(); fit()}
+ else if (d.axis){S.secAxis = d.axis; renderAll()}
+ else if (t.id === 'secFlip'){S.secFlip = !S.secFlip; renderAll()}
+ else if (t.id === 'mReset'){clearMeasure(); renderAll()}
+});
+$('#colorParts').onchange = e => {S.colorParts = e.target.checked; renderAll()};
+$('#bOpen').onclick = () => $('#file').click();
+$('#file').onchange = e => {openFiles([...e.target.files]); e.target.value = ''};
+$('#bFit').onclick = () => {fit(); req()};
+$('#bNormal').onclick = () => {normalTo(); req()};
+$('#bEdges').onclick = () => {S.edges = !S.edges; renderAll()};
+$('#bTransp').onclick = () => {if (!S.doc) return; const ps = S.sel ? [S.sel] : S.doc.parts; const v = !ps.every(p => p.transp); ps.forEach(p => p.transp = v); renderAll()};
+$('#bSection').onclick = () => {S.section = !S.section; renderAll()};
+$('#bMeasure').onclick = () => {S.measure = !S.measure; clearMeasure(); renderAll()};
+$('#bCdg').onclick = () => {S.cdg = !S.cdg; renderAll()};
+$('#panel').addEventListener('input', e => {
+ if (e.target.id === 'secPos'){S.secPos = +e.target.value; updateSection(); const l = e.target.previousElementSibling; const b = S.doc.box; l.textContent = 'Position du plan : ' + nf(b.min[S.secAxis] + (b.max[S.secAxis]-b.min[S.secAxis])*S.secPos) + ' mm'; req()}
+});
+$('#panel').addEventListener('change', e => {
+ const d = e.target.dataset;
+ if (e.target.id === 'matAll' && e.target.value !== '*'){S.doc.parts.filter(p => S.sel ? p === S.sel : p.visible).forEach(p => {p.mat = {id:e.target.value, rho:0}; S.mat[p.key] = p.mat}); LS.set('cao-mat', S.mat); renderAll(); return}
+ if (d.mat){const p = findPart(d.mat); p.mat = {id:e.target.value, rho:p.mat.rho || 0}; saveMat(p); renderAll()}
+ if (d.rho){const p = findPart(d.rho); p.mat.rho = Math.max(0, +e.target.value || 0); saveMat(p); renderAll()}
+});
+function saveMat(p){S.mat[p.key] = p.mat; LS.set('cao-mat', S.mat)}
+const vpw = $('#vpw');
+vpw.addEventListener('dragover', e => {e.preventDefault(); $('#drop').classList.add('on')});
+vpw.addEventListener('dragleave', e => {if (!vpw.contains(e.relatedTarget)) $('#drop').classList.remove('on')});
+vpw.addEventListener('drop', e => {e.preventDefault(); $('#drop').classList.remove('on'); const f = [...e.dataTransfer.files].filter(f => /\.(step|stp)$/i.test(f.name)); if (f.length) openFiles(f); else showError('Déposez un fichier .step ou .stp.')});
+
+function status(t){$('#status').hidden = !t; if (t) $('#statusTxt').textContent = t}
+function showError(t){$('#panel').insertAdjacentHTML('afterbegin', `<div class="sec"><p class="warn">${esc(t)}</p></div>`)}
+
+// ---------- Démarrage : noyau puis pièces de démonstration
+window.__cao = {S, pickAt, click, faceData, faceInfo, measure2, view, req, THREE, camera, renderer};
+(async () => {
+ renderAll();
+ try {await initKernel()} catch(e){status(null); showError('Le noyau OpenCascade n’a pas pu démarrer : ' + (e.message || e)); return}
+ status('Ouverture des pièces de démonstration…');
+ for (const n of ['CapotReduct10', 'FlasqueMot10']){
+  try {const r = await fetch('demo/' + n + '.step'); if (r.ok) addDoc(readStep(n + '.step', await r.arrayBuffer()))} catch(e){}
+ }
+ if (S.docs.length) setDoc(S.docs[0]);
+ status(null); renderAll();
+})();
+}
 </script>
 </body>
 </html>
