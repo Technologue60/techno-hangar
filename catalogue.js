@@ -71,6 +71,17 @@ window.CATALOGUE = [
   { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Le PFS",
     titre: "TD4 · Voiture (analytique)", fichier: "td-voiture-analytique.html", type: "td", icone: "voiture", en_ligne: false },
 
+  /* ITEC · 2 Statique · Statique analytique (modules de cours) */
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Statique analytique", groupe_icone: "pfs",
+    titre: "Module 1 · Modéliser les actions", fichier: "statique-analytique-module1.html", type: "activite", icone: "forces", en_ligne: true,
+    documents: [ { titre: "Cours à compléter (PDF)", url: "terminale-sti2d/docs/Cours-statique-analytique-eleve.pdf" } ] },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Statique analytique",
+    titre: "Module 2 · Liaisons et torseur", fichier: "statique-analytique-module2.html", type: "activite", icone: "pfs", en_ligne: true,
+    documents: [ { titre: "TD liaisons et torseurs (PDF)", url: "terminale-sti2d/docs/TD-liaisons-torseurs-eleve.pdf" } ] },
+  { classe: "terminale-sti2d", onglet: "itec", sequence: "2 · Statique", groupe: "Statique analytique",
+    titre: "Module 3 · Résoudre avec le PFS", fichier: "statique-analytique-module3.html", type: "activite", icone: "pfs", en_ligne: true,
+    documents: [ { titre: "TD potence (PDF)", url: "terminale-sti2d/docs/TD-PFS-potence-eleve.pdf" } ] },
+
   { classe: "terminale-sti2d", onglet: "tp", sequence: "Épreuves pratiques",
     titre: "Épreuve pratique · La trottinette électrique", fichier: "itec07-trottinette-eleve.html", type: "activite", icone: "pfs", en_ligne: true,
     titre_consigne: "Épreuve pratique : la trottinette électrique",
