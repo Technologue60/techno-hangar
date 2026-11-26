@@ -102,12 +102,13 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:30px}
  .hint{display:none}
 }
 </style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
 </head>
 <body>
 <div class="app">
 <header>
  <div class="brand">Visionneuse CAO<small>STEP</small></div>
+ <a class="tb" href="modeleur.html" title="Ouvrir le modeleur de pièces" style="text-decoration:none;color:inherit">Modeleur</a>
  <div class="grp">
   <button class="tb primary" id="bOpen" title="Ouvrir un fichier STEP (.step, .stp)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg><span class="lb">Ouvrir</span></button>
   <input type="file" id="file" accept=".step,.stp,.STEP,.STP" multiple hidden>
@@ -122,6 +123,7 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:30px}
  <div class="grp">
   <span>Outils</span>
   <button class="tb" id="bSection" aria-pressed="false" title="Vue en coupe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20L20 4M8 20l12-12M14 20l6-6M4 14L14 4M4 8l4-4"/></svg><span class="lb">Coupe</span></button>
+  <button class="tb" id="bMove" aria-pressed="false" title="Déplacer une pièce (sélectionnez-la puis tirez sur les flèches ou les anneaux)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg><span class="lb">Déplacer</span></button>
   <button class="tb" id="bMeasure" aria-pressed="false" title="Mesurer : cliquez une ou deux faces"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17L17 3l4 4L7 21z M7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span class="lb">Mesurer</span></button>
   <button class="tb" id="bCdg" aria-pressed="true" title="Afficher le centre de gravité"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 8 8h-8zM12 20a8 8 0 0 1-8-8h8z" fill="currentColor"/></svg><span class="lb">Gravité</span></button>
  </div>
@@ -145,6 +147,7 @@ input[type=range]{width:100%;accent-color:var(--acc);min-height:30px}
 <script src="occt-import-js.js"></script>
 <script type="module">
 import * as THREE from 'three';
+import {TransformControls} from 'three/addons/controls/TransformControls.js';
 {
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -153,7 +156,7 @@ const LS = {get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retur
 
 // ---------- Matériaux (masse volumique en kg/m³)
 const MATS = [
- ['', 'Non défini', 0], ['acier', 'Acier (S235)', 7850], ['inox', 'Acier inoxydable', 7900], ['fonte', 'Fonte', 7200],
+ ['', 'Non défini', 0], ['sw', 'Densité par défaut de SolidWorks (eau)', 1000], ['acier', 'Acier (S235)', 7850], ['inox', 'Acier inoxydable', 7900], ['fonte', 'Fonte', 7200],
  ['alu', 'Alliage d’aluminium', 2700], ['laiton', 'Laiton', 8500], ['cuivre', 'Cuivre', 8960], ['titane', 'Titane', 4430],
  ['abs', 'ABS', 1050], ['pla', 'PLA (impression 3D)', 1240], ['petg', 'PETG', 1270], ['pa', 'Polyamide (nylon)', 1140],
  ['pom', 'POM (Delrin)', 1410], ['bois', 'Bois (chêne)', 700], ['perso', 'Personnalisé…', 0]];
@@ -204,9 +207,26 @@ const hvMat = new THREE.MeshBasicMaterial({color:0xf5a524, transparent:true, opa
 const mGroup = new THREE.Group(); scene.add(mGroup);
 const lblEl = document.createElement('div'); lblEl.className = 'mlabel'; lblEl.hidden = true; $('#vpw').appendChild(lblEl);
 
+// ---------- Déplacement de pièce (façon « Déplacer le composant »)
+const tc = new TransformControls(camera, renderer.domElement);
+tc.setSize(0.9); scene.add(tc.getHelper());
+tc.addEventListener('change', () => req());
+tc.addEventListener('objectChange', () => {clearFace(); clearMeasure()});
+tc.addEventListener('dragging-changed', e => {if (!e.value) renderAll()});
+function syncMove(){
+ if (S.move && S.sel && S.sel.visible && S.doc && S.doc.parts.includes(S.sel)){if (tc.object !== S.sel.pivot) tc.attach(S.sel.pivot); tc.setMode(S.moveMode)} else tc.detach();
+}
+function resetPart(p){p.pivot.position.copy(p.c0); p.pivot.quaternion.identity()}
+function applyExplode(){
+ const doc = S.doc; if (!doc) return;
+ doc.parts.forEach(p => p.ex.position.set(0, 0, 0));
+ const C = refreshBox(doc).getCenter(new THREE.Vector3());
+ doc.parts.forEach(p => p.ex.position.copy(wBox(p).getCenter(new THREE.Vector3()).sub(C).multiplyScalar(S.explode*1.5)));
+ doc.explode = S.explode; clearFace(); clearMeasure();
+}
 // ---------- État
 const PAL = [0x5b8cff,0xf5a524,0x30a46c,0xe5484d,0xb07cff,0x2fc4c4,0xd6409f,0x8a9a3b,0xff8a4c,0x7b8cab];
-const S = {colorParts:false, docs:[], doc:null, sel:null, face:null, hover:null, edges:true, section:false, secAxis:'z', secPos:.5, secFlip:false, measure:false, picks:[], cdg:true, mat:LS.get('cao-mat') || {}};
+const S = {move:false, moveMode:'translate', explode:0, colorParts:false, docs:[], doc:null, sel:null, face:null, hover:null, edges:true, section:false, secAxis:'z', secPos:.5, secFlip:false, measure:false, picks:[], cdg:true, mat:LS.get('cao-mat') || {}};
 let occt = null, uid = 0;
 
 // ---------- Lecture STEP
@@ -220,7 +240,7 @@ function readStep(name, bytes){
  r.meshes.forEach((m, i) => doc.parts.push(makePart(doc, m, i)));
  doc.tree = (function walk(n){return {name:clean(n.name), parts:(n.meshes||[]).map(i=>doc.parts[i]), kids:(n.children||[]).map(walk)}})(r.root);
  if (!doc.tree.name) doc.tree.name = doc.name;
- doc.box = new THREE.Box3(); doc.parts.forEach(p => doc.box.union(p.box));
+ refreshBox(doc);
  return doc;
 }
 function makePart(doc, m, i){
@@ -241,7 +261,11 @@ function makePart(doc, m, i){
  const p = {id:++uid, doc, name, col0:col.clone(), mesh, edges, sb, sf, geom:g, fot, faces, visible:true, transp:false, box:g.boundingBox.clone(), props:massProps(g)};
  mesh.userData.part = p;
  const key = doc.name + '/' + name; p.key = key; p.mat = S.mat[key] || {id:'', rho:0};
- doc.group.add(mesh, edges, sb, sf);
+ const inner = new THREE.Group(), pivot = new THREE.Group(), ex = new THREE.Group();
+ p.c0 = p.box.getCenter(new THREE.Vector3());
+ inner.add(mesh, edges, sb, sf); inner.position.copy(p.c0).negate(); pivot.position.copy(p.c0); pivot.add(inner); ex.add(pivot);
+ Object.assign(p, {inner, pivot, ex}); pivot.userData.part = p;
+ doc.group.add(ex);
  return p;
 }
 const clean = n => (n || '').replace(/<\d+>$/,'').replace(/\.(ipt|iam|sldprt|sldasm|prt|asm|step|stp)$/i,'').trim();
@@ -277,6 +301,17 @@ function massProps(g){
  return {V:Math.abs(V), A, G:new THREE.Vector3(cx/V, cy/V, cz/V), closed:Math.abs(V) > 1e-9, flip:s < 0};
 }
 
+// ---------- Positions : chaque pièce = ex (éclatée) > pivot (déplacement, au centre de la pièce) > inner (géométrie)
+function wBox(p){p.ex.updateMatrixWorld(true); return p.box.clone().applyMatrix4(p.inner.matrixWorld)}
+function wG(p){p.ex.updateMatrixWorld(true); return p.props.G.clone().applyMatrix4(p.inner.matrixWorld)}
+function refreshBox(doc){doc.box = new THREE.Box3(); doc.parts.forEach(p => doc.box.union(wBox(p))); return doc.box}
+function worldFD(fd){
+ const p = fd.part; p.ex.updateMatrixWorld(true); const M = p.inner.matrixWorld, N = new THREE.Matrix3().getNormalMatrix(M);
+ const w = Object.assign({}, fd);
+ if (fd.type === 'plan'){w.n = fd.n.clone().applyMatrix3(N).normalize(); w.d = w.n.dot(fd.n.clone().multiplyScalar(fd.d).applyMatrix4(M))}
+ if (fd.type === 'cyl'){w.axis = fd.axis.clone().applyMatrix3(N).normalize(); w.ctr = fd.ctr.clone().applyMatrix4(M)}
+ return w;
+}
 // ---------- Analyse d'une face (plan, cylindre, autre)
 // SolidWorks exporte un perçage en deux demi-cylindres : on regroupe les faces coaxiales de même rayon.
 function faceInfo(p, k){
@@ -387,7 +422,7 @@ function addDoc(doc){
 function setDoc(doc){
  S.docs.forEach(d => d.group.visible = d === doc);
  if (S.doc && S.doc !== doc) S.doc.view = {pos:camera.position.clone(), up:camera.up.clone(), target:target.clone(), zoom:camera.zoom, frust};
- S.doc = doc; S.sel = null; clearFace(); clearMeasure();
+ S.doc = doc; S.sel = null; S.explode = doc ? (doc.explode || 0) : 0; clearFace(); clearMeasure();
  if (doc && doc.view){camera.position.copy(doc.view.pos); camera.up.copy(doc.view.up); target.copy(doc.view.target); camera.zoom = doc.view.zoom; frust = doc.view.frust; camera.lookAt(target); resize()}
  else if (doc) view('iso');
  updateSection(); renderAll();
@@ -418,7 +453,7 @@ $('#gViews').insertAdjacentHTML('beforeend', VIEW_BTNS.map(k => `<button class="
  `<button class="tb" id="bNormal" title="Normal à la face sélectionnée (8)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18h16M12 18V4M8 8l4-4 4 4"/></svg><span class="lb">Normal à</span></button>`);
 function visBox(){
  const b = new THREE.Box3(); if (!S.doc) return b.set(new THREE.Vector3(-50,-50,-50), new THREE.Vector3(50,50,50));
- S.doc.parts.forEach(p => {if (p.visible) b.union(p.box)}); if (b.isEmpty()) b.copy(S.doc.box); return b;
+ S.doc.parts.forEach(p => {if (p.visible) b.union(wBox(p))}); if (b.isEmpty()) b.copy(refreshBox(S.doc)); return b;
 }
 function view(k, dirV, upV){
  const dir = dirV || new THREE.Vector3(...VIEWS[k][2]).normalize(), up = upV || new THREE.Vector3(...VIEWS[k][3]);
@@ -457,6 +492,7 @@ function zoomAt(e, f){
 }
 vp.addEventListener('contextmenu', e => e.preventDefault());
 vp.addEventListener('pointerdown', e => {
+ if (tc.dragging) {drag = null; return}
  vp.focus({preventScroll:true}); vp.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
  if (ptrs.size === 2){const [a,b] = [...ptrs.values()]; pinch = {d:Math.hypot(a.x-b.x, a.y-b.y), x:(a.x+b.x)/2, y:(a.y+b.y)/2}; drag = null; return}
  const mode = e.button === 1 ? (e.ctrlKey || e.metaKey ? 'pan' : e.shiftKey ? 'zoom' : 'rot') : e.button === 2 ? 'pan' : 'rot';
@@ -476,7 +512,7 @@ vp.addEventListener('pointermove', e => {
   if (drag.mode === 'rot') rotate(dx, dy); else if (drag.mode === 'pan') pan(dx, dy); else zoomAt({clientX:drag.x0, clientY:drag.y0}, Math.exp(-dy*0.01));
   req(); return;
  }
- if (e.pointerType === 'mouse') hover(e);
+ if (e.pointerType === 'mouse' && !tc.dragging) hover(e);
 });
 function endPtr(e){
  ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
@@ -490,6 +526,8 @@ addEventListener('keydown', e => {
  if (e.target.closest && e.target.closest('input,select,textarea')) return;
  if (e.ctrlKey || e.metaKey || e.altKey) return;
  const k = Object.keys(VIEWS).find(v => VIEWS[v][1] === e.key);
+ if (S.move && (e.key === 't' || e.key === 'T')){S.moveMode = 'translate'; renderAll(); return}
+ if (S.move && (e.key === 'r' || e.key === 'R')){S.moveMode = 'rotate'; renderAll(); return}
  if (k){view(k); req()} else if (e.key === '8'){normalTo(); req()} else if (e.key === 'f' || e.key === 'F'){fit(); req()} else if (e.key === 'Escape'){S.sel = null; clearFace(); clearMeasure(); renderAll()}
 });
 
@@ -508,8 +546,8 @@ function pickAt(e){
 let hvMesh = null, hlMesh = null, hvT = 0;
 function faceMesh(fd, mat){const g = new THREE.BufferGeometry(); g.setAttribute('position', fd.part.geom.attributes.position); g.setIndex(fd.tri); const m = new THREE.Mesh(g, mat); m.renderOrder = 3; return m}
 function setHover(h){
- if (hvMesh){scene.remove(hvMesh); hvMesh.geometry.dispose(); hvMesh = null}
- if (h && h.k >= 0){hvMesh = faceMesh(faceInfo(h.part, h.k), hvMat); applyClip(hvMat); scene.add(hvMesh)}
+ if (hvMesh){hvMesh.removeFromParent(); hvMesh.geometry.dispose(); hvMesh = null}
+ if (h && h.k >= 0){hvMesh = faceMesh(faceInfo(h.part, h.k), hvMat); applyClip(hvMat); h.part.inner.add(hvMesh)}
  req();
 }
 function hover(e){
@@ -518,19 +556,19 @@ function hover(e){
  if (key !== S.hover){S.hover = key; setHover(h)}
  vp.style.cursor = h ? 'pointer' : 'default';
 }
-function clearFace(){S.face = null; if (hlMesh){scene.remove(hlMesh); hlMesh.geometry.dispose(); hlMesh = null}}
+function clearFace(){S.face = null; if (hlMesh){hlMesh.removeFromParent(); hlMesh.geometry.dispose(); hlMesh = null}}
 function click(e){
  const h = pickAt(e);
  if (!h || h.k < 0){
   if (!S.measure){S.sel = null; clearFace()}
   renderAll(); return;
  }
- const fd = faceInfo(h.part, h.k);
+ const fd = worldFD(faceInfo(h.part, h.k));
  if (S.measure){
   if (S.picks.length >= 2) clearMeasure();
   S.picks.push({pt:h.pt, fd}); drawMeasure();
  }
- S.sel = h.part; clearFace(); S.face = fd; hlMesh = faceMesh(fd, hlMat); applyClip(hlMat); scene.add(hlMesh);
+ S.sel = h.part; clearFace(); S.face = fd; hlMesh = faceMesh(fd, hlMat); applyClip(hlMat); h.part.inner.add(hlMesh);
  renderAll();
 }
 function clearMeasure(){S.picks = []; mGroup.clear(); lblEl.hidden = true}
@@ -547,7 +585,7 @@ function updateSection(){
  const doc = S.doc, on = S.section && !!doc;
  cap.visible = on;
  if (doc){
-  const b = doc.box, ax = S.secAxis, n = new THREE.Vector3(ax==='x'?1:0, ax==='y'?1:0, ax==='z'?1:0);
+  const b = refreshBox(doc), ax = S.secAxis, n = new THREE.Vector3(ax==='x'?1:0, ax==='y'?1:0, ax==='z'?1:0);
   const lo = b.min[ax], hi = b.max[ax], pos = lo + (hi-lo)*S.secPos;
   if (!S.secFlip) n.negate();
   clip.normal.copy(n); clip.constant = -n.dot(new THREE.Vector3(ax==='x'?pos:0, ax==='y'?pos:0, ax==='z'?pos:0));
@@ -585,6 +623,7 @@ function render(){
  const w = vp.clientWidth, h = vp.clientHeight;
  renderer.setViewport(0, 0, w, h); renderer.setScissorTest(false); renderer.clear(true, true, true);
  const wpp = (2*frust/camera.zoom)/(h || 1); cdgSprite.scale.set(wpp*22, wpp*22, 1);
+ if (S.doc){const sp = refreshBox(S.doc).getBoundingSphere(new THREE.Sphere()); const dir = target.clone().sub(camera.position).normalize(); const d = sp.center.clone().sub(camera.position).dot(dir), R = sp.radius*1.5 + 1; camera.near = d - R; camera.far = d + R; camera.updateProjectionMatrix()}
  renderer.render(scene, camera);
  const s = Math.min(96, w*0.22);
  triCam.position.copy(camera.position.clone().sub(target).normalize().multiplyScalar(4)); triCam.up.copy(camera.up); triCam.lookAt(0,0,0);
@@ -643,6 +682,16 @@ function renderPanel(){
   else {const m = measure2(S.picks[0], S.picks[1]); h += kv(m.rows) + '<div class="row"><button class="tb" id="mReset">Nouvelle mesure</button></div>'}
   h += '</div>';
  }
+ if (doc.parts.length > 1 || S.move){
+  h += `<div class="sec"><h2>Assemblage</h2>`;
+  if (S.move){
+   h += `<div class="row" role="group" aria-label="Type de déplacement"><button class="tb" data-mmode="translate" aria-pressed="${S.moveMode === 'translate'}">Translation (T)</button><button class="tb" data-mmode="rotate" aria-pressed="${S.moveMode === 'rotate'}">Rotation (R)</button></div>`;
+   h += S.sel ? `<p>Tirez sur une ${S.moveMode === 'translate' ? 'flèche pour faire glisser' : 'anneau pour faire tourner'} « ${esc(S.sel.name)} ».</p>` : '<p>Cliquez une pièce pour la déplacer.</p>';
+   h += `<div class="row">${S.sel ? '<button class="tb" id="resetOne">Remettre cette pièce</button>' : ''}<button class="tb" id="resetAll">Remettre toutes les pièces</button></div>`;
+  }
+  if (doc.parts.length > 1) h += `<label class="f" for="explode">Vue éclatée</label><input type="range" id="explode" min="0" max="1" step="0.01" value="${S.explode}">`;
+  h += '</div>';
+ }
  if (S.face){
   const ft = faceText(S.face);
   h += `<div class="sec"><h2>Face sélectionnée</h2><span class="badge">${esc(ft.t)}</span>${kv(ft.rows)}<p class="note">Pièce : ${esc(S.face.part.name)}</p></div>`;
@@ -652,8 +701,8 @@ function renderPanel(){
  let V = 0, A = 0, m = 0, mOk = true; const Gm = new THREE.Vector3(), Gv = new THREE.Vector3(), bb = new THREE.Box3();
  parts.forEach(p => {
   const rho = p.mat.id === 'perso' ? (p.mat.rho || 0) : (MATS.find(x => x[0] === p.mat.id) || [0,0,0])[2];
-  V += p.props.V; A += p.props.A; bb.union(p.box);
-  if (!rho) mOk = false; const mp = rho*p.props.V*1e-6; m += mp; Gm.addScaledVector(p.props.G, mp); Gv.addScaledVector(p.props.G, p.props.V);
+  V += p.props.V; A += p.props.A; bb.union(wBox(p)); const gw = wG(p);
+  if (!rho) mOk = false; const mp = rho*p.props.V*1e-6; m += mp; Gm.addScaledVector(gw, mp); Gv.addScaledVector(gw, p.props.V);
  });
  const Gc = mOk && m > 0 ? Gm.divideScalar(m) : Gv.divideScalar(V || 1); const sz = bb.getSize(new THREE.Vector3());
  h += `<div class="sec"><h2>Propriétés de masse · ${esc(S.sel ? S.sel.name : (parts.length === doc.parts.length ? doc.name : parts.length + ' pièces visibles'))}</h2>`;
@@ -674,11 +723,17 @@ function renderPanel(){
  el.innerHTML = h;
  cdgSprite.position.copy(Gc); cdgSprite.visible = S.cdg && parts.length > 0 && V > 0;
 }
+// Mise à jour du centre de gravité pendant l'éclatée sans reconstruire le panneau
+function renderPanelLight(){
+ const doc = S.doc; if (!doc) return; const parts = S.sel ? [S.sel] : doc.parts.filter(p => p.visible);
+ let V = 0; const Gv = new THREE.Vector3(); parts.forEach(p => {V += p.props.V; Gv.addScaledVector(wG(p), p.props.V)}); if (V) cdgSprite.position.copy(Gv.divideScalar(V));
+}
 function kv(rows){return '<dl class="kv">' + rows.map(([k, v, big]) => `<dt>${esc(k)}</dt><dd${big ? ' class="big"' : ''}>${esc(v)}</dd>`).join('') + '</dl>'}
 function renderAll(){
  applyLook(); renderTabs(); renderTree(); renderPanel();
  $('#bNormal').disabled = !(S.face && S.face.type === 'plan');
- [['#bEdges', S.edges], ['#bSection', S.section], ['#bMeasure', S.measure], ['#bCdg', S.cdg], ['#bTransp', !!S.doc && S.doc.parts.some(p => p.transp)]].forEach(([s, v]) => $(s).setAttribute('aria-pressed', v));
+ syncMove();
+ [['#bMove', S.move], ['#bEdges', S.edges], ['#bSection', S.section], ['#bMeasure', S.measure], ['#bCdg', S.cdg], ['#bTransp', !!S.doc && S.doc.parts.some(p => p.transp)]].forEach(([s, v]) => $(s).setAttribute('aria-pressed', v));
  if (S.picks.length < 2) lblEl.hidden = true; else lblEl.textContent = measure2(S.picks[0], S.picks[1]).label;
  req();
 }
@@ -697,6 +752,9 @@ document.addEventListener('click', e => {
  else if (d.axis){S.secAxis = d.axis; renderAll()}
  else if (t.id === 'secFlip'){S.secFlip = !S.secFlip; renderAll()}
  else if (t.id === 'mReset'){clearMeasure(); renderAll()}
+ else if (d.mmode){S.moveMode = d.mmode; renderAll()}
+ else if (t.id === 'resetOne'){resetPart(S.sel); clearFace(); clearMeasure(); renderAll()}
+ else if (t.id === 'resetAll'){S.doc.parts.forEach(resetPart); S.explode = 0; applyExplode(); renderAll()}
 });
 $('#colorParts').onchange = e => {S.colorParts = e.target.checked; renderAll()};
 $('#bOpen').onclick = () => $('#file').click();
@@ -706,14 +764,17 @@ $('#bNormal').onclick = () => {normalTo(); req()};
 $('#bEdges').onclick = () => {S.edges = !S.edges; renderAll()};
 $('#bTransp').onclick = () => {if (!S.doc) return; const ps = S.sel ? [S.sel] : S.doc.parts; const v = !ps.every(p => p.transp); ps.forEach(p => p.transp = v); renderAll()};
 $('#bSection').onclick = () => {S.section = !S.section; renderAll()};
-$('#bMeasure').onclick = () => {S.measure = !S.measure; clearMeasure(); renderAll()};
+$('#bMove').onclick = () => {S.move = !S.move; if (S.move && S.measure){S.measure = false; clearMeasure()} renderAll()};
+$('#bMeasure').onclick = () => {S.measure = !S.measure; if (S.measure) S.move = false; clearMeasure(); renderAll()};
 $('#bCdg').onclick = () => {S.cdg = !S.cdg; renderAll()};
 $('#panel').addEventListener('input', e => {
+ if (e.target.id === 'explode'){S.explode = +e.target.value; applyExplode(); if (S.section) updateSection(); const sv = cdgSprite.visible; renderPanelLight(); req(); return}
  if (e.target.id === 'secPos'){S.secPos = +e.target.value; updateSection(); const l = e.target.previousElementSibling; const b = S.doc.box; l.textContent = 'Position du plan : ' + nf(b.min[S.secAxis] + (b.max[S.secAxis]-b.min[S.secAxis])*S.secPos) + ' mm'; req()}
 });
 $('#panel').addEventListener('change', e => {
  const d = e.target.dataset;
  if (e.target.id === 'matAll' && e.target.value !== '*'){S.doc.parts.filter(p => S.sel ? p === S.sel : p.visible).forEach(p => {p.mat = {id:e.target.value, rho:0}; S.mat[p.key] = p.mat}); LS.set('cao-mat', S.mat); renderAll(); return}
+ if (e.target.id === 'explode'){renderAll(); return}
  if (d.mat){const p = findPart(d.mat); p.mat = {id:e.target.value, rho:p.mat.rho || 0}; saveMat(p); renderAll()}
  if (d.rho){const p = findPart(d.rho); p.mat.rho = Math.max(0, +e.target.value || 0); saveMat(p); renderAll()}
 });
@@ -732,7 +793,7 @@ window.__cao = {S, pickAt, click, faceData, faceInfo, measure2, view, req, THREE
  renderAll();
  try {await initKernel()} catch(e){status(null); showError('Le noyau OpenCascade n’a pas pu démarrer : ' + (e.message || e)); return}
  status('Ouverture des pièces de démonstration…');
- for (const n of ['CapotReduct10', 'FlasqueMot10']){
+ for (const n of ['Assemblage1', 'CapotReduct10', 'FlasqueMot10']){
   try {const r = await fetch('demo/' + n + '.step'); if (r.ok) addDoc(readStep(n + '.step', await r.arrayBuffer()))} catch(e){}
  }
  if (S.docs.length) setDoc(S.docs[0]);

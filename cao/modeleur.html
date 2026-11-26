@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modeleur CAO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* VOICE  : atelier de CAO pour lycéens, vocabulaire SolidWorks, aucun bruit.
+   IDEA   : la fenêtre SolidWorks réduite à l'essentiel : CommandManager, arbre de création / PropertyManager, zone graphique.
+   PICTURE: la pièce en construction, et en esquisse le dessin coté sur son plan.
+   COLOUR and TYPE : « Tech sombre » Techno-Hangar, bleu STI2D #5b8cff ; esquisse bleue (sous-contrainte) / noire (contrainte) / rouge (conflit) ; Geist.
+   LAYOUT : onglets d'outils en haut, panneau à gauche, zone 3D, barre d'état en bas ; empilé sur téléphone. */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef0f4,#09090b);--panel:light-dark(#ffffff,#111114);--panel2:light-dark(#f5f6f9,#17171b);
+--line:light-dark(#dcdfe6,#26262c);--ink:light-dark(#15161a,#e9e9ef);--mute:light-dark(#5d6170,#9a9aa6);
+--acc:light-dark(#3d6cf0,#5b8cff);--accbg:light-dark(#e6edff,#1a2340);--warn:light-dark(#b25b00,#f5b74a);--err:light-dark(#c62828,#ff6b6b);--ok:light-dark(#1d7a46,#3ecf8e);
+--vp1:light-dark(#fbfcfe,#20232c);--vp2:light-dark(#c9d2e3,#0b0c10)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Geist,system-ui,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+.app{display:grid;grid-template-rows:auto auto 1fr auto;height:100%}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:15px;white-space:nowrap;margin-right:4px}
+#docName{font-weight:600;border:1px solid transparent;background:none;border-radius:6px;padding:4px 6px;width:16ch;font-size:14px}
+#docName:hover,#docName:focus{border-color:var(--line);background:var(--panel2)}
+.sp{flex:1}
+.tb{min-height:34px;min-width:34px;padding:0 8px;border:1px solid transparent;border-radius:7px;background:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tb:hover:not(:disabled){background:var(--panel2);border-color:var(--line)}
+.tb[aria-pressed=true]{background:var(--accbg);border-color:var(--acc);color:var(--acc)}
+.tb:disabled{opacity:.38;cursor:default}
+.tb svg{width:18px;height:18px;flex:none}
+.tb.primary{background:var(--acc);color:#fff}
+.tb:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.cm{background:var(--panel);border-bottom:1px solid var(--line)}
+.cmtabs{display:flex;gap:2px;padding:4px 10px 0}
+.cmtabs button{border:0;background:none;padding:6px 12px;border-radius:7px 7px 0 0;cursor:pointer;color:var(--mute);font-weight:600}
+.cmtabs button[aria-selected=true]{background:var(--panel2);color:var(--acc)}
+.cmbar{display:flex;flex-wrap:wrap;gap:2px;padding:6px 10px;background:var(--panel2);min-height:50px;align-items:center}
+.cmbar .tb{flex-direction:column;gap:2px;font-size:12px;min-height:46px;padding:4px 8px}
+.cmbar .tb svg{width:20px;height:20px}
+.cmbar .sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.main{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:0}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow:auto;min-height:0}
+.pm-h{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600}
+.badge{font-size:12px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--accbg);color:var(--acc)}
+.pm-h .ok,.pm-h .ko{width:34px;height:34px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;display:grid;place-items:center}
+.pm-h .ok{color:var(--ok)}.pm-h .ko{color:var(--err)}
+.pm-h .t{flex:1}
+.pm-h>svg{width:18px;height:18px;flex:none;color:var(--acc)}
+.sec{padding:10px 12px;border-bottom:1px solid var(--line)}
+.sec h3{margin:0 0 6px;font-size:13px;font-weight:600}
+.sec p{margin:4px 0;color:var(--mute);font-size:13px}
+.tree{list-style:none;margin:0;padding:6px}
+.tree li{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:6px;cursor:pointer;user-select:none;min-height:32px}
+.tree li:hover{background:var(--panel2)}
+.tree li.sel{background:var(--accbg);color:var(--acc)}
+.tree li.err{color:var(--err)}
+.tree li.sub{padding-left:26px;color:var(--mute)}
+.tree li svg{width:16px;height:16px;flex:none}
+.tree li .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree li .x{opacity:0;border:0;background:none;cursor:pointer;color:var(--mute);width:28px;height:28px;border-radius:6px}
+.tree li:hover .x,.tree li.sel .x{opacity:1}
+.tree li.ghost{opacity:.5}
+label.f{display:block;font-size:13px;color:var(--mute);margin:8px 0 4px}
+select,input[type=number],input[type=text]{width:100%;min-height:36px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:16px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row .tb{border-color:var(--line)}
+.chk{display:flex;align-items:center;gap:8px;min-height:34px;cursor:pointer;font-size:13px}
+.chk input{width:18px;height:18px;accent-color:var(--acc)}
+.rel{display:flex;align-items:center;gap:6px;font-size:13px;padding:3px 0}
+.rel span{flex:1}
+.rel button{border:0;background:none;color:var(--mute);cursor:pointer;width:28px;height:28px;border-radius:6px}
+.rel button:hover{background:var(--panel2);color:var(--err)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .tb{border-color:var(--line);font-size:13px}
+dl.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:6px 0 0}
+dl.kv dt{color:var(--mute);font-size:13px}
+dl.kv dd{margin:0;text-align:right;font:500 13px "Geist Mono",monospace;white-space:nowrap}
+dl.kv dd.big{font-size:16px;color:var(--acc)}
+.note{font-size:12px;color:var(--mute);margin-top:8px}
+.msg-err{color:var(--err);font-size:13px}
+.msg-ok{color:var(--ok);font-size:13px}
+.vpw{position:relative;min-height:0;background:radial-gradient(ellipse at 50% 30%,var(--vp1),var(--vp2) 85%)}
+#vp{position:absolute;inset:0;touch-action:none;outline:none}
+#vp canvas{display:block;width:100%;height:100%}
+.views{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:2px;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:9px;padding:3px;z-index:2}
+.views .tb{min-height:32px;font-size:13px}
+.corner{position:absolute;top:8px;right:10px;display:flex;gap:6px;z-index:3}
+.corner button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 14px #0002}
+.corner .ok{color:var(--ok)}.corner .ko{color:var(--err)}
+.corner svg{width:22px;height:22px}
+.lbl{position:absolute;transform:translate(-50%,-50%);font:500 12px "Geist Mono",monospace;padding:1px 6px;border-radius:5px;background:var(--panel);border:1px solid var(--line);white-space:nowrap;cursor:pointer;z-index:2;user-select:none}
+.lbl.drv{color:light-dark(#111,#e9e9ef)}
+.lbl.sel{border-color:#12c2e9;color:#0ea5c6}
+.lbl.rel{font-size:11px;padding:0 4px;color:var(--mute);cursor:default;pointer-events:none;background:color-mix(in srgb,var(--panel) 80%,transparent)}
+#dimEdit{position:absolute;z-index:5;transform:translate(-50%,-50%);display:flex;gap:4px;background:var(--panel);border:1px solid var(--acc);border-radius:8px;padding:4px;box-shadow:0 8px 24px #0004}
+#dimEdit input{width:9ch;min-height:32px;font:500 15px "Geist Mono",monospace}
+#dimEdit button{min-height:32px;border:1px solid var(--line);background:var(--panel2);border-radius:6px;cursor:pointer;padding:0 8px}
+.status{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;padding:5px 12px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--mute);min-height:30px}
+.status b{font-weight:600}
+.st-under{color:#2f6fed}.st-full{color:var(--ink)}.st-over{color:var(--err)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:6;pointer-events:none}
+.loading div{background:var(--panel);border:1px solid var(--line);padding:14px 18px;border-radius:10px;box-shadow:0 8px 30px #0003;display:flex;gap:10px;align-items:center}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.modal{position:fixed;inset:0;background:#0006;display:grid;place-items:center;z-index:20}
+.modal>div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;max-width:420px;width:calc(100% - 32px)}
+.modal h3{margin:0 0 8px}
+.hint{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--mute);pointer-events:none;max-width:70%;padding-left:100px}
+@media (max-width:900px){
+ body{overflow:auto}.app{height:auto;min-height:100%}
+ .main{grid-template-columns:minmax(0,1fr)}
+ .vpw{height:60vh;min-height:340px;order:1}
+ aside{order:2;border-right:0}
+ .cmbar .tb .lb{display:none}.cmbar .tb{min-height:40px}
+ .views{max-width:calc(100% - 120px);overflow-x:auto;left:8px;transform:none}.views .tb{font-size:12px;padding:0 6px}.hint{display:none}
+}
+</style>
+<script type="importmap">{"imports":{
+ "three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+ "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/",
+ "replicad":"./lib/replicad/replicad.js",
+ "replicad-opencascadejs":"./lib/occ/replicad_single.js",
+ "planegcs":"./lib/planegcs/index.js"}}</script>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand">Modeleur CAO</div>
+ <input id="docName" type="text" value="Pièce1" aria-label="Nom de la pièce" spellcheck="false">
+ <button class="tb" id="bNew" title="Nouvelle pièce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h8l4 4v14H6z M14 3v4h4"/></svg><span class="lb">Nouveau</span></button>
+ <button class="tb" id="bOpen" title="Ouvrir une pièce (.cao.json)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg><span class="lb">Ouvrir</span></button>
+ <button class="tb" id="bSave" title="Enregistrer la pièce (.cao.json)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h12l2 2v16H5z M8 3v6h8V3 M8 21v-7h8v7"/></svg><span class="lb">Enregistrer</span></button>
+ <button class="tb" id="bCloud" aria-pressed="false" title="Espace de travail partagé (groupes, bibliothèque)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></svg><span class="lb">Espace</span></button>
+ <button class="tb" id="bUndo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+ <button class="tb" id="bRedo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
+ <span class="sp"></span>
+ <a class="tb" href="index.html" title="Ouvrir la visionneuse STEP (pièces et assemblages SolidWorks)" style="text-decoration:none;color:inherit">Visionneuse</a>
+ <button class="tb" id="bExample" title="Charger la pièce d'exemple">Exemple</button>
+ <button class="tb" id="bStep" title="Exporter en STEP (SolidWorks, FreeCAD, Fusion…)"><span>STEP</span></button>
+ <button class="tb" id="bStl" title="Exporter en STL (impression 3D)"><span>STL</span></button>
+ <input type="file" id="file" accept=".json,.cao.json" hidden>
+</header>
+<div class="cm">
+ <div class="cmtabs" role="tablist">
+  <button role="tab" data-tab="fonctions" aria-selected="true">Fonctions</button>
+  <button role="tab" data-tab="esquisse" aria-selected="false">Esquisse</button>
+  <button role="tab" data-tab="evaluer" aria-selected="false">Évaluer</button>
+ </div>
+ <div class="cmbar" id="cmbar"></div>
+</div>
+<div class="main">
+ <aside id="side"></aside>
+ <div class="vpw" id="vpw">
+  <div id="vp" tabindex="0" aria-label="Zone graphique"></div>
+  <div class="views" id="views"></div>
+  <div class="corner" id="corner" hidden></div>
+  <div class="hint" id="hint"></div>
+  <div class="loading" id="loading"><div><span class="spin"></span><span id="loadTxt">Chargement du noyau OpenCascade (23 Mo, une seule fois)…</span></div></div>
+ </div>
+</div>
+<div class="status" id="status"></div>
+</div>
+<div id="modal" class="modal" hidden></div>
+<script type="module" src="modeleur.js"></script>
+</body>
+</html>
